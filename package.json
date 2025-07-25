@@ -1,0 +1,224 @@
+// package.json
+{
+    "name": "iitmbs-cgpa-calculator",
+    "version": "1.0.0",
+    "description": "CGPA Calculator for IIT Madras BS Program Students",
+    "main": "index.js",
+    "scripts": {
+      "dev": "vercel dev",
+      "build": "echo 'No build step required'",
+      "deploy": "vercel --prod"
+    },
+    "dependencies": {
+      "@vercel/postgres": "^0.5.1",
+      "bcryptjs": "^2.4.3",
+      "jsonwebtoken": "^9.0.2"
+    },
+    "devDependencies": {
+      "vercel": "^32.5.0"
+    },
+    "keywords": [
+      "iit-madras",
+      "cgpa",
+      "calculator",
+      "academic",
+      "tracker"
+    ],
+    "author": "Arnav Labhasetwar",
+    "license": "MIT"
+  }
+  
+  // vercel.json
+  {
+    "version": 2,
+    "builds": [
+      {
+        "src": "index.html",
+        "use": "@vercel/static"
+      },
+      {
+        "src": "app.js",
+        "use": "@vercel/static"
+      },
+      {
+        "src": "api/**/*.js",
+        "use": "@vercel/node"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/api/(.*)",
+        "dest": "/api/$1"
+      },
+      {
+        "src": "/(.*)",
+        "dest": "/$1"
+      }
+    ],
+    "env": {
+      "JWT_SECRET": "@jwt_secret",
+      "POSTGRES_URL": "@postgres_url"
+    }
+  }
+  
+  // .env.example
+  JWT_SECRET=your-super-secret-jwt-key-here
+  POSTGRES_URL=postgres://username:password@host:port/database
+  
+  // README.md
+  # IITMBS CGPA Calculator
+  
+  A comprehensive CGPA calculator designed specifically for IIT Madras Bachelor of Science (IITMBS) students to track their academic progress throughout their journey.
+  
+  ## Features
+  
+  - 🎓 **Complete Course Database**: All 142 credits across Foundation, Diploma, and Degree levels
+  - 🔐 **Secure Authentication**: Username + 4-digit PIN with bcrypt hashing
+  - 💾 **Persistent Storage**: PostgreSQL database with 8-year retention
+  - 📊 **Real-time Analytics**: CGPA calculation, grade distribution, progress tracking
+  - 🎯 **Target CGPA Calculator**: Plan your grades to achieve desired CGPA
+  - 📱 **Responsive Design**: Works seamlessly on mobile and desktop
+  - 🌙 **Dark Theme**: Eye-friendly interface for extended use
+  - ⚡ **Auto-save**: Progress saved every 30 seconds
+  
+  ## Tech Stack
+  
+  - **Frontend**: Vanilla HTML/CSS/JavaScript
+  - **Backend**: Node.js with Vercel Serverless Functions
+  - **Database**: PostgreSQL (Vercel Postgres)
+  - **Authentication**: JWT + bcrypt
+  - **Hosting**: Vercel
+  - **Charts**: Chart.js
+  
+  ## Setup Instructions
+  
+  ### Prerequisites
+  - Node.js 16+
+  - Vercel account
+  - PostgreSQL database (Vercel Postgres recommended)
+  
+  ### Installation
+  
+  1. Clone the repository:
+     ```bash
+     git clone https://github.com/yourusername/iitmbs-cgpa-calculator.git
+     cd iitmbs-cgpa-calculator
+     ```
+  
+  2. Install dependencies:
+     ```bash
+     npm install
+     ```
+  
+  3. Create a `.env` file based on `.env.example`:
+     ```bash
+     cp .env.example .env
+     ```
+  
+  4. Set up your environment variables:
+     - `JWT_SECRET`: A secure random string for JWT signing
+     - `POSTGRES_URL`: Your PostgreSQL connection string
+  
+  5. Set up the database:
+     - Run the SQL schema from the `schema.sql` file in your PostgreSQL database
+     - This creates the necessary tables and indexes
+  
+  ### Local Development
+  
+  ```bash
+  npm run dev
+  ```
+  
+  This starts the Vercel development server at `http://localhost:3000`
+  
+  ### Deployment
+  
+  1. Install Vercel CLI:
+     ```bash
+     npm i -g vercel
+     ```
+  
+  2. Deploy to Vercel:
+     ```bash
+     vercel --prod
+     ```
+  
+  3. Set up environment variables in Vercel dashboard:
+     - Go to your project settings
+     - Add `JWT_SECRET` and `POSTGRES_URL` as environment variables
+  
+  ## Database Schema
+  
+  The application uses three main tables:
+  
+  - **users**: Stores user credentials (username, hashed PIN)
+  - **user_data**: Stores course grades and selections as JSONB
+  - **sessions**: Tracks user sessions for security
+  
+  ## API Endpoints
+  
+  - `POST /api/auth/register` - Create new account
+  - `POST /api/auth/login` - Login with credentials
+  - `GET /api/auth/verify` - Verify JWT token
+  - `GET /api/user/data` - Fetch user's course data
+  - `POST /api/user/data` - Save user's course data
+  
+  ## Security Features
+  
+  - PIN hashed with bcrypt (10 rounds)
+  - JWT tokens with 30-day expiration
+  - Automatic cleanup of inactive users (1 year)
+  - 8-year data retention policy
+  - CORS enabled for API endpoints
+  
+  ## Course Structure
+  
+  - **Foundation Level**: 32 credits (8 courses)
+  - **Diploma Level**: 55 credits
+    - Programming Diploma: 29 credits
+    - Data Science Diploma: 26 credits
+  - **Degree Level**: 55+ credits
+    - Core Courses: 20 credits
+    - Elective Courses: 35+ credits
+  
+  ## Grade Scale
+  
+  - S = 10 points
+  - A = 9 points
+  - B = 8 points
+  - C = 7 points
+  - D = 6 points
+  - E = 4 points
+  
+  ## Contributing
+  
+  Feel free to submit issues and enhancement requests!
+  
+  ## License
+  
+  MIT License
+  
+  ## Credits
+  
+  Developed for IIT Madras BS Program Students by Arnav Labhasetwar
+  
+  ---
+  
+  ## Folder Structure
+  
+  ```
+  iitmbs-cgpa-calculator/
+  ├── index.html          # Main HTML file
+  ├── app.js             # Frontend JavaScript
+  ├── api/               # Vercel serverless functions
+  │   ├── auth/
+  │   │   ├── login.js
+  │   │   ├── register.js
+  │   │   └── verify.js
+  │   └── user/
+  │       └── data.js
+  ├── package.json       # Dependencies
+  ├── vercel.json       # Vercel configuration
+  ├── .env.example      # Environment variables template
+  └── README.md         # Documentation
+  ```

@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IITMBS CGPA Calculator</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Track your academic progress at IIT Madras BS Program">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="IITMBS CGPA">
+    
+    <!-- PWA Links -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png">
+    
+    <style>
+        /* CSS Variables */
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #1a1f2e;
+            --bg-card: #1f2937;
+            --bg-hover: #2d3748;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-red: #ef4444;
+            --border-color: #374151;
+            --grade-s: #10b981;
+            --grade-a: #34d399;
+            --grade-b: #fbbf24;
+            --grade-c: #fb923c;
+            --grade-d: #f87171;
+            --grade-e: #ef4444;
+        }
+
+        /* Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background: rgba(26, 31, 46, 0.9);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            overflow-x: auto;
+        }
+
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .nav-tab.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Main Layout */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Course Sections */
+        .course-section {
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .foundation-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .diploma-icon { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .degree-icon { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+
+        .credits-badge {
+            background: var(--bg-hover);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Course Cards */
+        .course-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: move;
+        }
+
+        .course-card:hover {
+            background: var(--bg-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .course-card.dragging {
+            opacity: 0.5;
+            transform: rotate(3deg);
+        }
+
+        .course-info {
+            flex: 1;
+        }
+
+        .course-code {
+            font-size: 0.875rem;
+            color: var(--accent-blue);
+            font-weight: 500;
+        }
+
+        .course-name {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-top: 0.25rem;
+        }
+
+        .course-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .credits-input {
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            width: 80px;
+            text-align: center;
+        }
+
+        .grade-select {
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+
+        .grade-select:hover {
+            background: var(--bg-card);
+        }
+
+        .grade-select.grade-s { background: var(--grade-s); color: white; }
+        .grade-select.grade-a { background: var(--grade-a); color: white; }
+        .grade-select.grade-b { background: var(--grade-b); color: white; }
+        .grade-select.grade-c { background: var(--grade-c); color: white; }
+        .grade-select.grade-d { background: var(--grade-d); color: white; }
+        .grade-select.grade-e { background: var(--grade-e); color: white; }
+
+        /* Analytics Sidebar */
+        .analytics-sidebar {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+
+        .analytics-card {
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .analytics-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cgpa-display {
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-hover) 100%);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            border: 2px solid var(--accent-green);
+        }
+
+        .cgpa-value {
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .cgpa-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .cgpa-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 1rem;
+        }
+
+        /* Progress Circle */
+        .progress-circle {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .progress-svg {
+            transform: rotate(-90deg);
+        }
+
+        .progress-bg {
+            fill: none;
+            stroke: var(--bg-hover);
+            stroke-width: 10;
+        }
+
+        .progress-fill {
+            fill: none;
+            stroke: var(--accent-blue);
+            stroke-width: 10;
+            stroke-dasharray: 565.48;
+            stroke-dashoffset: 565.48;
+            transition: stroke-dashoffset 1s ease;
+            stroke-linecap: round;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .progress-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .progress-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Section CGPA */
+        .section-cgpa-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .section-cgpa-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--bg-card);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-cgpa-name {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .section-cgpa-value {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        /* Grade Distribution */
+        .grade-chart {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Login Page */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .login-card {
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid var(--border-color);
+        }
+
+        .login-title {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: var(--accent-blue);
+        }
+
+        .login-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .pin-inputs {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .pin-input {
+            width: 60px;
+            height: 60px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .form-button {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .form-button:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .form-toggle {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .form-toggle a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .form-toggle a:hover {
+            text-decoration: underline;
+        }
+
+        /* Electives Dropdown */
+        .add-elective-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: transparent;
+            border: 2px dashed var(--border-color);
+            border-radius: 0.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .add-elective-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .elective-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 2rem;
+        }
+
+        .elective-modal.active {
+            display: flex;
+        }
+
+        .elective-modal-content {
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .elective-search {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .elective-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .elective-item {
+            padding: 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .elective-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent-blue);
+        }
+
+        .elective-item-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .elective-item-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .analytics-sidebar {
+                position: static;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .nav-tabs {
+                padding: 1rem 0;
+            }
+
+            .nav-tab {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+
+            .cgpa-value {
+                font-size: 3rem;
+            }
+
+            .course-card {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .course-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--accent-blue);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1001;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-color: var(--accent-green);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .toast.error {
+            border-color: var(--accent-red);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Analytics Page */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .analytics-full-card {
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+        }
+
+        /* Hide sections when not active */
+        .section-content {
+            display: none;
+        }
+
+        .section-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <div class="login-card fade-in">
+            <h1 class="login-title">IITMBS Calculator</h1>
+            <p class="login-subtitle">Track your academic progress</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">4-Digit PIN</label>
+                    <div class="pin-inputs">
+                        <input type="text" class="form-input pin-input" maxlength="1" pattern="[0-9]" required>
+                        <input type="text" class="form-input pin-input" maxlength="1" pattern="[0-9]" required>
+                        <input type="text" class="form-input pin-input" maxlength="1" pattern="[0-9]" required>
+                        <input type="text" class="form-input pin-input" maxlength="1" pattern="[0-9]" required>
+                    </div>
+                </div>
+                
+                <button type="submit" class="form-button">
+                    <span id="loginBtnText">Login</span>
+                    <span id="loginLoader" class="loading" style="display: none;"></span>
+                </button>
+            </form>
+            
+            <div class="form-toggle">
+                Don't have an account? <a href="#" id="toggleRegister">Create one</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" style="display: none;">
+        <!-- Header -->
+        <header class="header">
+            <div class="container header-content">
+                <div class="logo">IITMBS Calculator</div>
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <span id="welcomeMessage">Welcome back, User</span>
+                    <button class="logout-btn" id="logoutBtn">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <div class="container">
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-section="foundation">Foundation</button>
+                <button class="nav-tab" data-section="diploma">Diploma</button>
+                <button class="nav-tab" data-section="degree">Degree</button>
+                <button class="nav-tab" data-section="analytics">Analytics</button>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="container">
+            <div class="main-content">
+                <!-- Course Sections -->
+                <div class="course-sections">
+                    <!-- Foundation Section -->
+                    <div id="foundationSection" class="section-content active">
+                        <div class="course-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <div class="section-icon foundation-icon">🎯</div>
+                                    <span>Foundation Level</span>
+                                </div>
+                                <div class="credits-badge">32/32 credits</div>
+                            </div>
+                            <div id="foundationCourses" class="course-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Diploma Section -->
+                    <div id="diplomaSection" class="section-content">
+                        <div class="course-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <div class="section-icon diploma-icon">💻</div>
+                                    <span>Diploma in Programming</span>
+                                </div>
+                                <div class="credits-badge">0/29 credits</div>
+                            </div>
+                            <div id="programmingCourses" class="course-list"></div>
+                        </div>
+
+                        <div class="course-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <div class="section-icon diploma-icon">📊</div>
+                                    <span>Diploma in Data Science</span>
+                                </div>
+                                <div class="credits-badge">0/26 credits</div>
+                            </div>
+                            <div id="dataScienceCourses" class="course-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Degree Section -->
+                    <div id="degreeSection" class="section-content">
+                        <div class="course-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <div class="section-icon degree-icon">🎓</div>
+                                    <span>Degree Level - Core Courses</span>
+                                </div>
+                                <div class="credits-badge">0/20 credits</div>
+                            </div>
+                            <div id="degreeCourses" class="course-list"></div>
+                        </div>
+
+                        <div class="course-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <div class="section-icon degree-icon">📚</div>
+                                    <span>Degree Level - Elective Courses</span>
+                                </div>
+                                <div class="credits-badge">0/35+ credits</div>
+                            </div>
+                            <div id="electiveCourses" class="course-list"></div>
+                            <button class="add-elective-btn" id="addElectiveBtn">+ Add Elective Course</button>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Section -->
+                    <div id="analyticsSection" class="section-content">
+                        <div class="analytics-grid">
+                            <div class="analytics-full-card">
+                                <h3 class="analytics-title">📈 CGPA Trend</h3>
+                                <div class="chart-container">
+                                    <canvas id="cgpaTrendChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="analytics-full-card">
+                                <h3 class="analytics-title">🎯 Target CGPA Calculator</h3>
+                                <div class="form-group">
+                                    <label class="form-label">Target CGPA</label>
+                                    <input type="number" class="form-input" id="targetCgpa" min="0" max="10" step="0.01" placeholder="e.g., 9.00">
+                                </div>
+                                <div id="targetAnalysis" style="margin-top: 1rem;"></div>
+                            </div>
+
+                            <div class="analytics-full-card">
+                                <h3 class="analytics-title">📊 What-If Analysis</h3>
+                                <p style="color: var(--text-secondary); margin-bottom: 1rem;">See how different grades would impact your CGPA</p>
+                                <div id="whatIfScenarios"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Sidebar -->
+                <aside class="analytics-sidebar">
+                    <!-- CGPA Display -->
+                    <div class="analytics-card">
+                        <h3 class="analytics-title">📊 CGPA Analytics</h3>
+                        <div class="cgpa-display">
+                            <div class="cgpa-value" id="mainCgpa">0.00</div>
+                            <div class="cgpa-label">Current CGPA</div>
+                            <div class="cgpa-subtitle" id="cgpaSubtitle">0 out of 142 credits completed</div>
+                        </div>
+                    </div>
+
+                    <!-- Section-wise CGPA -->
+                    <div class="analytics-card">
+                        <h3 class="analytics-title">📈 Section-wise CGPA</h3>
+                        <div class="section-cgpa-list">
+                            <div class="section-cgpa-item">
+                                <span class="section-cgpa-name">Foundation (32 credits)</span>
+                                <span class="section-cgpa-value" id="foundationCgpa">0.00</span>
+                            </div>
+                            <div class="section-cgpa-item">
+                                <span class="section-cgpa-name">Programming Diploma (29 credits)</span>
+                                <span class="section-cgpa-value" id="programmingCgpa">0.00</span>
+                            </div>
+                            <div class="section-cgpa-item">
+                                <span class="section-cgpa-name">Data Science Diploma (26 credits)</span>
+                                <span class="section-cgpa-value" id="dataScienceCgpa">0.00</span>
+                            </div>
+                            <div class="section-cgpa-item">
+                                <span class="section-cgpa-name">Degree (55 credits)</span>
+                                <span class="section-cgpa-value" id="degreeCgpa">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Credit Progress -->
+                    <div class="analytics-card">
+                        <h3 class="analytics-title">🎯 Credit Progress</h3>
+                        <div class="progress-circle">
+                            <svg class="progress-svg" width="200" height="200">
+                                <circle class="progress-bg" cx="100" cy="100" r="90"></circle>
+                                <circle class="progress-fill" cx="100" cy="100" r="90" id="progressCircle"></circle>
+                            </svg>
+                            <div class="progress-text">
+                                <div class="progress-value" id="progressPercent">0%</div>
+                                <div class="progress-label">of 142<br>credits</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grade Distribution -->
+                    <div class="analytics-card">
+                        <h3 class="analytics-title">🏆 Grade Distribution</h3>
+                        <div class="grade-chart">
+                            <canvas id="gradeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer style="text-align: center; padding: 2rem; color: var(--text-secondary); border-top: 1px solid var(--border-color); margin-top: 4rem;">
+            <p>Developed for IIT Madras BS Program Students by Arnav Labhasetwar</p>
+        </footer>
+    </div>
+
+    <!-- Elective Modal -->
+    <div class="elective-modal" id="electiveModal">
+        <div class="elective-modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Elective Course</h2>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <input type="text" class="elective-search" id="electiveSearch" placeholder="Search courses by name or code...">
+            <div class="elective-list" id="electiveList"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Main Application Script -->
+    <script src="app.js"></script>
+</body>
+</html>
