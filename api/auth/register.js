@@ -2,10 +2,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { sql } = require('@vercel/postgres');
 
-const pool = new Pool({
-    connectionString: process.env.POSTGRES_URL
-});
-
 module.exports = async (req, res) => {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
