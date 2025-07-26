@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { Pool } = require('@vercel/postgres');
+const { sql } = require('@vercel/postgres');
 
 const pool = new Pool({
     connectionString: process.env.POSTGRES_URL
@@ -30,10 +30,7 @@ module.exports = async (req, res) => {
 
     try {
         // Find user
-        const userResult = await pool.query(
-            'SELECT * FROM users WHERE username = $1',
-            [username.toLowerCase()]
-        );
+        const userResult = await sql`SELECT * FROM users WHERE username = ${username.toLowerCase()}`;
 
         if (userResult.rows.length === 0) {
             return res.status(401).json({ message: 'Invalid credentials' });
@@ -48,10 +45,7 @@ module.exports = async (req, res) => {
         }
 
         // Update last login
-        await pool.query(
-            'UPDATE users SET last_login = NOW() WHERE id = $1',
-            [user.id]
-        );
+        await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
 
         // Generate JWT
         const token = jwt.sign(

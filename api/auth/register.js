@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { Pool } = require('@vercel/postgres');
+const { sql } = require('@vercel/postgres');
 
 const pool = new Pool({
     connectionString: process.env.POSTGRES_URL
@@ -41,32 +41,22 @@ module.exports = async (req, res) => {
     }
 
     try {
-        // Check if username exists
-        const existingUser = await pool.query(
-            'SELECT id FROM users WHERE username = $1',
-            [username.toLowerCase()]
-        );
-
+        // Check if user already exists
+        const existingUser = await sql`SELECT * FROM users WHERE username = ${username.toLowerCase()}`;
         if (existingUser.rows.length > 0) {
-            return res.status(409).json({ message: 'Username already exists' });
+            return res.status(409).json({ message: 'Username already taken' });
         }
 
         // Hash PIN
-        const pinHash = await bcrypt.hash(pin, 10);
+        const pin_hash = await bcrypt.hash(pin, 10);
 
         // Create user
-        const result = await pool.query(
-            'INSERT INTO users (username, pin_hash) VALUES ($1, $2) RETURNING id, username, created_at',
-            [username.toLowerCase(), pinHash]
-        );
-
-        const user = result.rows[0];
-
-        // Initialize user data
-        await pool.query(
-            'INSERT INTO user_data (user_id) VALUES ($1)',
-            [user.id]
-        );
+        const newUser = await sql`
+            INSERT INTO users (username, pin_hash, created_at)
+            VALUES (${username.toLowerCase()}, ${pin_hash}, NOW())
+            RETURNING id, username, created_at
+        `;
+        const user = newUser.rows[0];
 
         // Generate JWT
         const token = jwt.sign(
@@ -84,7 +74,7 @@ module.exports = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Registration error:', error);
+        console.error('Register error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
