@@ -118,8 +118,8 @@ let userData = {
     courses: {},
     electives: [],
     dataScienceOptions: {
-        analytics: true,  // true for Business Analytics, false for DL
-        project: true     // true for BDM Project, false for DL Project
+        analytics: true,
+        project: true
     }
 };
 let autoSaveInterval = null;
@@ -351,18 +351,25 @@ async function loadUserData() {
 }
 
 function renderAllCourses() {
-    // Render Foundation courses
-    renderCourseList('foundationCourses', courseDatabase.foundation.courses, 'foundation');
-    
-    // Render Diploma courses
-    renderCourseList('programmingCourses', courseDatabase.diploma.programming.courses, 'programming');
-    renderDataScienceCourses();
-    
-    // Render Degree core courses
-    renderCourseList('degreeCourses', courseDatabase.degree.core.courses, 'degreeCore');
-    
-    // Render selected electives
-    renderElectives();
+    try {
+        // Defensive: ensure userData has all required keys
+        if (!userData.courses) userData.courses = {};
+        if (!userData.electives) userData.electives = [];
+        if (!userData.dataScienceOptions) userData.dataScienceOptions = { analytics: true, project: true };
+
+        // Render Foundation courses
+        renderCourseList('foundationCourses', courseDatabase.foundation.courses, 'foundation');
+        // Render Diploma courses
+        renderCourseList('programmingCourses', courseDatabase.diploma.programming.courses, 'programming');
+        renderDataScienceCourses();
+        // Render Degree core courses
+        renderCourseList('degreeCourses', courseDatabase.degree.core.courses, 'degreeCore');
+        // Render selected electives
+        renderElectives();
+    } catch (err) {
+        console.error('Error rendering courses:', err);
+        showToast('Error rendering courses. Check console for details.', 'error');
+    }
 }
 
 function renderDataScienceCourses() {
