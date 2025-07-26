@@ -1,223 +1,93 @@
-// manifest.json - PWA Manifest
 {
-    "name": "IITMBS CGPA Calculator",
-    "short_name": "IITMBS CGPA",
-    "description": "Track your academic progress at IIT Madras BS Program",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#0a0e1a",
-    "theme_color": "#3b82f6",
-    "orientation": "portrait",
-    "icons": [
-      {
-        "src": "/icons/icon-72x72.png",
-        "sizes": "72x72",
-        "type": "image/png",
-        "purpose": "maskable any"
-      },
-      {
-        "src": "/icons/icon-96x96.png",
-        "sizes": "96x96",
-        "type": "image/png",
-        "purpose": "maskable any"
-      },
-      {
-        "src": "/icons/icon-128x128.png",
-        "sizes": "128x128",
-        "type": "image/png",
-        "purpose": "maskable any"
-      },
-      {
-        "src": "/icons/icon-144x144.png",
-        "sizes": "144x144",
-        "type": "image/png",
-        "purpose": "maskable any"
-      },
-      {
-        "src": "/icons/icon-152x152.png",
-        "sizes": "152x152",
-        "type": "image/png",
-        "purpose": "maskable any"
-      },
-      {
-        "src": "/icons/icon-192x192.png",
-        "sizes": "192x192",
-        "type": "image/png",
-        "purpose": "maskable any"
-      },
-      {
-        "src": "/icons/icon-384x384.png",
-        "sizes": "384x384",
-        "type": "image/png",
-        "purpose": "maskable any"
-      },
-      {
-        "src": "/icons/icon-512x512.png",
-        "sizes": "512x512",
-        "type": "image/png",
-        "purpose": "maskable any"
-      }
-    ],
-    "screenshots": [
-      {
-        "src": "/screenshots/login.png",
-        "sizes": "1080x1920",
-        "type": "image/png",
-        "label": "Login Screen"
-      },
-      {
-        "src": "/screenshots/dashboard.png",
-        "sizes": "1080x1920",
-        "type": "image/png",
-        "label": "CGPA Dashboard"
-      },
-      {
-        "src": "/screenshots/analytics.png",
-        "sizes": "1080x1920",
-        "type": "image/png",
-        "label": "Analytics View"
-      }
-    ],
-    "categories": ["education", "productivity"],
-    "shortcuts": [
-      {
-        "name": "Foundation Courses",
-        "url": "/?section=foundation",
-        "description": "View Foundation level courses"
-      },
-      {
-        "name": "Analytics",
-        "url": "/?section=analytics",
-        "description": "View CGPA analytics"
-      }
-    ]
-  }
-  
-  // service-worker.js - Service Worker for offline functionality
-  const CACHE_NAME = 'iitmbs-cgpa-v1';
-  const urlsToCache = [
-    '/',
-    '/index.html',
-    '/app.js',
-    '/manifest.json',
-    'https://cdn.jsdelivr.net/npm/chart.js'
-  ];
-  
-  // Install event - cache resources
-  self.addEventListener('install', event => {
-    event.waitUntil(
-      caches.open(CACHE_NAME)
-        .then(cache => {
-          console.log('Opened cache');
-          return cache.addAll(urlsToCache);
-        })
-    );
-  });
-  
-  // Fetch event - serve from cache when offline
-  self.addEventListener('fetch', event => {
-    event.respondWith(
-      caches.match(event.request)
-        .then(response => {
-          // Cache hit - return response
-          if (response) {
-            return response;
-          }
-  
-          // Clone the request
-          const fetchRequest = event.request.clone();
-  
-          return fetch(fetchRequest).then(response => {
-            // Check if valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-  
-            // Clone the response
-            const responseToCache = response.clone();
-  
-            // Don't cache API calls
-            if (!event.request.url.includes('/api/')) {
-              caches.open(CACHE_NAME)
-                .then(cache => {
-                  cache.put(event.request, responseToCache);
-                });
-            }
-  
-            return response;
-          });
-        })
-        .catch(() => {
-          // Offline fallback
-          if (event.request.destination === 'document') {
-            return caches.match('/index.html');
-          }
-        })
-    );
-  });
-  
-  // Activate event - clean up old caches
-  self.addEventListener('activate', event => {
-    const cacheWhitelist = [CACHE_NAME];
-  
-    event.waitUntil(
-      caches.keys().then(cacheNames => {
-        return Promise.all(
-          cacheNames.map(cacheName => {
-            if (cacheWhitelist.indexOf(cacheName) === -1) {
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      })
-    );
-  });
-  
-  // Background sync for saving data
-  self.addEventListener('sync', event => {
-    if (event.tag === 'sync-user-data') {
-      event.waitUntil(syncUserData());
+  "name": "StudyMetrics - IITMBS CGPA Calculator",
+  "short_name": "StudyMetrics",
+  "description": "Track your academic progress at IIT Madras BS Program",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
     }
-  });
-  
-  async function syncUserData() {
-    try {
-      const cache = await caches.open(CACHE_NAME);
-      const pendingRequests = await cache.match('pending-sync');
-      
-      if (pendingRequests) {
-        const requests = await pendingRequests.json();
-        
-        for (const reqData of requests) {
-          await fetch(reqData.url, {
-            method: reqData.method,
-            headers: reqData.headers,
-            body: reqData.body
-          });
-        }
-        
-        // Clear pending requests
-        await cache.delete('pending-sync');
-      }
-    } catch (error) {
-      console.error('Sync failed:', error);
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/login.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "label": "Login Screen"
+    },
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "label": "CGPA Dashboard"
+    },
+    {
+      "src": "/screenshots/analytics.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "label": "Analytics View"
     }
-  }
-  
-  // Push notifications
-  self.addEventListener('push', event => {
-    const options = {
-      body: event.data ? event.data.text() : 'New update available',
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/icon-72x72.png',
-      vibrate: [100, 50, 100],
-      data: {
-        dateOfArrival: Date.now(),
-        primaryKey: 1
-      }
-    };
-  
-    event.waitUntil(
-      self.registration.showNotification('IITMBS CGPA Calculator', options)
-    );
-  });
+  ],
+  "categories": ["education", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Foundation Courses",
+      "url": "/?section=foundation",
+      "description": "View Foundation level courses"
+    },
+    {
+      "name": "Analytics",
+      "url": "/?section=analytics",
+      "description": "View CGPA analytics"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-// Course Database (from your JSON)
+// Course Database with corrected credit structure
 const courseDatabase = {
     foundation: {
         title: "Foundation Level",
@@ -17,7 +17,7 @@ const courseDatabase = {
     diploma: {
         programming: {
             title: "Diploma in Programming",
-            totalCredits: 29,
+            totalCredits: 27,
             courses: [
                 { name: "Database Management Systems", code: "BSCS2001", credits: 4 },
                 { name: "Programming, Data Structures and Algorithms using Python", code: "BSCS2002", credits: 4 },
@@ -31,18 +31,24 @@ const courseDatabase = {
         },
         dataScience: {
             title: "Diploma in Data Science",
-            totalCredits: 26,
+            totalCredits: 27,
             courses: [
                 { name: "Machine Learning Foundations", code: "BSCS2004", credits: 4 },
                 { name: "Business Data Management", code: "BSMS2001", credits: 4 },
-                { name: "Business Data Management - Project", code: "BSMS2001P", credits: 2 },
                 { name: "Machine Learning Techniques", code: "BSCS2007", credits: 4 },
                 { name: "Machine Learning Practice", code: "BSCS2008", credits: 4 },
                 { name: "Machine Learning Practice - Project", code: "BSCS2008P", credits: 2 },
-                { name: "Business Analytics", code: "BSMS2002", credits: 4 },
-                { name: "Tools in Data Science", code: "BSSE2002", credits: 3 },
-                { name: "Introduction to DeepLearning and GenAI", code: "BSCS2009", credits: 4 },
-                { name: "Introduction to DeepLearning and GenAI Project", code: "BSCS2009P", credits: 2 }
+                { name: "Tools in Data Science", code: "BSSE2002", credits: 3 }
+            ],
+            optionalCourses: [
+                { 
+                    primary: { name: "Business Analytics", code: "BSMS2002", credits: 4 },
+                    alternative: { name: "Introduction to Deep Learning", code: "BSCS2009", credits: 4 }
+                },
+                { 
+                    primary: { name: "Business Data Management - Project", code: "BSMS2001P", credits: 2 },
+                    alternative: { name: "Introduction to Deep Learning - Project", code: "BSCS2009P", credits: 2 }
+                }
             ]
         }
     },
@@ -88,6 +94,8 @@ const courseDatabase = {
             { name: "Sequential Decision Making", code: "BSCS3107", credits: 4, category: "Machine Learning" },
             { name: "Deep Learning Practice", code: "BSCS3116", credits: 4, category: "Machine Learning" },
             { name: "Algorithms for Data Science (ADS)", code: "BSCS3118", credits: 4, category: "Data Science" },
+            { name: "Business Analytics", code: "BSMS2002", credits: 4, category: "Management" },
+            { name: "Business Data Management - Project", code: "BSMS2001P", credits: 2, category: "Management" },
             { name: "Apprenticeship", code: "BSAP3001", credits: "variable", type: "special" },
             { name: "Other", code: "BSOT3001", credits: "variable", type: "special" }
         ]
@@ -108,13 +116,17 @@ const gradeScale = {
 let currentUser = null;
 let userData = {
     courses: {},
-    electives: []
+    electives: [],
+    dataScienceOptions: {
+        analytics: true,  // true for Business Analytics, false for DL
+        project: true     // true for BDM Project, false for DL Project
+    }
 };
 let autoSaveInterval = null;
 let isRegistering = false;
 
 // API Configuration
-const API_BASE_URL = '/api'; // Will be configured for Vercel
+const API_BASE_URL = '/api';
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
@@ -220,7 +232,7 @@ function setupEventListeners() {
 }
 
 function updateAuthUI() {
-    const button = document.querySelector('.form-button');
+    const button = document.querySelector('.form-button span');
     const toggleLink = document.getElementById('toggleRegister');
     const subtitle = document.querySelector('.login-subtitle');
     
@@ -231,7 +243,7 @@ function updateAuthUI() {
     } else {
         button.textContent = 'Login';
         toggleLink.textContent = 'Create one';
-        subtitle.textContent = 'Track your academic progress';
+        subtitle.textContent = 'Track your IITMBS academic progress';
     }
 }
 
@@ -322,7 +334,14 @@ async function loadUserData() {
 
         if (response.ok) {
             const data = await response.json();
-            userData = data.userData || { courses: {}, electives: [] };
+            userData = data.userData || { 
+                courses: {}, 
+                electives: [],
+                dataScienceOptions: {
+                    analytics: true,
+                    project: true
+                }
+            };
             renderAllCourses();
             updateAnalytics();
         }
@@ -337,7 +356,7 @@ function renderAllCourses() {
     
     // Render Diploma courses
     renderCourseList('programmingCourses', courseDatabase.diploma.programming.courses, 'programming');
-    renderCourseList('dataScienceCourses', courseDatabase.diploma.dataScience.courses, 'dataScience');
+    renderDataScienceCourses();
     
     // Render Degree core courses
     renderCourseList('degreeCourses', courseDatabase.degree.core.courses, 'degreeCore');
@@ -345,6 +364,59 @@ function renderAllCourses() {
     // Render selected electives
     renderElectives();
 }
+
+function renderDataScienceCourses() {
+    const container = document.getElementById('dataScienceCourses');
+    container.innerHTML = '';
+    
+    // Add option selector for Business Analytics vs Deep Learning
+    const optionDiv = document.createElement('div');
+    optionDiv.className = 'option-selector';
+    optionDiv.innerHTML = `
+        <div class="option-label">Choose your track:</div>
+        <div class="option-buttons">
+            <button class="option-btn ${userData.dataScienceOptions.analytics ? 'active' : ''}" 
+                    onclick="toggleDataScienceOption('analytics', true)">Business Analytics Track</button>
+            <button class="option-btn ${!userData.dataScienceOptions.analytics ? 'active' : ''}" 
+                    onclick="toggleDataScienceOption('analytics', false)">Deep Learning Track</button>
+        </div>
+    `;
+    container.appendChild(optionDiv);
+    
+    // Render fixed courses
+    courseDatabase.diploma.dataScience.courses.forEach((course, index) => {
+        const courseCard = createCourseCard(course, 'dataScience', index);
+        container.appendChild(courseCard);
+    });
+    
+    // Render optional courses based on selection
+    const optionalCourses = courseDatabase.diploma.dataScience.optionalCourses;
+    
+    // Analytics/DL course
+    const analyticsCourse = userData.dataScienceOptions.analytics ? 
+        optionalCourses[0].primary : optionalCourses[0].alternative;
+    const analyticsCard = createCourseCard(analyticsCourse, 'dataScience', 'opt-analytics');
+    container.appendChild(analyticsCard);
+    
+    // Project course
+    const projectCourse = userData.dataScienceOptions.project ? 
+        optionalCourses[1].primary : optionalCourses[1].alternative;
+    const projectCard = createCourseCard(projectCourse, 'dataScience', 'opt-project');
+    container.appendChild(projectCard);
+    
+    enableDragAndDrop(container);
+}
+
+// Global function to toggle data science options
+window.toggleDataScienceOption = function(option, value) {
+    if (option === 'analytics') {
+        userData.dataScienceOptions.analytics = value;
+        userData.dataScienceOptions.project = value; // Keep them synced
+    }
+    renderDataScienceCourses();
+    updateAnalytics();
+    saveUserData();
+};
 
 function renderCourseList(containerId, courses, section) {
     const container = document.getElementById(containerId);
@@ -561,33 +633,40 @@ function calculateCGPA() {
     // Process all courses
     Object.entries(userData.courses).forEach(([courseId, data]) => {
         if (data.grade && gradeScale[data.grade]) {
-            const [section] = courseId.split('-');
+            const [section, index] = courseId.split('-');
             let credits = 0;
             let course = null;
             
             // Find course and credits
             if (section === 'foundation') {
-                course = courseDatabase.foundation.courses[parseInt(courseId.split('-')[1])];
-                credits = course.credits;
+                course = courseDatabase.foundation.courses[parseInt(index)];
+                credits = course ? course.credits : 4;
                 sections.foundation.points += gradeScale[data.grade] * credits;
                 sections.foundation.credits += credits;
             } else if (section === 'programming') {
-                course = courseDatabase.diploma.programming.courses[parseInt(courseId.split('-')[1])];
-                credits = course.credits;
+                course = courseDatabase.diploma.programming.courses[parseInt(index)];
+                credits = course ? course.credits : 4;
                 sections.programming.points += gradeScale[data.grade] * credits;
                 sections.programming.credits += credits;
             } else if (section === 'dataScience') {
-                course = courseDatabase.diploma.dataScience.courses[parseInt(courseId.split('-')[1])];
-                credits = course.credits;
+                // Handle both fixed and optional courses
+                if (index === 'opt-analytics') {
+                    credits = 4;
+                } else if (index === 'opt-project') {
+                    credits = 2;
+                } else {
+                    course = courseDatabase.diploma.dataScience.courses[parseInt(index)];
+                    credits = course ? course.credits : 4;
+                }
                 sections.dataScience.points += gradeScale[data.grade] * credits;
                 sections.dataScience.credits += credits;
             } else if (section === 'degreeCore') {
-                course = courseDatabase.degree.core.courses[parseInt(courseId.split('-')[1])];
-                credits = course.credits;
+                course = courseDatabase.degree.core.courses[parseInt(index)];
+                credits = course ? course.credits : 4;
                 sections.degree.points += gradeScale[data.grade] * credits;
                 sections.degree.credits += credits;
             } else if (section === 'elective') {
-                const electiveCode = courseId.split('-')[1];
+                const electiveCode = index;
                 course = courseDatabase.degree.electives.find(e => e.code === electiveCode);
                 credits = course && course.credits !== 'variable' ? course.credits : (data.credits || 4);
                 sections.degree.points += gradeScale[data.grade] * credits;
@@ -620,20 +699,25 @@ function updateProgress() {
     
     Object.entries(userData.courses).forEach(([courseId, data]) => {
         if (data.grade) {
-            const [section] = courseId.split('-');
+            const [section, index] = courseId.split('-');
             let credits = 0;
             
             if (section === 'foundation') {
-                credits = courseDatabase.foundation.courses[parseInt(courseId.split('-')[1])].credits;
+                credits = courseDatabase.foundation.courses[parseInt(index)]?.credits || 4;
             } else if (section === 'programming') {
-                credits = courseDatabase.diploma.programming.courses[parseInt(courseId.split('-')[1])].credits;
+                credits = courseDatabase.diploma.programming.courses[parseInt(index)]?.credits || 4;
             } else if (section === 'dataScience') {
-                credits = courseDatabase.diploma.dataScience.courses[parseInt(courseId.split('-')[1])].credits;
+                if (index === 'opt-analytics') {
+                    credits = 4;
+                } else if (index === 'opt-project') {
+                    credits = 2;
+                } else {
+                    credits = courseDatabase.diploma.dataScience.courses[parseInt(index)]?.credits || 4;
+                }
             } else if (section === 'degreeCore') {
-                credits = courseDatabase.degree.core.courses[parseInt(courseId.split('-')[1])].credits;
+                credits = courseDatabase.degree.core.courses[parseInt(index)]?.credits || 4;
             } else if (section === 'elective') {
-                const electiveCode = courseId.split('-')[1];
-                const course = courseDatabase.degree.electives.find(e => e.code === electiveCode);
+                const course = courseDatabase.degree.electives.find(e => e.code === index);
                 credits = course && course.credits !== 'variable' ? course.credits : (data.credits || 4);
             }
             
@@ -705,8 +789,60 @@ function updateGradeDistribution() {
 }
 
 function updateSectionCredits() {
-    // This function updates the credit badges for each section
-    // Implementation depends on the specific requirements
+    // Calculate completed credits for each section
+    const sectionCredits = {
+        foundation: { completed: 0, total: 32 },
+        programming: { completed: 0, total: 27 },
+        dataScience: { completed: 0, total: 27 },
+        degree: { completed: 0, total: 56 },
+        degreeCore: { completed: 0, total: 20 },
+        electives: { completed: 0, total: 36 }
+    };
+    
+    Object.entries(userData.courses).forEach(([courseId, data]) => {
+        if (data.grade) {
+            const [section, index] = courseId.split('-');
+            let credits = 0;
+            
+            if (section === 'foundation') {
+                credits = courseDatabase.foundation.courses[parseInt(index)]?.credits || 4;
+                sectionCredits.foundation.completed += credits;
+            } else if (section === 'programming') {
+                credits = courseDatabase.diploma.programming.courses[parseInt(index)]?.credits || 4;
+                sectionCredits.programming.completed += credits;
+            } else if (section === 'dataScience') {
+                if (index === 'opt-analytics') {
+                    credits = 4;
+                } else if (index === 'opt-project') {
+                    credits = 2;
+                } else {
+                    credits = courseDatabase.diploma.dataScience.courses[parseInt(index)]?.credits || 4;
+                }
+                sectionCredits.dataScience.completed += credits;
+            } else if (section === 'degreeCore') {
+                credits = courseDatabase.degree.core.courses[parseInt(index)]?.credits || 4;
+                sectionCredits.degreeCore.completed += credits;
+                sectionCredits.degree.completed += credits;
+            } else if (section === 'elective') {
+                const course = courseDatabase.degree.electives.find(e => e.code === index);
+                credits = course && course.credits !== 'variable' ? course.credits : (data.credits || 4);
+                sectionCredits.electives.completed += credits;
+                sectionCredits.degree.completed += credits;
+            }
+        }
+    });
+    
+    // Update credit badges
+    document.getElementById('foundationCredits').textContent = 
+        `${sectionCredits.foundation.completed}/${sectionCredits.foundation.total} credits`;
+    document.getElementById('programmingCredits').textContent = 
+        `${sectionCredits.programming.completed}/${sectionCredits.programming.total} credits`;
+    document.getElementById('dataScienceCredits').textContent = 
+        `${sectionCredits.dataScience.completed}/${sectionCredits.dataScience.total} credits`;
+    document.getElementById('degreeCredits').textContent = 
+        `${sectionCredits.degreeCore.completed}/${sectionCredits.degreeCore.total} credits`;
+    document.getElementById('electiveCredits').textContent = 
+        `${sectionCredits.electives.completed}/${sectionCredits.electives.total}+ credits`;
 }
 
 function switchSection(section) {
@@ -719,6 +855,19 @@ function switchSection(section) {
     document.querySelectorAll('.section-content').forEach(content => {
         content.classList.toggle('active', content.id === `${section}Section`);
     });
+    
+    // Special handling for analytics section
+    if (section === 'analytics') {
+        initializeWhatIfAnalysis();
+        addExportButtons();
+        
+        // Add event listener for target CGPA calculation
+        const targetInput = document.getElementById('targetCgpa');
+        if (targetInput && !targetInput.hasListener) {
+            targetInput.addEventListener('change', calculateTargetCGPA);
+            targetInput.hasListener = true;
+        }
+    }
     
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -758,7 +907,14 @@ function logout() {
     stopAutoSave();
     localStorage.removeItem('authToken');
     currentUser = null;
-    userData = { courses: {}, electives: [] };
+    userData = { 
+        courses: {}, 
+        electives: [],
+        dataScienceOptions: {
+            analytics: true,
+            project: true
+        }
+    };
     showLoginPage();
     showToast('Logged out successfully', 'success');
 }
@@ -791,24 +947,30 @@ function calculateCurrentStats(courseData) {
 
     Object.entries(courseData.courses).forEach(([courseId, data]) => {
         if (data.grade && gradePoints[data.grade]) {
-            const [section] = courseId.split('-');
+            const [section, index] = courseId.split('-');
             let credits = 4; // Default credits
             
             // Get actual credits based on course
             if (section === 'foundation') {
-                const course = courseDatabase.foundation.courses[parseInt(courseId.split('-')[1])];
+                const course = courseDatabase.foundation.courses[parseInt(index)];
                 credits = course ? course.credits : 4;
             } else if (section === 'programming') {
-                const course = courseDatabase.diploma.programming.courses[parseInt(courseId.split('-')[1])];
+                const course = courseDatabase.diploma.programming.courses[parseInt(index)];
                 credits = course ? course.credits : 4;
             } else if (section === 'dataScience') {
-                const course = courseDatabase.diploma.dataScience.courses[parseInt(courseId.split('-')[1])];
-                credits = course ? course.credits : 4;
+                if (index === 'opt-analytics') {
+                    credits = 4;
+                } else if (index === 'opt-project') {
+                    credits = 2;
+                } else {
+                    const course = courseDatabase.diploma.dataScience.courses[parseInt(index)];
+                    credits = course ? course.credits : 4;
+                }
             } else if (section === 'degreeCore') {
-                const course = courseDatabase.degree.core.courses[parseInt(courseId.split('-')[1])];
+                const course = courseDatabase.degree.core.courses[parseInt(index)];
                 credits = course ? course.credits : 4;
             } else if (section === 'elective') {
-                const electiveCode = courseId.split('-')[1];
+                const electiveCode = index;
                 const course = courseDatabase.degree.electives.find(e => e.code === electiveCode);
                 credits = course && course.credits !== 'variable' ? course.credits : (data.credits || 4);
             }
@@ -849,7 +1011,7 @@ async function exportData(format = 'json') {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `iitmbs_cgpa_${currentUser.username}_${new Date().toISOString().split('T')[0]}.${format}`;
+            a.download = `studymetrics_${currentUser.username}_${new Date().toISOString().split('T')[0]}.${format}`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -901,9 +1063,26 @@ function calculateCompletedCredits() {
     let credits = 0;
     Object.entries(userData.courses).forEach(([courseId, data]) => {
         if (data.grade) {
-            const [section] = courseId.split('-');
-            // Add logic to get credits based on section and course
-            credits += 4; // Simplified - you'd get actual credits
+            const [section, index] = courseId.split('-');
+            
+            if (section === 'foundation') {
+                credits += courseDatabase.foundation.courses[parseInt(index)]?.credits || 4;
+            } else if (section === 'programming') {
+                credits += courseDatabase.diploma.programming.courses[parseInt(index)]?.credits || 4;
+            } else if (section === 'dataScience') {
+                if (index === 'opt-analytics') {
+                    credits += 4;
+                } else if (index === 'opt-project') {
+                    credits += 2;
+                } else {
+                    credits += courseDatabase.diploma.dataScience.courses[parseInt(index)]?.credits || 4;
+                }
+            } else if (section === 'degreeCore') {
+                credits += courseDatabase.degree.core.courses[parseInt(index)]?.credits || 4;
+            } else if (section === 'elective') {
+                const course = courseDatabase.degree.electives.find(e => e.code === index);
+                credits += course && course.credits !== 'variable' ? course.credits : 4;
+            }
         }
     });
     return credits;
@@ -972,7 +1151,7 @@ function initializeWhatIfAnalysis() {
     `;
 }
 
-function addWhatIfScenario() {
+window.addWhatIfScenario = function() {
     const grade = document.getElementById('whatIfGrade').value;
     const credits = parseInt(document.getElementById('whatIfCredits').value);
     
@@ -998,7 +1177,7 @@ function addWhatIfScenario() {
             <p><strong>CGPA Change:</strong> ${newCGPA > currentStats.cgpa ? '+' : ''}${(newCGPA - currentStats.cgpa).toFixed(2)}</p>
         </div>
     `;
-}
+};
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
@@ -1019,15 +1198,16 @@ document.addEventListener('keydown', (e) => {
 // Add export buttons to Analytics section
 function addExportButtons() {
     const analyticsSection = document.getElementById('analyticsSection');
-    if (analyticsSection) {
+    if (analyticsSection && !document.getElementById('exportSection')) {
         const exportDiv = document.createElement('div');
+        exportDiv.id = 'exportSection';
         exportDiv.style.cssText = 'margin-top: 2rem; text-align: center;';
         exportDiv.innerHTML = `
             <h3 style="margin-bottom: 1rem;">Export Your Data</h3>
-            <button onclick="exportData('json')" class="form-button" style="margin: 0 0.5rem;">
+            <button onclick="exportData('json')" class="form-button" style="margin: 0 0.5rem; display: inline-block; width: auto; padding: 0.75rem 2rem;">
                 Export as JSON
             </button>
-            <button onclick="exportData('csv')" class="form-button" style="margin: 0 0.5rem;">
+            <button onclick="exportData('csv')" class="form-button" style="margin: 0 0.5rem; display: inline-block; width: auto; padding: 0.75rem 2rem;">
                 Export as CSV
             </button>
         `;
@@ -1035,19 +1215,5 @@ function addExportButtons() {
     }
 }
 
-// Initialize additional features when switching to analytics
-const originalSwitchSection = switchSection;
-switchSection = function(section) {
-    originalSwitchSection(section);
-    
-    if (section === 'analytics') {
-        initializeWhatIfAnalysis();
-        addExportButtons();
-        
-        // Add event listener for target CGPA calculation
-        const targetInput = document.getElementById('targetCgpa');
-        if (targetInput) {
-            targetInput.addEventListener('change', calculateTargetCGPA);
-        }
-    }
-};
+// Make export function global
+window.exportData = exportData;

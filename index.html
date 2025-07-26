@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IITMBS CGPA Calculator</title>
+    <title>StudyMetrics - IITMBS CGPA Calculator</title>
     
     <!-- PWA Meta Tags -->
     <meta name="description" content="Track your academic progress at IIT Madras BS Program">
     <meta name="theme-color" content="#3b82f6">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="IITMBS CGPA">
+    <meta name="apple-mobile-web-app-title" content="StudyMetrics">
     
     <!-- PWA Links -->
     <link rel="manifest" href="/manifest.json">
@@ -646,6 +646,44 @@
             color: var(--text-secondary);
         }
 
+        /* Option Selector for Data Science Diploma */
+        .option-selector {
+            background: var(--bg-card);
+            border: 1px solid var(--accent-blue);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .option-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .option-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .option-btn {
+            flex: 1;
+            padding: 0.5rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+        }
+
+        .option-btn.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
         /* Animations */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -776,8 +814,8 @@
     <!-- Login Page -->
     <div id="loginPage" class="login-container">
         <div class="login-card fade-in">
-            <h1 class="login-title">IITMBS Calculator</h1>
-            <p class="login-subtitle">Track your academic progress</p>
+            <h1 class="login-title">StudyMetrics</h1>
+            <p class="login-subtitle">Track your IITMBS academic progress</p>
             
             <form id="loginForm">
                 <div class="form-group">
@@ -812,7 +850,7 @@
         <!-- Header -->
         <header class="header">
             <div class="container header-content">
-                <div class="logo">IITMBS Calculator</div>
+                <div class="logo">StudyMetrics</div>
                 <div class="user-info">
                     <div class="user-avatar" id="userAvatar">A</div>
                     <span id="welcomeMessage">Welcome back, User</span>
@@ -844,7 +882,7 @@
                                     <div class="section-icon foundation-icon">🎯</div>
                                     <span>Foundation Level</span>
                                 </div>
-                                <div class="credits-badge">32/32 credits</div>
+                                <div class="credits-badge" id="foundationCredits">0/32 credits</div>
                             </div>
                             <div id="foundationCourses" class="course-list"></div>
                         </div>
@@ -858,7 +896,7 @@
                                     <div class="section-icon diploma-icon">💻</div>
                                     <span>Diploma in Programming</span>
                                 </div>
-                                <div class="credits-badge">0/29 credits</div>
+                                <div class="credits-badge" id="programmingCredits">0/27 credits</div>
                             </div>
                             <div id="programmingCourses" class="course-list"></div>
                         </div>
@@ -869,7 +907,7 @@
                                     <div class="section-icon diploma-icon">📊</div>
                                     <span>Diploma in Data Science</span>
                                 </div>
-                                <div class="credits-badge">0/26 credits</div>
+                                <div class="credits-badge" id="dataScienceCredits">0/27 credits</div>
                             </div>
                             <div id="dataScienceCourses" class="course-list"></div>
                         </div>
@@ -883,7 +921,7 @@
                                     <div class="section-icon degree-icon">🎓</div>
                                     <span>Degree Level - Core Courses</span>
                                 </div>
-                                <div class="credits-badge">0/20 credits</div>
+                                <div class="credits-badge" id="degreeCredits">0/20 credits</div>
                             </div>
                             <div id="degreeCourses" class="course-list"></div>
                         </div>
@@ -894,7 +932,7 @@
                                     <div class="section-icon degree-icon">📚</div>
                                     <span>Degree Level - Elective Courses</span>
                                 </div>
-                                <div class="credits-badge">0/35+ credits</div>
+                                <div class="credits-badge" id="electiveCredits">0/36+ credits</div>
                             </div>
                             <div id="electiveCourses" class="course-list"></div>
                             <button class="add-elective-btn" id="addElectiveBtn">+ Add Elective Course</button>
@@ -950,15 +988,15 @@
                                 <span class="section-cgpa-value" id="foundationCgpa">0.00</span>
                             </div>
                             <div class="section-cgpa-item">
-                                <span class="section-cgpa-name">Programming Diploma (29 credits)</span>
+                                <span class="section-cgpa-name">Programming Diploma (27 credits)</span>
                                 <span class="section-cgpa-value" id="programmingCgpa">0.00</span>
                             </div>
                             <div class="section-cgpa-item">
-                                <span class="section-cgpa-name">Data Science Diploma (26 credits)</span>
+                                <span class="section-cgpa-name">Data Science Diploma (27 credits)</span>
                                 <span class="section-cgpa-value" id="dataScienceCgpa">0.00</span>
                             </div>
                             <div class="section-cgpa-item">
-                                <span class="section-cgpa-name">Degree (55 credits)</span>
+                                <span class="section-cgpa-name">Degree (56 credits)</span>
                                 <span class="section-cgpa-value" id="degreeCgpa">0.00</span>
                             </div>
                         </div>
@@ -986,7 +1024,7 @@
                             <canvas id="gradeChart"></canvas>
                         </div>
                     </div>
-                </div>
+                </aside>
             </div>
         </div>
 
