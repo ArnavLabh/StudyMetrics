@@ -15,7 +15,7 @@ module.exports = async (req, res) => {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
 
     if (req.method === 'OPTIONS') {
@@ -23,113 +23,128 @@ module.exports = async (req, res) => {
         return;
     }
 
-    if (req.method !== 'POST') {
+    if (req.method !== 'GET') {
         return res.status(405).json({ message: 'Method not allowed' });
     }
 
     try {
         const decoded = verifyToken(req);
-        const { targetCGPA, remainingCredits } = req.body;
+        const { format = 'json' } = req.query;
 
-        if (!targetCGPA || targetCGPA < 0 || targetCGPA > 10) {
-            return res.status(400).json({ message: 'Invalid target CGPA' });
-        }
-
-        // Get current user data
-        const result = await pool.query(
-            'SELECT course_data FROM user_data WHERE user_id = $1',
+        // Get user data
+        const userResult = await pool.query(
+            'SELECT u.username, u.created_at, ud.course_data FROM users u LEFT JOIN user_data ud ON u.id = ud.user_id WHERE u.id = $1',
             [decoded.userId]
         );
 
-        const courseData = result.rows[0]?.course_data || { courses: {}, electives: [] };
-        const currentStats = calculateCurrentStats(courseData);
-        
-        // Calculate required grade points
-        const requiredTotalPoints = targetCGPA * (currentStats.completedCredits + remainingCredits);
-        const requiredNewPoints = requiredTotalPoints - currentStats.totalPoints;
-        const requiredAvgGrade = requiredNewPoints / remainingCredits;
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
 
-        // Generate recommendations
-        const recommendations = generateGradeRecommendations(requiredAvgGrade, remainingCredits);
+        const user = userResult.rows[0];
+        const courseData = user.course_data || { courses: {}, electives: [], dataScienceOptions: { analytics: true, project: true } };
 
-        res.status(200).json({
-            currentCGPA: currentStats.cgpa,
-            currentCredits: currentStats.completedCredits,
-            targetCGPA,
-            remainingCredits,
-            requiredAverageGrade: requiredAvgGrade.toFixed(2),
-            recommendations,
-            feasible: requiredAvgGrade <= 10 && requiredAvgGrade >= 0
-        });
+        if (format === 'json') {
+            // Return JSON format
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Content-Disposition', `attachment; filename="studymetrics_${user.username}_${new Date().toISOString().split('T')[0]}.json"`);
+            
+            res.status(200).json({
+                username: user.username,
+                exportDate: new Date().toISOString(),
+                accountCreated: user.created_at,
+                courseData: courseData,
+                summary: calculateSummary(courseData)
+            });
+        } else if (format === 'csv') {
+            // Return CSV format
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', `attachment; filename="studymetrics_${user.username}_${new Date().toISOString().split('T')[0]}.csv"`);
+            
+            const csv = generateCSV(user.username, courseData);
+            res.status(200).send(csv);
+        } else {
+            res.status(400).json({ message: 'Invalid format. Use json or csv' });
+        }
     } catch (error) {
-        console.error('Target CGPA error:', error);
+        console.error('Export error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
 
-function calculateCurrentStats(courseData) {
+function calculateSummary(courseData) {
     const gradePoints = { S: 10, A: 9, B: 8, C: 7, D: 6, E: 4 };
     let totalPoints = 0;
-    let completedCredits = 0;
+    let totalCredits = 0;
+    let gradeDistribution = { S: 0, A: 0, B: 0, C: 0, D: 0, E: 0 };
 
     Object.entries(courseData.courses || {}).forEach(([courseId, course]) => {
         if (course.grade && gradePoints[course.grade]) {
-            const credits = getCreditsForCourse(courseId);
+            const credits = getCreditsForCourse(courseId, courseData);
             totalPoints += gradePoints[course.grade] * credits;
-            completedCredits += credits;
+            totalCredits += credits;
+            gradeDistribution[course.grade]++;
         }
     });
 
     return {
-        totalPoints,
-        completedCredits,
-        cgpa: completedCredits > 0 ? (totalPoints / completedCredits).toFixed(2) : '0.00'
+        cgpa: totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00',
+        totalCredits,
+        completedCourses: Object.keys(courseData.courses || {}).filter(id => courseData.courses[id].grade).length,
+        gradeDistribution
     };
 }
 
-function getCreditsForCourse(courseId) {
+function getCreditsForCourse(courseId, courseData) {
     const [section, index] = courseId.split('-');
     
-    // Special cases for different credit values
-    if (section === 'dataScience' && index === 'opt-project') return 2;
-    if (section === 'programming' && ['3', '6'].includes(index)) return 2;
-    if (section === 'programming' && index === '7') return 3;
-    if (section === 'dataScience' && ['2', '4'].includes(index)) return 2;
-    if (section === 'dataScience' && index === '5') return 3;
+    // Default credits mapping
+    const creditMap = {
+        'foundation': 4,
+        'programming': 4,
+        'dataScience': 4,
+        'degreeCore': 4,
+        'elective': 4
+    };
     
-    return 4; // Default credits
+    // Special cases
+    if (section === 'dataScience' && index === 'opt-project') return 2;
+    if (section === 'programming' && ['3', '6'].includes(index)) return 2; // Project courses
+    if (section === 'programming' && index === '7') return 3; // System Commands
+    if (section === 'dataScience' && ['2', '4'].includes(index)) return 2; // Project courses
+    if (section === 'dataScience' && index === '5') return 3; // Tools in Data Science
+    
+    return creditMap[section] || 4;
 }
 
-function generateGradeRecommendations(requiredAvg, credits) {
-    const recommendations = [];
-    const coursesNeeded = Math.ceil(credits / 4); // Assuming most courses are 4 credits
+function generateCSV(username, courseData) {
+    const headers = ['Course ID', 'Section', 'Grade', 'Credits', 'Grade Points'];
+    const rows = [headers.join(',')];
+    const gradePoints = { S: 10, A: 9, B: 8, C: 7, D: 6, E: 4 };
     
-    // Generate different combinations
-    for (let sCount = 0; sCount <= coursesNeeded; sCount++) {
-        for (let aCount = 0; aCount <= coursesNeeded - sCount; aCount++) {
-            for (let bCount = 0; bCount <= coursesNeeded - sCount - aCount; bCount++) {
-                const cCount = coursesNeeded - sCount - aCount - bCount;
-                
-                if (cCount >= 0) {
-                    const totalPoints = sCount * 40 + aCount * 36 + bCount * 32 + cCount * 28;
-                    const avg = totalPoints / (coursesNeeded * 4);
-                    
-                    if (Math.abs(avg - requiredAvg) < 0.5) {
-                        recommendations.push({
-                            S: sCount,
-                            A: aCount,
-                            B: bCount,
-                            C: cCount,
-                            averageGrade: avg.toFixed(2)
-                        });
-                    }
-                }
-            }
+    // Add course data
+    Object.entries(courseData.courses || {}).forEach(([courseId, data]) => {
+        if (data.grade) {
+            const [section] = courseId.split('-');
+            const credits = getCreditsForCourse(courseId, courseData);
+            const row = [
+                courseId,
+                section,
+                data.grade,
+                credits,
+                gradePoints[data.grade] || 0
+            ];
+            rows.push(row.map(cell => `"${cell}"`).join(','));
         }
-    }
-
-    // Sort by closest to required average and return top 5
-    return recommendations
-        .sort((a, b) => Math.abs(a.averageGrade - requiredAvg) - Math.abs(b.averageGrade - requiredAvg))
-        .slice(0, 5);
+    });
+    
+    // Add summary
+    const summary = calculateSummary(courseData);
+    rows.push('');
+    rows.push('Summary');
+    rows.push(`CGPA,${summary.cgpa}`);
+    rows.push(`Total Credits,${summary.totalCredits}`);
+    rows.push(`Completed Courses,${summary.completedCourses}`);
+    
+    return rows.join('\n');
 }
