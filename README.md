@@ -2,6 +2,10 @@
 
 **A comprehensive CGPA calculator and academic progress tracker designed exclusively for IIT Madras Bachelor of Science (IITMBS) students.**
 
+![StudyMetrics Logo](https://img.shields.io/badge/StudyMetrics-IITMBS-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-green)
+![License](https://img.shields.io/badge/license-MIT-yellow)
+
 ---
 
 ## 🎯 What is StudyMetrics?
@@ -133,16 +137,6 @@ StudyMetrics uses the standard IITMBS grading scale:
 - Update your grades immediately after results are declared
 - Use the auto-save feature to never lose your progress
 - Review your analytics monthly to stay on track
-
----
-
-## 🎓 Success Stories
-
-*"StudyMetrics helped me visualize my academic journey and plan my electives strategically. I graduated with the CGPA I targeted!"* - IITMBS Graduate
-
-*"The clean interface and real-time calculations make grade tracking so much easier than spreadsheets."* - Current Student
-
-*"Being able to see exactly what grades I needed motivated me to work harder in my final semester."* - IITMBS Alumni
 
 ---
 

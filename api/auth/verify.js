@@ -1,4 +1,3 @@
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('@vercel/postgres');
 
@@ -18,50 +17,32 @@ module.exports = async (req, res) => {
         return;
     }
 
-    if (req.method !== 'POST') {
+    if (req.method !== 'GET') {
         return res.status(405).json({ message: 'Method not allowed' });
     }
 
-    const { username, pin } = req.body;
+    const token = req.headers.authorization?.replace('Bearer ', '');
 
-    if (!username || !pin || pin.length !== 4) {
-        return res.status(400).json({ message: 'Invalid username or PIN' });
+    if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
     }
 
     try {
-        // Find user
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret-key');
+        
+        // Get user info
         const userResult = await pool.query(
-            'SELECT * FROM users WHERE username = $1',
-            [username.toLowerCase()]
+            'SELECT id, username, created_at FROM users WHERE id = $1 AND is_active = true',
+            [decoded.userId]
         );
 
         if (userResult.rows.length === 0) {
-            return res.status(401).json({ message: 'Invalid credentials' });
+            return res.status(404).json({ message: 'User not found' });
         }
 
         const user = userResult.rows[0];
 
-        // Verify PIN
-        const isValidPin = await bcrypt.compare(pin, user.pin_hash);
-        if (!isValidPin) {
-            return res.status(401).json({ message: 'Invalid credentials' });
-        }
-
-        // Update last login
-        await pool.query(
-            'UPDATE users SET last_login = NOW() WHERE id = $1',
-            [user.id]
-        );
-
-        // Generate JWT
-        const token = jwt.sign(
-            { userId: user.id, username: user.username },
-            process.env.JWT_SECRET || 'dev-secret-key',
-            { expiresIn: '30d' }
-        );
-
         res.status(200).json({
-            token,
             user: {
                 id: user.id,
                 username: user.username,
@@ -69,7 +50,10 @@ module.exports = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Login error:', error);
+        if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Invalid token' });
+        }
+        console.error('Verify error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };

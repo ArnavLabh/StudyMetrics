@@ -28,28 +28,43 @@ module.exports = async (req, res) => {
         return res.status(400).json({ message: 'Invalid username or PIN' });
     }
 
+    if (username.length < 3 || username.length > 20) {
+        return res.status(400).json({ message: 'Username must be between 3 and 20 characters' });
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        return res.status(400).json({ message: 'Username can only contain letters, numbers, and underscores' });
+    }
+
+    if (!/^\d{4}$/.test(pin)) {
+        return res.status(400).json({ message: 'PIN must be 4 digits' });
+    }
+
     try {
-        // Find user
-        const userResult = await pool.query(
-            'SELECT * FROM users WHERE username = $1',
+        // Check if username exists
+        const existingUser = await pool.query(
+            'SELECT id FROM users WHERE username = $1',
             [username.toLowerCase()]
         );
 
-        if (userResult.rows.length === 0) {
-            return res.status(401).json({ message: 'Invalid credentials' });
+        if (existingUser.rows.length > 0) {
+            return res.status(409).json({ message: 'Username already exists' });
         }
 
-        const user = userResult.rows[0];
+        // Hash PIN
+        const pinHash = await bcrypt.hash(pin, 10);
 
-        // Verify PIN
-        const isValidPin = await bcrypt.compare(pin, user.pin_hash);
-        if (!isValidPin) {
-            return res.status(401).json({ message: 'Invalid credentials' });
-        }
+        // Create user
+        const result = await pool.query(
+            'INSERT INTO users (username, pin_hash) VALUES ($1, $2) RETURNING id, username, created_at',
+            [username.toLowerCase(), pinHash]
+        );
 
-        // Update last login
+        const user = result.rows[0];
+
+        // Initialize user data
         await pool.query(
-            'UPDATE users SET last_login = NOW() WHERE id = $1',
+            'INSERT INTO user_data (user_id) VALUES ($1)',
             [user.id]
         );
 
@@ -60,7 +75,7 @@ module.exports = async (req, res) => {
             { expiresIn: '30d' }
         );
 
-        res.status(200).json({
+        res.status(201).json({
             token,
             user: {
                 id: user.id,
@@ -69,7 +84,7 @@ module.exports = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('Registration error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };

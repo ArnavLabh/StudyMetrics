@@ -1,5 +1,5 @@
--- IITMBS CGPA Calculator Database Schema
--- PostgreSQL Database Setup
+-- StudyMetrics Database Schema
+-- PostgreSQL Database Setup for IITMBS CGPA Calculator
 
 -- Drop existing tables if needed (careful in production!)
 -- DROP TABLE IF EXISTS sessions CASCADE;
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS user_data (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    course_data JSONB NOT NULL DEFAULT '{"courses": {}, "electives": []}',
+    course_data JSONB NOT NULL DEFAULT '{"courses": {}, "electives": [], "dataScienceOptions": {"analytics": true, "project": true}}',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     -- Ensure one record per user
@@ -67,6 +67,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger to auto-update updated_at
+DROP TRIGGER IF EXISTS update_user_data_updated_at ON user_data;
 CREATE TRIGGER update_user_data_updated_at 
     BEFORE UPDATE ON user_data
     FOR EACH ROW
@@ -124,8 +125,8 @@ BEGIN
         COUNT(DISTINCT CASE WHEN u.is_active THEN u.id END) as active_users,
         COUNT(DISTINCT ud.user_id) as users_with_data,
         AVG(CASE 
-            WHEN ud.course_data IS NOT NULL 
-            THEN jsonb_array_length(ud.course_data->'courses') 
+            WHEN jsonb_typeof(ud.course_data->'courses') = 'object' 
+            THEN (SELECT COUNT(*) FROM jsonb_object_keys(ud.course_data->'courses'))
             ELSE 0 
         END) as avg_courses_per_user
     FROM users u
@@ -133,39 +134,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Sample data for testing (remove in production)
--- INSERT INTO users (username, pin_hash) VALUES 
--- ('testuser', '$2a$10$YourHashedPinHere');
-
--- Maintenance queries to run periodically
--- These can be scheduled using pg_cron or external schedulers
-
--- Daily: Clean up expired sessions
--- SELECT cleanup_expired_sessions();
-
--- Weekly: Clean up inactive users
--- SELECT cleanup_inactive_users();
-
--- Monthly: Clean up old users
--- SELECT cleanup_old_users();
-
--- Useful queries for monitoring
-
--- Get user activity summary
--- SELECT 
---     COUNT(*) as total_users,
---     COUNT(CASE WHEN last_login > CURRENT_TIMESTAMP - INTERVAL '30 days' THEN 1 END) as active_last_30_days,
---     COUNT(CASE WHEN last_login > CURRENT_TIMESTAMP - INTERVAL '7 days' THEN 1 END) as active_last_7_days
--- FROM users;
-
--- Get storage usage by user
--- SELECT 
---     u.username,
---     u.created_at,
---     u.last_login,
---     pg_column_size(ud.course_data) as data_size_bytes,
---     jsonb_array_length(ud.course_data->'electives') as electives_count
--- FROM users u
--- LEFT JOIN user_data ud ON u.id = ud.user_id
--- ORDER BY data_size_bytes DESC NULLS LAST
--- LIMIT 20;
+-- Grant permissions (adjust as needed for your setup)
+-- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO your_db_user;
+-- GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO your_db_user;

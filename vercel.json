@@ -10,11 +10,11 @@
       "use": "@vercel/static"
     },
     {
-      "src": "service-worker.js",
+      "src": "manifest.json",
       "use": "@vercel/static"
     },
     {
-      "src": "manifest.json",
+      "src": "service-worker.js",
       "use": "@vercel/static"
     },
     {
@@ -28,45 +28,11 @@
       "dest": "/api/$1"
     },
     {
-      "src": "/manifest.json",
-      "dest": "/manifest.json"
-    },
-    {
-      "src": "/service-worker.js",
-      "dest": "/service-worker.js"
-    },
-    {
       "src": "/(.*)",
       "dest": "/$1"
     }
   ],
-  "env": {
-    "JWT_SECRET": "@jwt_secret",
-    "POSTGRES_URL": "@postgres_url"
-  },
-  "functions": {
-    "api/**/*.js": {
-      "maxDuration": 30
-    }
-  },
   "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        }
-      ]
-    },
     {
       "source": "/(.*)",
       "headers": [
@@ -81,6 +47,10 @@
         {
           "key": "X-XSS-Protection",
           "value": "1; mode=block"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
         }
       ]
     }
