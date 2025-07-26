@@ -1,9 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { Pool } = require('@vercel/postgres');
-
-const pool = new Pool({
-    connectionString: process.env.POSTGRES_URL
-});
+const { sql } = require('@vercel/postgres');
 
 // Middleware to verify token
 const verifyToken = (req) => {
@@ -31,22 +27,20 @@ module.exports = async (req, res) => {
 
         if (req.method === 'GET') {
             // Get user data
-            const result = await pool.query(
-                'SELECT course_data FROM user_data WHERE user_id = $1',
-                [decoded.userId]
-            );
+            const result = await sql`SELECT course_data FROM user_data WHERE user_id = ${decoded.userId}`;
 
             if (result.rows.length === 0) {
-                return res.status(200).json({ 
-                    userData: { 
-                        courses: {}, 
-                        electives: [],
-                        dataScienceOptions: {
-                            analytics: true,
-                            project: true
-                        }
-                    } 
-                });
+                // Create a new user_data row for this user
+                const defaultData = {
+                    courses: {},
+                    electives: [],
+                    dataScienceOptions: {
+                        analytics: true,
+                        project: true
+                    }
+                };
+                await sql`INSERT INTO user_data (user_id, course_data) VALUES (${decoded.userId}, ${JSON.stringify(defaultData)}) ON CONFLICT (user_id) DO NOTHING`;
+                return res.status(200).json({ userData: defaultData });
             }
 
             res.status(200).json({ userData: result.rows[0].course_data });
@@ -59,13 +53,7 @@ module.exports = async (req, res) => {
                 return res.status(400).json({ message: 'No data provided' });
             }
 
-            await pool.query(
-                `INSERT INTO user_data (user_id, course_data, updated_at) 
-                 VALUES ($1, $2, NOW()) 
-                 ON CONFLICT (user_id) 
-                 DO UPDATE SET course_data = $2, updated_at = NOW()`,
-                [decoded.userId, JSON.stringify(userData)]
-            );
+            await sql`INSERT INTO user_data (user_id, course_data, updated_at) VALUES (${decoded.userId}, ${JSON.stringify(userData)}, NOW()) ON CONFLICT (user_id) DO UPDATE SET course_data = ${JSON.stringify(userData)}, updated_at = NOW()`;
 
             res.status(200).json({ message: 'Data saved successfully' });
 
