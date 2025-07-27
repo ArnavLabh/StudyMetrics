@@ -830,38 +830,67 @@ function renderDataScienceCourses() {
     
     container.innerHTML = '';
     
-    // Add option selector
-    const optionDiv = document.createElement('div');
-    optionDiv.className = 'option-selector';
-    optionDiv.innerHTML = `
-        <div class="option-label">Choose your track:</div>
-        <div class="option-buttons">
-            <button class="option-btn ${userData.dataScienceOptions.analytics ? 'active' : ''}" 
-                    onclick="toggleDataScienceOption('analytics', true)">Business Analytics Track</button>
-            <button class="option-btn ${!userData.dataScienceOptions.analytics ? 'active' : ''}" 
-                    onclick="toggleDataScienceOption('analytics', false)">Deep Learning Track</button>
-        </div>
-    `;
-    container.appendChild(optionDiv);
-    
-    // Render fixed courses
+    // Render all fixed courses
     courseDatabase.diploma.dataScience.courses.forEach((course, index) => {
         const courseCard = createCourseCard(course, 'dataScience', index);
         container.appendChild(courseCard);
     });
     
-    // Render optional courses
+    // Render all optional courses
     const optionalCourses = courseDatabase.diploma.dataScience.optionalCourses;
     
-    const analyticsCourse = userData.dataScienceOptions.analytics ? 
-        optionalCourses[0].primary : optionalCourses[0].alternative;
-    const analyticsCard = createCourseCard(analyticsCourse, 'dataScience', 'opt-analytics');
+    // Business Analytics course
+    const analyticsCard = createCourseCard(optionalCourses[0].primary, 'dataScience', 'opt-analytics');
     container.appendChild(analyticsCard);
     
-    const projectCourse = userData.dataScienceOptions.project ? 
-        optionalCourses[1].primary : optionalCourses[1].alternative;
-    const projectCard = createCourseCard(projectCourse, 'dataScience', 'opt-project');
-    container.appendChild(projectCard);
+    // Deep Learning course
+    const dlCard = createCourseCard(optionalCourses[0].alternative, 'dataScience', 'opt-dl');
+    container.appendChild(dlCard);
+    
+    // Business Analytics Project
+    const analyticsProjectCard = createCourseCard(optionalCourses[1].primary, 'dataScience', 'opt-analytics-project');
+    container.appendChild(analyticsProjectCard);
+    
+    // Deep Learning Project
+    const dlProjectCard = createCourseCard(optionalCourses[1].alternative, 'dataScience', 'opt-dl-project');
+    container.appendChild(dlProjectCard);
+    
+    // Apply disabling logic
+    updateDataScienceCourseStates();
+}
+
+function updateDataScienceCourseStates() {
+    // Check if Business Analytics track is selected
+    const hasAnalyticsGrade = userData.courses['dataScience-opt-analytics']?.grade;
+    const hasAnalyticsProjectGrade = userData.courses['dataScience-opt-analytics-project']?.grade;
+    
+    // Check if Deep Learning track is selected
+    const hasDLGrade = userData.courses['dataScience-opt-dl']?.grade;
+    const hasDLProjectGrade = userData.courses['dataScience-opt-dl-project']?.grade;
+    
+    // Disable courses based on selections
+    const analyticsCard = document.querySelector('[data-course-id="dataScience-opt-analytics"]');
+    const dlCard = document.querySelector('[data-course-id="dataScience-opt-dl"]');
+    const analyticsProjectCard = document.querySelector('[data-course-id="dataScience-opt-analytics-project"]');
+    const dlProjectCard = document.querySelector('[data-course-id="dataScience-opt-dl-project"]');
+    
+    if (hasDLGrade || hasDLProjectGrade) {
+        // Deep Learning track selected, disable Business Analytics courses
+        if (analyticsCard) analyticsCard.classList.add('disabled');
+        if (analyticsProjectCard) analyticsProjectCard.classList.add('disabled');
+    } else {
+        if (analyticsCard) analyticsCard.classList.remove('disabled');
+        if (analyticsProjectCard) analyticsProjectCard.classList.remove('disabled');
+    }
+    
+    if (hasAnalyticsGrade || hasAnalyticsProjectGrade) {
+        // Business Analytics track selected, disable Deep Learning courses
+        if (dlCard) dlCard.classList.add('disabled');
+        if (dlProjectCard) dlProjectCard.classList.add('disabled');
+    } else {
+        if (dlCard) dlCard.classList.remove('disabled');
+        if (dlProjectCard) dlProjectCard.classList.remove('disabled');
+    }
 }
 
 function createCourseCard(course, section, index) {
@@ -884,25 +913,51 @@ function createCourseCard(course, section, index) {
         <div class="course-controls">
             <div class="credits-display">${course.credits} credits</div>
             <div class="grade-select-wrapper">
-                <select class="grade-select ${grade ? `grade-${grade.toLowerCase()}` : ''}" 
-                        data-course-id="${section}-${index}">
-                    <option value="">-</option>
-                    <option value="S" ${grade === 'S' ? 'selected' : ''}>S (10)</option>
-                    <option value="A" ${grade === 'A' ? 'selected' : ''}>A (9)</option>
-                    <option value="B" ${grade === 'B' ? 'selected' : ''}>B (8)</option>
-                    <option value="C" ${grade === 'C' ? 'selected' : ''}>C (7)</option>
-                    <option value="D" ${grade === 'D' ? 'selected' : ''}>D (6)</option>
-                    <option value="E" ${grade === 'E' ? 'selected' : ''}>E (4)</option>
-                </select>
+                <div class="custom-dropdown ${grade ? `grade-${grade.toLowerCase()}` : ''}" data-course-id="${section}-${index}">
+                    <div class="dropdown-selected">
+                        <span class="selected-text">${grade || '-'}</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="dropdown-options">
+                        <div class="dropdown-option" data-value="">-</div>
+                        <div class="dropdown-option" data-value="S">S</div>
+                        <div class="dropdown-option" data-value="A">A</div>
+                        <div class="dropdown-option" data-value="B">B</div>
+                        <div class="dropdown-option" data-value="C">C</div>
+                        <div class="dropdown-option" data-value="D">D</div>
+                        <div class="dropdown-option" data-value="E">E</div>
+                    </div>
+                </div>
             </div>
             ${removeBtn}
         </div>
     `;
     
-    // Add grade change listener
-    const gradeSelect = div.querySelector('.grade-select');
-    gradeSelect.addEventListener('change', (e) => {
-        handleGradeChange(e.target.dataset.courseId, e.target.value);
+    // Add custom dropdown functionality
+    const dropdown = div.querySelector('.custom-dropdown');
+    const selectedText = dropdown.querySelector('.selected-text');
+    const options = dropdown.querySelectorAll('.dropdown-option');
+    
+    options.forEach(option => {
+        option.addEventListener('click', () => {
+            const value = option.dataset.value;
+            selectedText.textContent = value || '-';
+            dropdown.className = `custom-dropdown ${value ? `grade-${value.toLowerCase()}` : ''}`;
+            handleGradeChange(dropdown.dataset.courseId, value);
+        });
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!dropdown.contains(e.target)) {
+            dropdown.classList.remove('open');
+        }
+    });
+    
+    // Toggle dropdown
+    dropdown.querySelector('.dropdown-selected').addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
     });
     
     return div;
@@ -915,9 +970,20 @@ function handleGradeChange(courseId, grade) {
     
     userData.courses[courseId].grade = grade;
     
-    // Update select styling
-    const select = document.querySelector(`[data-course-id="${courseId}"]`);
-    select.className = `grade-select ${grade ? `grade-${grade.toLowerCase()}` : ''}`;
+    // Update custom dropdown styling
+    const dropdown = document.querySelector(`[data-course-id="${courseId}"]`);
+    if (dropdown) {
+        dropdown.className = `custom-dropdown ${grade ? `grade-${grade.toLowerCase()}` : ''}`;
+        const selectedText = dropdown.querySelector('.selected-text');
+        if (selectedText) {
+            selectedText.textContent = grade || '-';
+        }
+    }
+    
+    // Update data science course states if needed
+    if (courseId.startsWith('dataScience-opt-')) {
+        updateDataScienceCourseStates();
+    }
     
     // Update analytics and save
     updateAnalytics();
@@ -927,15 +993,10 @@ function handleGradeChange(courseId, grade) {
     updateCGPAHistory();
 }
 
-// Global function for data science options
+// Global function for data science options (deprecated - now handled by course disabling)
 window.toggleDataScienceOption = function(option, value) {
-    if (option === 'analytics') {
-        userData.dataScienceOptions.analytics = value;
-        userData.dataScienceOptions.project = value;
-    }
-    renderDataScienceCourses();
-    updateAnalytics();
-    saveUserData();
+    // This function is deprecated - course selection is now handled automatically
+    console.log('Data science options are now handled automatically based on course selections');
 };
 
 function renderElectives() {
@@ -1079,7 +1140,11 @@ function calculateCGPA() {
             } else if (section === 'dataScience') {
                 if (index === 'opt-analytics') {
                     credits = 4;
-                } else if (index === 'opt-project') {
+                } else if (index === 'opt-dl') {
+                    credits = 4;
+                } else if (index === 'opt-analytics-project') {
+                    credits = 2;
+                } else if (index === 'opt-dl-project') {
                     credits = 2;
                 } else {
                     const course = courseDatabase.diploma.dataScience.courses[parseInt(index)];
@@ -1145,7 +1210,11 @@ function updateProgress() {
             } else if (section === 'dataScience') {
                 if (index === 'opt-analytics') {
                     credits = 4;
-                } else if (index === 'opt-project') {
+                } else if (index === 'opt-dl') {
+                    credits = 4;
+                } else if (index === 'opt-analytics-project') {
+                    credits = 2;
+                } else if (index === 'opt-dl-project') {
                     credits = 2;
                 } else {
                     credits = courseDatabase.diploma.dataScience.courses[parseInt(index)]?.credits || 4;
@@ -1279,7 +1348,11 @@ function updateSectionCredits() {
             } else if (section === 'dataScience') {
                 if (index === 'opt-analytics') {
                     credits = 4;
-                } else if (index === 'opt-project') {
+                } else if (index === 'opt-dl') {
+                    credits = 4;
+                } else if (index === 'opt-analytics-project') {
+                    credits = 2;
+                } else if (index === 'opt-dl-project') {
                     credits = 2;
                 } else {
                     credits = courseDatabase.diploma.dataScience.courses[parseInt(index)]?.credits || 4;
@@ -1519,7 +1592,11 @@ function calculateCurrentStats() {
             } else if (section === 'dataScience') {
                 if (index === 'opt-analytics') {
                     credits = 4;
-                } else if (index === 'opt-project') {
+                } else if (index === 'opt-dl') {
+                    credits = 4;
+                } else if (index === 'opt-analytics-project') {
+                    credits = 2;
+                } else if (index === 'opt-dl-project') {
                     credits = 2;
                 } else {
                     const course = courseDatabase.diploma.dataScience.courses[parseInt(index)];
@@ -1735,16 +1812,43 @@ function updateWhatIfInputs() {
                    value="${course.name}" onchange="updateWhatIfCourse(${course.id}, 'name', this.value)">
             <input type="number" class="whatif-course-input" min="1" max="10" value="${course.credits}"
                    onchange="updateWhatIfCourse(${course.id}, 'credits', parseInt(this.value))">
-            <select class="whatif-course-input" onchange="updateWhatIfCourse(${course.id}, 'grade', this.value)">
-                <option value="S" ${course.grade === 'S' ? 'selected' : ''}>S (10)</option>
-                <option value="A" ${course.grade === 'A' ? 'selected' : ''}>A (9)</option>
-                <option value="B" ${course.grade === 'B' ? 'selected' : ''}>B (8)</option>
-                <option value="C" ${course.grade === 'C' ? 'selected' : ''}>C (7)</option>
-                <option value="D" ${course.grade === 'D' ? 'selected' : ''}>D (6)</option>
-                <option value="E" ${course.grade === 'E' ? 'selected' : ''}>E (4)</option>
-            </select>
+            <div class="custom-dropdown whatif-dropdown ${course.grade ? `grade-${course.grade.toLowerCase()}` : ''}" data-course-id="${course.id}">
+                <div class="dropdown-selected">
+                    <span class="selected-text">${course.grade || 'A'}</span>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                <div class="dropdown-options">
+                    <div class="dropdown-option" data-value="S">S</div>
+                    <div class="dropdown-option" data-value="A">A</div>
+                    <div class="dropdown-option" data-value="B">B</div>
+                    <div class="dropdown-option" data-value="C">C</div>
+                    <div class="dropdown-option" data-value="D">D</div>
+                    <div class="dropdown-option" data-value="E">E</div>
+                </div>
+            </div>
             <button class="whatif-remove" onclick="removeWhatIfCourse(${course.id})">×</button>
         `;
+        
+        // Add dropdown functionality
+        const dropdown = div.querySelector('.custom-dropdown');
+        const selectedText = dropdown.querySelector('.selected-text');
+        const options = dropdown.querySelectorAll('.dropdown-option');
+        
+        options.forEach(option => {
+            option.addEventListener('click', () => {
+                const value = option.dataset.value;
+                selectedText.textContent = value;
+                dropdown.className = `custom-dropdown whatif-dropdown ${value ? `grade-${value.toLowerCase()}` : ''}`;
+                updateWhatIfCourse(course.id, 'grade', value);
+            });
+        });
+        
+        // Toggle dropdown
+        dropdown.querySelector('.dropdown-selected').addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+        });
+        
         container.appendChild(div);
     });
     
@@ -1834,6 +1938,16 @@ function populateTimerCourses() {
     });
     
     courseDatabase.diploma.dataScience.courses.forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.code;
+        option.textContent = `${course.code} - ${course.name}`;
+        select.appendChild(option);
+    });
+    
+    // Add optional data science courses
+    const optionalCourses = courseDatabase.diploma.dataScience.optionalCourses;
+    [optionalCourses[0].primary, optionalCourses[0].alternative, 
+     optionalCourses[1].primary, optionalCourses[1].alternative].forEach(course => {
         const option = document.createElement('option');
         option.value = course.code;
         option.textContent = `${course.code} - ${course.name}`;
