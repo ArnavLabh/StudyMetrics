@@ -1,5 +1,5 @@
 -- StudyMetrics Database Schema
--- PostgreSQL Database Setup for IITMBS CGPA Calculator
+-- PostgreSQL Database Setup for IITM BS CGPA Calculator
 
 -- Drop existing tables if needed (careful in production!)
 -- DROP TABLE IF EXISTS sessions CASCADE;

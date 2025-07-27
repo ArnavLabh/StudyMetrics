@@ -243,7 +243,7 @@ function updateAuthUI() {
     } else {
         button.textContent = 'Login';
         toggleLink.textContent = 'Create one';
-        subtitle.textContent = 'Track your IITMBS academic progress';
+        subtitle.textContent = 'Track your IITM BS academic progress';
     }
 }
 
