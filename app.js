@@ -1,3 +1,12 @@
+// Check if Chart.js is loaded
+function ensureChartJS() {
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js not loaded. Please ensure the Chart.js CDN is included.');
+        return false;
+    }
+    return true;
+}
+
 // Course Database with corrected credit structure
 const courseDatabase = {
     foundation: {
@@ -145,6 +154,22 @@ const API_BASE_URL = '/api';
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded - Initializing app...');
+    
+    // Ensure all required DOM elements exist
+    const requiredElements = [
+        'loginPage', 'mainApp', 'userAvatar', 'welcomeMessage',
+        'foundationCourses', 'programmingCourses', 'dataScienceCourses', 
+        'degreeCourses', 'electiveCourses'
+    ];
+    
+    const missingElements = requiredElements.filter(id => !document.getElementById(id));
+    if (missingElements.length > 0) {
+        console.error('Missing required DOM elements:', missingElements);
+        return;
+    }
+    
+    console.log('All required DOM elements found, proceeding with initialization...');
     initializeApp();
     registerServiceWorker();
     checkForUpdates();
@@ -179,6 +204,7 @@ async function checkForUpdates() {
 }
 
 function initializeApp() {
+    console.log('Initializing app...');
     const token = getStoredToken();
     if (token) {
         verifyAndLoadUser(token);
@@ -188,6 +214,21 @@ function initializeApp() {
     
     setupEventListeners();
     initializeTimer();
+    
+    // Ensure courses are rendered even if API calls fail
+    setTimeout(() => {
+        if (document.getElementById('mainApp').style.display !== 'none' && !userData.courses) {
+            console.log('Fallback: Rendering courses after timeout...');
+            userData = {
+                courses: {},
+                electives: [],
+                dataScienceOptions: { analytics: true, project: true },
+                targetCGPA: null,
+                cgpaHistory: []
+            };
+            renderAllCourses();
+        }
+    }, 3000); // 3 second fallback
 }
 
 // Enhanced token management
@@ -386,12 +427,30 @@ async function handleAuth(e) {
         const data = await response.json();
 
         if (response.ok) {
+            console.log('Authentication successful:', data);
             storeToken(data.token, true); // Remember by default
             currentUser = data.user;
             showMainApp();
-            await loadUserData();
+            
+            // Load user data in background, but render courses immediately
+            loadUserData().catch(error => {
+                console.error('Failed to load user data, but continuing with empty data:', error);
+                // Ensure courses are rendered even if loadUserData fails
+                if (!userData.courses) {
+                    userData = {
+                        courses: {},
+                        electives: [],
+                        dataScienceOptions: { analytics: true, project: true },
+                        targetCGPA: null,
+                        cgpaHistory: []
+                    };
+                    renderAllCourses();
+                }
+            });
+            
             showToast(isRegistering ? 'Account created successfully!' : 'Welcome back!', 'success');
         } else {
+            console.error('Authentication failed:', data);
             showToast(data.message || 'Authentication failed', 'error');
         }
     } catch (error) {
@@ -405,16 +464,34 @@ async function handleAuth(e) {
 
 async function verifyAndLoadUser(token) {
     try {
+        console.log('Verifying user token...');
         const response = await fetch(`${API_BASE_URL}/auth/verify`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (response.ok) {
             const data = await response.json();
+            console.log('User verified:', data.user);
             currentUser = data.user;
             showMainApp();
-            await loadUserData();
+            
+            // Load user data in background, but render courses immediately
+            loadUserData().catch(error => {
+                console.error('Failed to load user data, but continuing with empty data:', error);
+                // Ensure courses are rendered even if loadUserData fails
+                if (!userData.courses) {
+                    userData = {
+                        courses: {},
+                        electives: [],
+                        dataScienceOptions: { analytics: true, project: true },
+                        targetCGPA: null,
+                        cgpaHistory: []
+                    };
+                    renderAllCourses();
+                }
+            });
         } else {
+            console.error('Token verification failed - response not ok:', response.status);
             removeStoredToken();
             showLoginPage();
         }
@@ -432,30 +509,73 @@ function showLoginPage() {
 }
 
 function showMainApp() {
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'block';
+    console.log('Showing main app...');
+    
+    const loginPage = document.getElementById('loginPage');
+    const mainApp = document.getElementById('mainApp');
+    
+    if (!loginPage || !mainApp) {
+        console.error('Required DOM elements not found');
+        return;
+    }
+    
+    loginPage.style.display = 'none';
+    mainApp.style.display = 'block';
     document.body.style.overflow = 'auto';
     
     // Update user info
     const avatar = document.getElementById('userAvatar');
     const welcome = document.getElementById('welcomeMessage');
     
-    avatar.textContent = currentUser.username[0].toUpperCase();
-    welcome.textContent = `Welcome back, ${currentUser.username}`;
+    if (avatar && welcome && currentUser) {
+        avatar.textContent = currentUser.username[0].toUpperCase();
+        welcome.textContent = `Welcome back, ${currentUser.username}`;
+    }
     
     startAutoSave();
     populateTimerCourses();
+    
+    // Ensure courses are rendered even if loadUserData fails
+    if (!userData.courses) {
+        console.log('Initializing empty user data and rendering courses...');
+        userData = {
+            courses: {},
+            electives: [],
+            dataScienceOptions: { analytics: true, project: true },
+            targetCGPA: null,
+            cgpaHistory: []
+        };
+        renderAllCourses();
+    }
+    
+    // Initialize charts after a short delay to ensure DOM is ready
+    setTimeout(() => {
+        updateGradeDistribution();
+    }, 500);
+    
+    console.log('Main app shown successfully');
 }
 
 async function loadUserData() {
     try {
+        console.log('Loading user data...');
         const token = getStoredToken();
+        
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
         const response = await fetch(`${API_BASE_URL}/user/data`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}` },
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
 
         if (response.ok) {
             const data = await response.json();
+            console.log('User data loaded:', data);
+            
             userData = {
                 courses: data.userData?.courses || {},
                 electives: data.userData?.electives || [],
@@ -470,32 +590,201 @@ async function loadUserData() {
                 targetInput.value = userData.targetCGPA;
             }
             
+            console.log('About to render all courses...');
             renderAllCourses();
             updateAnalytics();
             updateCGPAHistory();
+            
+            // Initialize charts after user data is loaded
+            setTimeout(() => {
+                updateGradeDistribution();
+            }, 200);
+        } else {
+            console.error('Failed to load user data - response not ok:', response.status);
+            // Even if API fails, render courses with empty data
+            userData = {
+                courses: {},
+                electives: [],
+                dataScienceOptions: { analytics: true, project: true },
+                targetCGPA: null,
+                cgpaHistory: []
+            };
+            renderAllCourses();
+            
+            // Initialize charts after user data is loaded
+            setTimeout(() => {
+                updateGradeDistribution();
+            }, 200);
         }
     } catch (error) {
         console.error('Failed to load user data:', error);
         showToast('Failed to load your data', 'error');
+        
+        // Even if there's an error, render courses with empty data
+        userData = {
+            courses: {},
+            electives: [],
+            dataScienceOptions: { analytics: true, project: true },
+            targetCGPA: null,
+            cgpaHistory: []
+        };
+        renderAllCourses();
+        
+        // Initialize charts after user data is loaded
+        setTimeout(() => {
+            updateGradeDistribution();
+        }, 200);
     }
 }
 
 function renderAllCourses() {
     try {
+        console.log('Rendering all courses...');
+        
+        // Check if main app is visible
+        const mainApp = document.getElementById('mainApp');
+        if (!mainApp || mainApp.style.display === 'none') {
+            console.log('Main app not visible, deferring course rendering...');
+            setTimeout(() => renderAllCourses(), 100);
+            return;
+        }
+        
+        // Check if dashboard section is visible
+        const dashboardSection = document.getElementById('dashboardSection');
+        if (!dashboardSection || dashboardSection.style.display === 'none') {
+            console.log('Dashboard section not visible, deferring course rendering...');
+            setTimeout(() => renderAllCourses(), 100);
+            return;
+        }
+        
+        // Check if course containers exist
+        const courseContainers = [
+            'foundationCourses', 'programmingCourses', 'dataScienceCourses', 
+            'degreeCourses', 'electiveCourses'
+        ];
+        
+        const missingContainers = courseContainers.filter(id => !document.getElementById(id));
+        if (missingContainers.length > 0) {
+            console.error('Missing course containers:', missingContainers);
+            setTimeout(() => renderAllCourses(), 100);
+            return;
+        }
+        
+        // Check if course database is properly loaded
+        if (!courseDatabase || !courseDatabase.foundation || !courseDatabase.diploma || !courseDatabase.degree) {
+            console.error('Course database not properly loaded');
+            showToast('Course data not available', 'error');
+            return;
+        }
+        
+        // Check if course database has the expected structure
+        if (!courseDatabase.foundation.courses || !courseDatabase.diploma.programming.courses || 
+            !courseDatabase.diploma.dataScience.courses || !courseDatabase.degree.core.courses || 
+            !courseDatabase.degree.electives) {
+            console.error('Course database missing expected structure');
+            showToast('Course data structure is invalid', 'error');
+            return;
+        }
+        
+        // Check if course database has courses in each section
+        if (courseDatabase.foundation.courses.length === 0 || 
+            courseDatabase.diploma.programming.courses.length === 0 || 
+            courseDatabase.diploma.dataScience.courses.length === 0 || 
+            courseDatabase.degree.core.courses.length === 0) {
+            console.error('Course database has empty sections');
+            showToast('Course data is incomplete', 'error');
+            return;
+        }
+        
+        // Check if course database has the expected number of courses
+        const expectedCourses = {
+            foundation: 8,
+            programming: 8,
+            dataScience: 6,
+            degreeCore: 5
+        };
+        
+        if (courseDatabase.foundation.courses.length !== expectedCourses.foundation ||
+            courseDatabase.diploma.programming.courses.length !== expectedCourses.programming ||
+            courseDatabase.diploma.dataScience.courses.length !== expectedCourses.dataScience ||
+            courseDatabase.degree.core.courses.length !== expectedCourses.degreeCore) {
+            console.warn('Course database has unexpected number of courses:', {
+                foundation: courseDatabase.foundation.courses.length,
+                programming: courseDatabase.diploma.programming.courses.length,
+                dataScience: courseDatabase.diploma.dataScience.courses.length,
+                degreeCore: courseDatabase.degree.core.courses.length
+            });
+        }
+        
+        // Check if course database has the expected course structure
+        const sampleCourse = courseDatabase.foundation.courses[0];
+        if (!sampleCourse || !sampleCourse.name || !sampleCourse.code || !sampleCourse.credits) {
+            console.error('Course database has invalid course structure');
+            showToast('Course data structure is invalid', 'error');
+            return;
+        }
+        
+        // Check if all courses have the required fields
+        const allCourses = [
+            ...courseDatabase.foundation.courses,
+            ...courseDatabase.diploma.programming.courses,
+            ...courseDatabase.diploma.dataScience.courses,
+            ...courseDatabase.degree.core.courses
+        ];
+        
+        const invalidCourses = allCourses.filter(course => !course.name || !course.code || !course.credits);
+        if (invalidCourses.length > 0) {
+            console.error('Found courses with missing required fields:', invalidCourses);
+            showToast('Some courses have invalid data', 'error');
+            return;
+        }
+        
+        // Check if all courses have valid credit values
+        const invalidCredits = allCourses.filter(course => !Number.isInteger(course.credits) || course.credits <= 0);
+        if (invalidCredits.length > 0) {
+            console.error('Found courses with invalid credit values:', invalidCredits);
+            showToast('Some courses have invalid credit values', 'error');
+            return;
+        }
+        
+        console.log('Course database structure:', {
+            foundation: courseDatabase.foundation?.courses?.length || 0,
+            programming: courseDatabase.diploma?.programming?.courses?.length || 0,
+            dataScience: courseDatabase.diploma?.dataScience?.courses?.length || 0,
+            degreeCore: courseDatabase.degree?.core?.courses?.length || 0,
+            electives: courseDatabase.degree?.electives?.length || 0
+        });
+        
         // Ensure userData integrity
         if (!userData.courses) userData.courses = {};
         if (!userData.electives) userData.electives = [];
         if (!userData.dataScienceOptions) userData.dataScienceOptions = { analytics: true, project: true };
 
         // Render all sections
+        console.log('Rendering foundation courses:', courseDatabase.foundation.courses.length);
         renderCourseList('foundationCourses', courseDatabase.foundation.courses, 'foundation');
+        
+        console.log('Rendering programming courses:', courseDatabase.diploma.programming.courses.length);
         renderCourseList('programmingCourses', courseDatabase.diploma.programming.courses, 'programming');
+        
+        console.log('Rendering data science courses');
         renderDataScienceCourses();
+        
+        console.log('Rendering degree courses:', courseDatabase.degree.core.courses.length);
         renderCourseList('degreeCourses', courseDatabase.degree.core.courses, 'degreeCore');
+        
+        console.log('Rendering electives');
         renderElectives();
         
         // Update all analytics after rendering
         updateAnalytics();
+        
+        // Initialize charts after courses are rendered
+        setTimeout(() => {
+            updateGradeDistribution();
+        }, 100);
+        
+        console.log('All courses rendered successfully');
     } catch (error) {
         console.error('Error rendering courses:', error);
         showToast('Error loading course data', 'error');
@@ -503,15 +792,36 @@ function renderAllCourses() {
 }
 
 function renderCourseList(containerId, courses, section) {
+    console.log(`Attempting to render ${containerId} with ${courses?.length || 0} courses`);
+    
+    // Check if DOM is ready
+    if (document.readyState !== 'complete') {
+        console.log('DOM not ready, deferring course rendering...');
+        setTimeout(() => renderCourseList(containerId, courses, section), 100);
+        return;
+    }
+    
     const container = document.getElementById(containerId);
-    if (!container) return;
+    if (!container) {
+        console.error(`Container ${containerId} not found in DOM`);
+        return;
+    }
     
     container.innerHTML = '';
     
+    if (!courses || courses.length === 0) {
+        console.log(`No courses provided for ${containerId}`);
+        container.innerHTML = '<div class="text-sm text-secondary">No courses available</div>';
+        return;
+    }
+    
+    console.log(`Rendering ${courses.length} courses for ${containerId}`);
     courses.forEach((course, index) => {
         const courseCard = createCourseCard(course, section, index);
         container.appendChild(courseCard);
     });
+    
+    console.log(`Successfully rendered ${courses.length} courses for ${containerId}`);
 }
 
 function renderDataScienceCourses() {
@@ -725,9 +1035,16 @@ function removeElective(code) {
 }
 
 function updateAnalytics() {
+    console.log('Updating all analytics...');
+    
     calculateCGPA();
     updateProgress();
-    updateGradeDistribution();
+    
+    // Update grade distribution chart with a small delay to ensure DOM is ready
+    setTimeout(() => {
+        updateGradeDistribution();
+    }, 50);
+    
     updateSectionCredits();
 }
 
@@ -858,6 +1175,14 @@ function updateProgress() {
 }
 
 function updateGradeDistribution() {
+    console.log('Updating grade distribution...');
+    
+    // Check if Chart.js is available
+    if (!ensureChartJS()) {
+        console.error('Cannot update grade distribution chart - Chart.js not available');
+        return;
+    }
+    
     const gradeCounts = { S: 0, A: 0, B: 0, C: 0, D: 0, E: 0 };
     
     Object.values(userData.courses).forEach(data => {
@@ -866,33 +1191,37 @@ function updateGradeDistribution() {
         }
     });
     
+    console.log('Grade counts:', gradeCounts);
+    
     const ctx = document.getElementById('gradeChart');
-    if (ctx) {
-        const chartCtx = ctx.getContext('2d');
+    if (!ctx) {
+        console.error('Grade chart canvas not found');
+        return;
+    }
+    
+    const chartCtx = ctx.getContext('2d');
+    
+    // Clear previous chart
+    if (window.gradeChart) {
+        window.gradeChart.destroy();
+    }
+    
+    const hasData = Object.values(gradeCounts).some(count => count > 0);
+    
+    if (hasData) {
+        // Use actual color values instead of CSS variables for better compatibility
+        const colors = ['#10b981', '#22d3ee', '#3b82f6', '#f59e0b', '#f97316', '#ef4444'];
         
-        if (window.gradeChart) {
-            window.gradeChart.destroy();
-        }
-        
-        const hasData = Object.values(gradeCounts).some(count => count > 0);
-        
-        if (hasData) {
+        try {
             window.gradeChart = new Chart(chartCtx, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(gradeCounts),
                     datasets: [{
                         data: Object.values(gradeCounts),
-                        backgroundColor: [
-                            'var(--grade-s)',
-                            'var(--grade-a)', 
-                            'var(--grade-b)',
-                            'var(--grade-c)',
-                            'var(--grade-d)',
-                            'var(--grade-e)'
-                        ],
+                        backgroundColor: colors,
                         borderWidth: 2,
-                        borderColor: 'var(--bg-primary)'
+                        borderColor: '#0f172a'
                     }]
                 },
                 options: {
@@ -902,7 +1231,7 @@ function updateGradeDistribution() {
                         legend: {
                             position: 'bottom',
                             labels: {
-                                color: 'var(--text-secondary)',
+                                color: '#cbd5e1',
                                 padding: 8,
                                 font: { size: 10 },
                                 usePointStyle: true
@@ -911,13 +1240,19 @@ function updateGradeDistribution() {
                     }
                 }
             });
-        } else {
-            // Show placeholder for empty state
-            chartCtx.fillStyle = 'var(--text-muted)';
-            chartCtx.font = '12px Inter';
-            chartCtx.textAlign = 'center';
-            chartCtx.fillText('No grades yet', 80, 80);
+            
+            console.log('Grade distribution chart created successfully');
+        } catch (error) {
+            console.error('Error creating grade distribution chart:', error);
         }
+    } else {
+        // Show placeholder for empty state
+        chartCtx.clearRect(0, 0, ctx.width, ctx.height);
+        chartCtx.fillStyle = '#94a3b8';
+        chartCtx.font = '12px Inter';
+        chartCtx.textAlign = 'center';
+        chartCtx.fillText('No grades yet', 80, 80);
+        console.log('Grade distribution chart shows empty state');
     }
 }
 
@@ -999,7 +1334,10 @@ function switchSection(section) {
     
     // Special handling for different sections
     if (section === 'analytics') {
-        initializeAnalytics();
+        // Add a small delay to ensure the section is visible before initializing charts
+        setTimeout(() => {
+            initializeAnalytics();
+        }, 100);
     } else if (section === 'timer') {
         updateTimerDisplay();
         loadTimerHistory();
@@ -1010,82 +1348,129 @@ function switchSection(section) {
 }
 
 function initializeAnalytics() {
-    updateCGPATrendChart();
-    if (userData.targetCGPA) {
-        document.getElementById('targetCgpaInput').value = userData.targetCGPA;
+    console.log('Initializing analytics...');
+    
+    // Check if analytics section is visible
+    const analyticsSection = document.getElementById('analyticsSection');
+    if (!analyticsSection || analyticsSection.style.display === 'none') {
+        console.log('Analytics section not visible, deferring initialization...');
+        setTimeout(() => initializeAnalytics(), 100);
+        return;
     }
-    initializeWhatIfAnalysis();
+    
+    // Check if Chart.js is available
+    if (!ensureChartJS()) {
+        console.error('Chart.js not loaded');
+        showToast('Chart library not available', 'error');
+        return;
+    }
+    
+    console.log('Chart.js available, updating charts...');
+    
+    // Update charts with a small delay to ensure DOM is ready
+    setTimeout(() => {
+        updateCGPATrendChart();
+        if (userData.targetCGPA) {
+            const targetInput = document.getElementById('targetCgpaInput');
+            if (targetInput) {
+                targetInput.value = userData.targetCGPA;
+            }
+        }
+        initializeWhatIfAnalysis();
+    }, 100);
 }
 
 function updateCGPATrendChart() {
+    console.log('Updating CGPA trend chart...');
+    
+    // Check if Chart.js is available
+    if (!ensureChartJS()) {
+        console.error('Cannot update CGPA trend chart - Chart.js not available');
+        return;
+    }
+    
     const ctx = document.getElementById('cgpaTrendChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.error('CGPA trend chart canvas not found');
+        return;
+    }
     
     const chartCtx = ctx.getContext('2d');
     
+    // Clear previous chart
     if (window.cgpaTrendChart) {
         window.cgpaTrendChart.destroy();
     }
     
     // Generate trend data from CGPA history
     const trendData = userData.cgpaHistory || [];
+    console.log('CGPA trend data:', trendData);
     
     if (trendData.length > 0) {
-        window.cgpaTrendChart = new Chart(chartCtx, {
-            type: 'line',
-            data: {
-                labels: trendData.map((_, index) => `Update ${index + 1}`),
-                datasets: [{
-                    label: 'CGPA',
-                    data: trendData.map(entry => parseFloat(entry.cgpa)),
-                    borderColor: 'var(--accent-primary)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: 'var(--accent-primary)',
-                    pointBorderColor: 'white',
-                    pointBorderWidth: 2,
-                    pointRadius: 5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+        // Use actual color values instead of CSS variables for better compatibility
+        try {
+            window.cgpaTrendChart = new Chart(chartCtx, {
+                type: 'line',
+                data: {
+                    labels: trendData.map((_, index) => `Update ${index + 1}`),
+                    datasets: [{
+                        label: 'CGPA',
+                        data: trendData.map(entry => parseFloat(entry.cgpa)),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: 'white',
+                        pointBorderWidth: 2,
+                        pointRadius: 5
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        min: Math.max(0, Math.min(...trendData.map(e => parseFloat(e.cgpa))) - 1),
-                        max: 10,
-                        grid: {
-                            color: 'var(--border-primary)'
-                        },
-                        ticks: {
-                            color: 'var(--text-secondary)'
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     },
-                    x: {
-                        grid: {
-                            color: 'var(--border-primary)'
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: Math.max(0, Math.min(...trendData.map(e => parseFloat(e.cgpa))) - 1),
+                            max: 10,
+                            grid: {
+                                color: '#475569'
+                            },
+                            ticks: {
+                                color: '#cbd5e1'
+                            }
                         },
-                        ticks: {
-                            color: 'var(--text-secondary)'
+                        x: {
+                            grid: {
+                                color: '#475569'
+                            },
+                            ticks: {
+                                color: '#cbd5e1'
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+            
+            console.log('CGPA trend chart created successfully');
+        } catch (error) {
+            console.error('Error creating CGPA trend chart:', error);
+        }
     } else {
         // Show placeholder
-        chartCtx.fillStyle = 'var(--text-muted)';
+        chartCtx.clearRect(0, 0, ctx.width, ctx.height);
+        chartCtx.fillStyle = '#94a3b8';
         chartCtx.font = '16px Inter';
         chartCtx.textAlign = 'center';
         chartCtx.fillText('CGPA trend will appear as you add grades', ctx.width / 2, ctx.height / 2);
+        console.log('CGPA trend chart shows empty state');
     }
 }
 
