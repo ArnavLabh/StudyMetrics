@@ -1,33 +1,54 @@
 {
-  "name": "studymetrics-iitmbs",
-  "version": "1.0.0",
-  "description": "StudyMetrics - CGPA Calculator for IIT Madras BS Program Students",
-  "main": "index.js",
+  "name": "studymetrics",
+  "version": "2.0.0",
+  "description": "IITM BS Academic Progress Tracker with Enhanced Analytics and Study Timer",
+  "main": "app.js",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'No build step required'",
-    "deploy": "vercel --prod",
-    "setup-db": "node scripts/setup-db.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "setup-db": "node setup-database.js",
+    "migrate": "node setup-database.js",
+    "test": "jest",
+    "lint": "eslint .",
+    "build": "npm run setup-db"
   },
   "dependencies": {
-    "@vercel/postgres": "^0.5.1",
+    "@vercel/postgres": "^0.5.0",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
-    "vercel": "^32.5.0"
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0",
+    "eslint": "^8.53.0",
+    "eslint-config-standard": "^17.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ArnavLabh/StudyMetrics.git"
   },
   "keywords": [
+    "education",
+    "academic-tracker",
+    "cgpa-calculator",
     "iit-madras",
-    "cgpa",
-    "calculator",
-    "academic",
-    "tracker",
-    "studymetrics"
+    "student-tools",
+    "analytics",
+    "pomodoro-timer",
+    "study-tracker"
   ],
   "author": "Arnav Labhasetwar",
   "license": "MIT",
-  "engines": {
-    "node": ">=16.0.0"
-  }
-} 
+  "bugs": {
+    "url": "https://github.com/ArnavLabh/StudyMetrics/issues"
+  },
+  "homepage": "https://github.com/ArnavLabh/StudyMetrics#readme"
+}
