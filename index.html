@@ -7,7 +7,7 @@
     
     <!-- PWA Meta Tags -->
     <meta name="description" content="Track your academic progress at IIT Madras BS Program">
-    <meta name="theme-color" content="#1e293b">
+    <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="StudyMetrics">
@@ -18,34 +18,44 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png">
     
+    <!-- Professional Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
     <style>
-        /* CSS Variables - Refined Color Palette */
+        /* CSS Variables - Modern Professional Color Palette */
         :root {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-card: #334155;
-            --bg-hover: #475569;
-            --bg-surface: #64748b;
-            --text-primary: #f8fafc;
-            --text-secondary: #cbd5e1;
-            --text-muted: #94a3b8;
-            --accent-primary: #3b82f6;
-            --accent-secondary: #06b6d4;
-            --accent-success: #10b981;
-            --accent-warning: #f59e0b;
-            --accent-error: #ef4444;
-            --border-primary: #475569;
-            --border-secondary: #64748b;
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1f2937;
+            --bg-hover: #374151;
+            --bg-surface: #4b5563;
+            --bg-accent: #1e40af;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-muted: #9ca3af;
+            --accent-primary: #2563eb;
+            --accent-secondary: #0891b2;
+            --accent-success: #059669;
+            --accent-warning: #d97706;
+            --accent-error: #dc2626;
+            --accent-purple: #7c3aed;
+            --border-primary: #374151;
+            --border-secondary: #4b5563;
+            --border-accent: #2563eb;
             --grade-s: #10b981;
-            --grade-a: #22d3ee;
+            --grade-a: #06b6d4;
             --grade-b: #3b82f6;
             --grade-c: #f59e0b;
             --grade-d: #f97316;
             --grade-e: #ef4444;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.15), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.15), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --gradient-primary: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            --gradient-success: linear-gradient(135deg, #059669 0%, #047857 100%);
+            --gradient-card: linear-gradient(145deg, #1f2937 0%, #111827 100%);
         }
 
         /* Global Styles */
@@ -91,13 +101,14 @@
 
         /* Header */
         .header {
-            background: rgba(30, 41, 59, 0.95);
-            padding: 0.75rem 0;
+            background: rgba(17, 24, 39, 0.95);
+            padding: 1rem 0;
             border-bottom: 1px solid var(--border-primary);
             position: sticky;
             top: 0;
             z-index: 100;
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-md);
         }
 
         .header-content {
@@ -107,10 +118,22 @@
         }
 
         .logo {
-            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.375rem;
             font-weight: 700;
-            color: var(--accent-primary);
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             letter-spacing: -0.025em;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            color: var(--accent-primary);
         }
 
         .user-info {
@@ -119,17 +142,48 @@
             gap: 0.75rem;
         }
 
+        .save-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            background: var(--gradient-success);
+            border: none;
+            color: white;
+            padding: 0.5rem 0.875rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            font-weight: 500;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .save-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .save-btn.saving {
+            background: var(--accent-warning);
+            cursor: not-allowed;
+        }
+
+        .save-btn.saved {
+            background: var(--accent-success);
+        }
+
         .user-avatar {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            background: var(--accent-primary);
+            background: var(--gradient-primary);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
             font-size: 0.875rem;
             color: white;
+            box-shadow: var(--shadow-sm);
         }
 
         .welcome-text {
@@ -139,20 +193,25 @@
         }
 
         .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
             background: transparent;
             border: 1px solid var(--border-primary);
             color: var(--text-secondary);
-            padding: 0.375rem 0.75rem;
-            border-radius: 0.375rem;
+            padding: 0.5rem 0.875rem;
+            border-radius: 0.5rem;
             cursor: pointer;
             transition: all 0.2s ease;
             font-size: 0.875rem;
+            font-weight: 500;
         }
 
         .logout-btn:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-            border-color: var(--border-secondary);
+            background: var(--accent-error);
+            color: white;
+            border-color: var(--accent-error);
+            transform: translateY(-1px);
         }
 
         /* Navigation */
@@ -160,14 +219,15 @@
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-primary);
             position: sticky;
-            top: 57px;
+            top: 73px;
             z-index: 90;
+            backdrop-filter: blur(10px);
         }
 
         .nav-tabs {
             display: flex;
-            gap: 0;
-            padding: 0;
+            gap: 0.25rem;
+            padding: 0.5rem;
             overflow-x: auto;
             scrollbar-width: none;
         }
@@ -177,10 +237,10 @@
         }
 
         .nav-tab {
-            padding: 0.75rem 1rem;
+            padding: 0.75rem 1.25rem;
             background: transparent;
             border: none;
-            border-bottom: 2px solid transparent;
+            border-radius: 0.5rem;
             color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.2s ease;
@@ -191,24 +251,41 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            position: relative;
+        }
+
+        .nav-tab-icon {
+            width: 16px;
+            height: 16px;
         }
 
         .nav-tab:hover {
             color: var(--text-primary);
             background: var(--bg-hover);
+            transform: translateY(-1px);
         }
 
         .nav-tab.active {
             color: var(--accent-primary);
-            border-bottom-color: var(--accent-primary);
             background: var(--bg-primary);
+            border: 1px solid var(--border-accent);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0.5rem;
+            height: 0.5rem;
+            background: var(--accent-primary);
+            border-radius: 50%;
         }
 
         /* Main Layout */
         .main-content {
-            display: grid;
-            grid-template-columns: 1fr 340px;
-            gap: 1.5rem;
             padding: 1.5rem 0;
         }
 
@@ -216,80 +293,130 @@
             min-height: 0;
         }
 
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2rem;
+        }
+
+        .cgpa-top-section {
+            grid-column: 1 / -1;
+            margin-bottom: 2rem;
+        }
+
         /* Course Sections */
         .course-section {
-            background: var(--bg-secondary);
-            border-radius: 0.75rem;
-            padding: 1.25rem;
-            margin-bottom: 1.5rem;
+            background: var(--gradient-card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
             border: 1px solid var(--border-primary);
-            box-shadow: var(--shadow-sm);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .course-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-primary);
         }
 
         .section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
         }
 
         .section-title {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            font-size: 1.125rem;
-            font-weight: 600;
+            gap: 0.875rem;
+            font-size: 1.25rem;
+            font-weight: 700;
             color: var(--text-primary);
         }
 
         .section-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 0.5rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 0.75rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
+            color: white;
+            box-shadow: var(--shadow-md);
         }
 
-        .foundation-icon { background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); }
-        .diploma-icon { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
-        .degree-icon { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .foundation-icon { 
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); 
+        }
+        .diploma-icon { 
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); 
+        }
+        .degree-icon { 
+            background: linear-gradient(135deg, #059669 0%, #047857 100%); 
+        }
 
         .credits-badge {
-            background: var(--bg-card);
-            padding: 0.375rem 0.75rem;
-            border-radius: 1rem;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-primary);
-            font-weight: 500;
+            background: var(--bg-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            border: 1px solid var(--border-accent);
+            font-weight: 600;
+            box-shadow: var(--shadow-sm);
         }
 
         /* Course Cards */
         .course-card {
-            background: var(--bg-card);
+            background: var(--bg-primary);
             border: 1px solid var(--border-primary);
-            border-radius: 0.5rem;
-            padding: 0.75rem;
-            margin-bottom: 0.75rem;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 0.875rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             transition: all 0.2s ease;
             position: relative;
+            overflow: hidden;
+        }
+
+        .course-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--gradient-primary);
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
 
         .course-card:hover {
             background: var(--bg-hover);
-            border-color: var(--border-secondary);
-            box-shadow: var(--shadow-md);
+            border-color: var(--border-accent);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .course-card:hover::before {
+            opacity: 1;
         }
 
         .course-card.dragging {
-            opacity: 0.6;
-            transform: rotate(1deg);
+            opacity: 0.7;
+            transform: rotate(2deg) scale(1.02);
             z-index: 10;
+            box-shadow: var(--shadow-xl);
         }
 
         .course-info {
@@ -298,10 +425,11 @@
         }
 
         .course-code {
-            font-size: 0.75rem;
-            color: var(--accent-secondary);
-            font-weight: 600;
-            margin-bottom: 0.125rem;
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            letter-spacing: 0.025em;
         }
 
         .course-name {
@@ -452,6 +580,61 @@
             color: var(--text-muted);
         }
 
+        /* CGPA Top Section */
+        .cgpa-hero {
+            background: var(--gradient-card);
+            border-radius: 1.25rem;
+            padding: 2rem;
+            border: 1px solid var(--border-primary);
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cgpa-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+
+        .cgpa-hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .cgpa-main-display {
+            text-align: center;
+        }
+
+        .cgpa-hero-value {
+            font-size: 4rem;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .cgpa-hero-label {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .cgpa-hero-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
         /* Analytics Sidebar */
         .analytics-sidebar {
             position: sticky;
@@ -462,22 +645,77 @@
         }
 
         .analytics-card {
-            background: var(--bg-secondary);
-            border-radius: 0.75rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
+            background: var(--gradient-card);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
             border: 1px solid var(--border-primary);
-            box-shadow: var(--shadow-sm);
+            box-shadow: var(--shadow-md);
         }
 
         .analytics-title {
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
             color: var(--text-primary);
+        }
+
+        .analytics-icon {
+            width: 18px;
+            height: 18px;
+            color: var(--accent-primary);
+        }
+
+        .section-cgpa-compact .section-cgpa-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .section-cgpa-compact .section-cgpa-item:last-child {
+            border-bottom: none;
+        }
+
+        .section-cgpa-compact .section-cgpa-name {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .section-cgpa-compact .section-cgpa-value {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .progress-circle-compact {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-text-compact {
+            position: absolute;
+            text-align: center;
+        }
+
+        .progress-text-compact .progress-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            line-height: 1;
+        }
+
+        .progress-text-compact .progress-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.2;
         }
 
         .cgpa-display {
@@ -1247,8 +1485,63 @@
         <!-- Main Content -->
         <div class="container">
             <div id="dashboardSection" class="main-content">
-                <!-- Course Sections -->
-                <div class="content-area">
+                <!-- CGPA Hero Section -->
+                <div class="cgpa-top-section">
+                    <div class="cgpa-hero">
+                        <div class="cgpa-hero-grid">
+                            <div class="cgpa-main-display">
+                                <div class="cgpa-hero-value" id="mainCgpaHero">0.00</div>
+                                <div class="cgpa-hero-label">Current CGPA</div>
+                                <div class="cgpa-hero-subtitle" id="cgpaHeroSubtitle">0 out of 142 credits completed</div>
+                            </div>
+                            <div class="section-cgpa-grid">
+                                <h4 style="color: var(--text-primary); font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i>
+                                    Section-wise Progress
+                                </h4>
+                                <div class="section-cgpa-compact">
+                                    <div class="section-cgpa-item">
+                                        <span class="section-cgpa-name">Foundation</span>
+                                        <span class="section-cgpa-value" id="foundationCgpaHero">0.00</span>
+                                    </div>
+                                    <div class="section-cgpa-item">
+                                        <span class="section-cgpa-name">Programming</span>
+                                        <span class="section-cgpa-value" id="programmingCgpaHero">0.00</span>
+                                    </div>
+                                    <div class="section-cgpa-item">
+                                        <span class="section-cgpa-name">Data Science</span>
+                                        <span class="section-cgpa-value" id="dataScienceCgpaHero">0.00</span>
+                                    </div>
+                                    <div class="section-cgpa-item">
+                                        <span class="section-cgpa-name">Degree</span>
+                                        <span class="section-cgpa-value" id="degreeCgpaHero">0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="credit-progress-compact">
+                                <h4 style="color: var(--text-primary); font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <i data-lucide="target" style="width: 18px; height: 18px;"></i>
+                                    Credit Progress
+                                </h4>
+                                <div class="progress-circle-compact">
+                                    <svg class="progress-svg" width="120" height="120">
+                                        <circle class="progress-bg" cx="60" cy="60" r="55"></circle>
+                                        <circle class="progress-fill" cx="60" cy="60" r="55" id="progressCircleHero"></circle>
+                                    </svg>
+                                    <div class="progress-text-compact">
+                                        <div class="progress-value" id="progressPercentHero">0%</div>
+                                        <div class="progress-label">of 142<br>credits</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Layout Grid -->
+                <div class="layout-grid">
+                    <!-- Course Sections -->
+                    <div class="content-area">
                     <!-- Foundation Section -->
                     <section id="foundation" class="course-section">
                         <div class="section-header">
