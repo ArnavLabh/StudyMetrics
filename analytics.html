@@ -89,11 +89,20 @@
         <div class="analytics-grid">
             <div class="analytics-card">
                 <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <i data-lucide="trending-up" style="width: 18px; height: 18px; color: #6366f1;"></i>
-                    CGPA Trend Over Time
+                    <i data-lucide="radar" style="width: 18px; height: 18px; color: #6366f1;"></i>
+                    Section Performance Radar
+                    <button onclick="generatePythonCharts()" id="generateBtn" 
+                            style="margin-left: auto; padding: 0.25rem 0.5rem; background: #10b981; color: white; border: none; border-radius: 0.25rem; font-size: 0.75rem; cursor: pointer;">
+                        Generate
+                    </button>
                 </h3>
-                <div class="chart-container">
-                    <canvas id="cgpaTrendChart"></canvas>
+                <div class="chart-container" id="radarChartContainer">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #94a3b8; text-align: center;">
+                        <div>
+                            <i data-lucide="zap" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                            <p>Click "Generate" to create advanced analytics charts</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -166,6 +175,16 @@
                 console.log('Using offline data');
             }
             initializeAnalyticsCharts();
+            
+            // Add CSS for loading animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
         }
         
         function initializeAnalyticsCharts() {
@@ -179,37 +198,73 @@
             createSectionChart();
         }
         
-        function createCGPATrendChart() {
-            const ctx = document.getElementById('cgpaTrendChart');
-            const history = userData.cgpaHistory || [];
+        async function generatePythonCharts() {
+            const btn = document.getElementById('generateBtn');
+            const container = document.getElementById('radarChartContainer');
             
-            if (history.length > 1) {
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: history.map((_, i) => `Update ${i + 1}`),
-                        datasets: [{
-                            label: 'CGPA',
-                            data: history.map(h => parseFloat(h.cgpa)),
-                            borderColor: '#6366f1',
-                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.4
-                        }]
+            btn.textContent = 'Generating...';
+            btn.disabled = true;
+            
+            container.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #6366f1;">
+                    <div style="text-align: center;">
+                        <div style="width: 40px; height: 40px; border: 4px solid #334155; border-top: 4px solid #6366f1; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+                        <p>Generating advanced analytics...</p>
+                    </div>
+                </div>
+            `;
+            
+            try {
+                const token = localStorage.getItem('studymetrics_token');
+                const response = await fetch('/api/analytics/python-charts', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: false, max: 10, grid: { color: '#334155' }, ticks: { color: '#cbd5e1' } },
-                            x: { grid: { color: '#334155' }, ticks: { color: '#cbd5e1' } }
-                        }
-                    }
+                    body: JSON.stringify({ userData })
                 });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    displayPythonCharts(result.charts);
+                } else {
+                    throw new Error('Failed to generate charts');
+                }
+            } catch (error) {
+                console.error('Chart generation error:', error);
+                container.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #ef4444; text-align: center;">
+                        <div>
+                            <i data-lucide="alert-circle" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                            <p>Failed to generate charts<br><small>Python analytics not available</small></p>
+                        </div>
+                    </div>
+                `;
+            } finally {
+                btn.textContent = 'Generate';
+                btn.disabled = false;
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+        }
+        
+        function displayPythonCharts(charts) {
+            const container = document.getElementById('radarChartContainer');
+            
+            if (charts['section_performance_radar.png']) {
+                container.innerHTML = `
+                    <img src="${charts['section_performance_radar.png']}" 
+                         alt="Section Performance Radar" 
+                         style="width: 100%; height: 100%; object-fit: contain; border-radius: 0.5rem;">
+                `;
             } else {
-                ctx.getContext('2d').fillText('Add more grades to see trend', 200, 150);
+                container.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #f59e0b;">
+                        <p>Chart generated but not available for display</p>
+                    </div>
+                `;
             }
         }
         

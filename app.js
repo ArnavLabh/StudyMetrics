@@ -406,15 +406,18 @@ function toggleAuthMode() {
 function updateAuthUI() {
     const btnText = document.getElementById('authBtnText');
     const toggleLink = document.getElementById('toggleAuth');
+    const toggleText = document.getElementById('toggleText');
     const subtitle = document.querySelector('.login-subtitle');
     
     if (isRegistering) {
         btnText.textContent = 'Create Account';
         toggleLink.textContent = 'Login instead';
+        toggleText.textContent = 'Already have an account?';
         subtitle.textContent = 'Create your account to get started';
     } else {
         btnText.textContent = 'Login';
         toggleLink.textContent = 'Create one';
+        toggleText.textContent = 'Don\'t have an account?';
         subtitle.textContent = 'Track your IITM BS academic progress';
     }
 }
@@ -1019,14 +1022,20 @@ function handleGradeChange(courseId, grade) {
     // Update analytics and save
     updateAnalytics();
     
-    // Auto-save with debouncing
+    // Auto-save with debouncing and retry logic
     clearTimeout(window.autoSaveTimeout);
     window.autoSaveTimeout = setTimeout(async () => {
-        const success = await saveUserData(false);
+        const success = await saveUserDataWithRetry(false);
         if (success) {
             console.log('Auto-save successful');
+            updateSaveButtonState('saved');
+            setTimeout(() => updateSaveButtonState('default'), 1000);
+        } else {
+            console.error('Auto-save failed');
+            updateSaveButtonState('error');
+            setTimeout(() => updateSaveButtonState('default'), 2000);
         }
-    }, 2000);
+    }, 1500);
     
     // Update CGPA history
     updateCGPAHistory();
@@ -2249,23 +2258,39 @@ async function saveUserData(showNotification = false) {
     
     try {
         const token = getStoredToken();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
         const response = await fetch(`${API_BASE_URL}/user/data`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ userData })
+            body: JSON.stringify({ 
+                userData,
+                timerSettings: {
+                    studyDuration: timerState.studyDuration,
+                    breakDuration: timerState.breakDuration
+                }
+            }),
+            signal: controller.signal
         });
         
+        clearTimeout(timeoutId);
+        
         if (response.ok) {
+            const result = await response.json();
             if (showNotification) {
                 showToast('Data saved successfully!', 'success');
                 updateSaveButtonState('saved');
             }
             return true;
+        } else if (response.status === 401) {
+            logout();
+            return false;
         } else {
-            throw new Error('Failed to save data');
+            throw new Error(`Save failed: ${response.status}`);
         }
     } catch (error) {
         console.error('Failed to save user data:', error);
@@ -2277,9 +2302,21 @@ async function saveUserData(showNotification = false) {
     }
 }
 
+async function saveUserDataWithRetry(showNotification = false, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        const success = await saveUserData(showNotification && i === retries - 1);
+        if (success) return true;
+        
+        if (i < retries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+        }
+    }
+    return false;
+}
+
 async function manualSave() {
     updateSaveButtonState('saving');
-    const success = await saveUserData(true);
+    const success = await saveUserDataWithRetry(true);
     
     setTimeout(() => {
         updateSaveButtonState('default');

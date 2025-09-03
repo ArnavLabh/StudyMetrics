@@ -1,67 +1,68 @@
-const bcrypt = require('bcryptjs');
+const { Pool } = require('pg');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { sql } = require('@vercel/postgres');
+
+const pool = new Pool({
+    user: process.env.DB_USER || 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME || 'studymetrics',
+    password: process.env.DB_PASSWORD || 'password',
+    port: process.env.DB_PORT || 5432,
+});
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 module.exports = async (req, res) => {
-    // Enable CORS
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
-
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
-    }
-
     if (req.method !== 'POST') {
-        return res.status(405).json({ message: 'Method not allowed' });
-    }
-
-    const { username, pin } = req.body;
-
-    if (!username || !pin || pin.length !== 4) {
-        return res.status(400).json({ message: 'Invalid username or PIN' });
-    }
-
-    if (username.length < 3 || username.length > 20) {
-        return res.status(400).json({ message: 'Username must be between 3 and 20 characters' });
-    }
-
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-        return res.status(400).json({ message: 'Username can only contain letters, numbers, and underscores' });
-    }
-
-    if (!/^\d{4}$/.test(pin)) {
-        return res.status(400).json({ message: 'PIN must be 4 digits' });
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        // Check if user already exists
-        const existingUser = await sql`SELECT * FROM users WHERE username = ${username.toLowerCase()}`;
-        if (existingUser.rows.length > 0) {
-            return res.status(409).json({ message: 'Username already taken' });
+        const { username, pin } = req.body;
+
+        if (!username || !pin) {
+            return res.status(400).json({ error: 'Username and PIN are required' });
         }
 
-        // Hash PIN
-        const pin_hash = await bcrypt.hash(pin, 10);
+        if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+            return res.status(400).json({ error: 'PIN must be exactly 4 digits' });
+        }
 
-        // Create user
-        const newUser = await sql`
-            INSERT INTO users (username, pin_hash, created_at)
-            VALUES (${username.toLowerCase()}, ${pin_hash}, NOW())
-            RETURNING id, username, created_at
-        `;
-        const user = newUser.rows[0];
+        if (username.length < 3 || username.length > 20) {
+            return res.status(400).json({ error: 'Username must be between 3 and 20 characters' });
+        }
 
-        // Generate JWT
+        // Check if username already exists
+        const existingUser = await pool.query(
+            'SELECT id FROM users WHERE username = $1',
+            [username.toLowerCase()]
+        );
+
+        if (existingUser.rows.length > 0) {
+            return res.status(409).json({ error: 'Username already exists' });
+        }
+
+        // Hash the PIN
+        const hashedPin = await bcrypt.hash(pin, 10);
+
+        // Create new user
+        const result = await pool.query(
+            'INSERT INTO users (username, pin_hash, created_at) VALUES ($1, $2, NOW()) RETURNING id, username, created_at',
+            [username.toLowerCase(), hashedPin]
+        );
+
+        const user = result.rows[0];
+
+        // Generate JWT token
         const token = jwt.sign(
             { userId: user.id, username: user.username },
-            process.env.JWT_SECRET || 'dev-secret-key',
-            { expiresIn: '30d' }
+            JWT_SECRET,
+            { expiresIn: '7d' }
         );
 
         res.status(201).json({
+            success: true,
+            message: 'Account created successfully',
             token,
             user: {
                 id: user.id,
@@ -69,8 +70,9 @@ module.exports = async (req, res) => {
                 createdAt: user.created_at
             }
         });
+
     } catch (error) {
-        console.error('Register error:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Registration error:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
