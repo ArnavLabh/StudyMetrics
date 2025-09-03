@@ -18,6 +18,7 @@
     <!-- PWA Links -->
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png">
     
@@ -1026,13 +1027,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.8);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 1000;
             padding: 1rem;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(8px);
+            animation: fadeIn 0.2s ease;
         }
 
         .modal-overlay.active {
@@ -1040,15 +1042,57 @@
         }
 
         .modal-content {
-            background: var(--bg-secondary);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            max-width: 600px;
+            background: var(--gradient-card);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 700px;
             width: 100%;
-            max-height: 80vh;
+            max-height: 85vh;
             overflow-y: auto;
-            border: 1px solid var(--border-primary);
+            border: 2px solid var(--border-primary);
             box-shadow: var(--shadow-xl);
+            position: relative;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+            border-radius: 1rem 1rem 0 0;
+        }
+
+        .elective-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .elective-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent-primary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        .elective-item-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .elective-item-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
         }
 
         .modal-header {
@@ -1358,6 +1402,111 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Enhanced Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient-hero);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            text-align: center;
+            max-width: 400px;
+            padding: 2rem;
+        }
+
+        .loading-logo {
+            margin-bottom: 2rem;
+        }
+
+        .loading-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .loading-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0;
+        }
+
+        .loading-spinner {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 2rem auto;
+        }
+
+        .spinner-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid transparent;
+            border-top: 3px solid var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+        }
+
+        .spinner-ring:nth-child(2) {
+            width: 60px;
+            height: 60px;
+            top: 10px;
+            left: 10px;
+            border-top-color: var(--accent-secondary);
+            animation-duration: 1s;
+            animation-direction: reverse;
+        }
+
+        .spinner-ring:nth-child(3) {
+            width: 40px;
+            height: 40px;
+            top: 20px;
+            left: 20px;
+            border-top-color: var(--accent-success);
+            animation-duration: 0.8s;
+        }
+
+        .loading-text {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+
+        .loading-progress {
+            width: 200px;
+            height: 4px;
+            background: var(--bg-secondary);
+            border-radius: 2px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0;
+            height: 100%;
+            background: var(--gradient-primary);
+            border-radius: 2px;
+            animation: progress 3s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0% { width: 0; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
         
         /* Save button states */
         .save-btn.saving .loading {
@@ -1507,12 +1656,20 @@
 </head>
 <body>
     <!-- Loading Screen -->
-    <div id="loadingScreen" class="login-container">
-        <div class="login-card">
-            <div style="text-align: center;">
-                <div class="loading-large" style="margin: 2rem auto;"></div>
-                <h2 style="color: var(--accent-primary); margin-bottom: 0.5rem;">StudyMetrics</h2>
-                <p style="color: var(--text-secondary);">Loading your dashboard...</p>
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <div class="loading-icon">📊</div>
+                <h1 class="loading-title">StudyMetrics</h1>
+            </div>
+            <div class="loading-spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+            </div>
+            <p class="loading-text">Loading your academic dashboard...</p>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
             </div>
         </div>
     </div>
@@ -1774,10 +1931,8 @@
 
                     <div class="timer-settings">
                         <div class="form-group">
-                            <label class="form-label">Select Course (Optional)</label>
-                            <select id="timerCourseSelect" class="form-input">
-                                <option value="">Select a course...</option>
-                            </select>
+                            <label class="form-label">Course (Optional)</label>
+                            <input type="text" id="timerCourseInput" class="form-input" placeholder="e.g., BSCS1001 - Computational Thinking">
                         </div>
 
                         <div class="form-group">

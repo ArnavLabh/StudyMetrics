@@ -1016,9 +1016,9 @@ function renderElectiveList(filter = '') {
             div.innerHTML = `
                 <div class="elective-item-name">${elective.name}</div>
                 <div class="elective-item-meta">
-                    <span>${elective.code}</span>
+                    <span style="color: var(--accent-primary); font-weight: 600;">${elective.code}</span>
                     <span>${elective.credits} credits</span>
-                    <span>${elective.category}</span>
+                    <span style="background: var(--bg-primary); padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.6875rem;">${elective.category}</span>
                 </div>
             `;
             
@@ -1798,62 +1798,8 @@ function initializeTimer() {
 }
 
 function populateTimerCourses() {
-    const select = document.getElementById('timerCourseSelect');
-    if (!select) return;
-    
-    select.innerHTML = '<option value="">Select a course...</option>';
-    
-    // Add foundation courses
-    courseDatabase.foundation.courses.forEach(course => {
-        const option = document.createElement('option');
-        option.value = course.code;
-        option.textContent = `${course.code} - ${course.name}`;
-        select.appendChild(option);
-    });
-    
-    // Add diploma courses
-    courseDatabase.diploma.programming.courses.forEach(course => {
-        const option = document.createElement('option');
-        option.value = course.code;
-        option.textContent = `${course.code} - ${course.name}`;
-        select.appendChild(option);
-    });
-    
-    courseDatabase.diploma.dataScience.courses.forEach(course => {
-        const option = document.createElement('option');
-        option.value = course.code;
-        option.textContent = `${course.code} - ${course.name}`;
-        select.appendChild(option);
-    });
-    
-    // Add optional data science courses
-    const optionalCourses = courseDatabase.diploma.dataScience.optionalCourses;
-    [optionalCourses[0].primary, optionalCourses[0].alternative, 
-     optionalCourses[1].primary, optionalCourses[1].alternative].forEach(course => {
-        const option = document.createElement('option');
-        option.value = course.code;
-        option.textContent = `${course.code} - ${course.name}`;
-        select.appendChild(option);
-    });
-    
-    // Add degree courses
-    courseDatabase.degree.core.courses.forEach(course => {
-        const option = document.createElement('option');
-        option.value = course.code;
-        option.textContent = `${course.code} - ${course.name}`;
-        select.appendChild(option);
-    });
-    
-    // Add selected electives
-    userData.electives.forEach(electiveCode => {
-        const elective = courseDatabase.degree.electives.find(e => e.code === electiveCode);
-        if (elective) {
-            const option = document.createElement('option');
-            option.value = elective.code;
-            option.textContent = `${elective.code} - ${elective.name}`;
-            select.appendChild(option);
-        }
-    });
+    // Timer now uses text input instead of dropdown
+    // No population needed
 }
 
 function loadTimerSettings() {
@@ -1884,7 +1830,7 @@ function startTimer() {
     if (timerState.isRunning) return;
     
     timerState.isRunning = true;
-    timerState.currentCourse = document.getElementById('timerCourseSelect')?.value || '';
+    timerState.currentCourse = document.getElementById('timerCourseInput')?.value || '';
     timerState.currentActivity = document.getElementById('timerActivity')?.value || '';
     
     timerState.interval = setInterval(() => {
