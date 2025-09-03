@@ -585,10 +585,7 @@ function showMainApp() {
         renderAllCourses();
     }
     
-    // Initialize charts after a short delay to ensure DOM is ready
-    setTimeout(() => {
-        updateGradeDistribution();
-    }, 500);
+    // Charts removed from main app
     
     console.log('Main app shown successfully');
 }
@@ -632,10 +629,7 @@ async function loadUserData() {
             updateAnalytics();
             updateCGPAHistory();
             
-            // Initialize charts after user data is loaded
-            setTimeout(() => {
-                updateGradeDistribution();
-            }, 200);
+            // Charts removed
         } else {
             console.error('Failed to load user data - response not ok:', response.status);
             // Even if API fails, render courses with empty data
@@ -648,10 +642,7 @@ async function loadUserData() {
             };
             renderAllCourses();
             
-            // Initialize charts after user data is loaded
-            setTimeout(() => {
-                updateGradeDistribution();
-            }, 200);
+            // Charts removed
         }
     } catch (error) {
         console.error('Failed to load user data:', error);
@@ -667,10 +658,7 @@ async function loadUserData() {
         };
         renderAllCourses();
         
-        // Initialize charts after user data is loaded
-        setTimeout(() => {
-            updateGradeDistribution();
-        }, 200);
+        // Charts removed
     }
 }
 
@@ -707,80 +695,9 @@ function renderAllCourses() {
             return;
         }
         
-        // Check if course database is properly loaded
-        if (!courseDatabase || !courseDatabase.foundation || !courseDatabase.diploma || !courseDatabase.degree) {
-            console.error('Course database not properly loaded');
-            showToast('Course data not available', 'error');
-            return;
-        }
-        
-        // Check if course database has the expected structure
-        if (!courseDatabase.foundation.courses || !courseDatabase.diploma.programming.courses || 
-            !courseDatabase.diploma.dataScience.courses || !courseDatabase.degree.core.courses || 
-            !courseDatabase.degree.electives) {
-            console.error('Course database missing expected structure');
-            showToast('Course data structure is invalid', 'error');
-            return;
-        }
-        
-        // Check if course database has courses in each section
-        if (courseDatabase.foundation.courses.length === 0 || 
-            courseDatabase.diploma.programming.courses.length === 0 || 
-            courseDatabase.diploma.dataScience.courses.length === 0 || 
-            courseDatabase.degree.core.courses.length === 0) {
-            console.error('Course database has empty sections');
-            showToast('Course data is incomplete', 'error');
-            return;
-        }
-        
-        // Check if course database has the expected number of courses
-        const expectedCourses = {
-            foundation: 8,
-            programming: 8,
-            dataScience: 6,
-            degreeCore: 5
-        };
-        
-        if (courseDatabase.foundation.courses.length !== expectedCourses.foundation ||
-            courseDatabase.diploma.programming.courses.length !== expectedCourses.programming ||
-            courseDatabase.diploma.dataScience.courses.length !== expectedCourses.dataScience ||
-            courseDatabase.degree.core.courses.length !== expectedCourses.degreeCore) {
-            console.warn('Course database has unexpected number of courses:', {
-                foundation: courseDatabase.foundation.courses.length,
-                programming: courseDatabase.diploma.programming.courses.length,
-                dataScience: courseDatabase.diploma.dataScience.courses.length,
-                degreeCore: courseDatabase.degree.core.courses.length
-            });
-        }
-        
-        // Check if course database has the expected course structure
-        const sampleCourse = courseDatabase.foundation.courses[0];
-        if (!sampleCourse || !sampleCourse.name || !sampleCourse.code || !sampleCourse.credits) {
-            console.error('Course database has invalid course structure');
-            showToast('Course data structure is invalid', 'error');
-            return;
-        }
-        
-        // Check if all courses have the required fields
-        const allCourses = [
-            ...courseDatabase.foundation.courses,
-            ...courseDatabase.diploma.programming.courses,
-            ...courseDatabase.diploma.dataScience.courses,
-            ...courseDatabase.degree.core.courses
-        ];
-        
-        const invalidCourses = allCourses.filter(course => !course.name || !course.code || !course.credits);
-        if (invalidCourses.length > 0) {
-            console.error('Found courses with missing required fields:', invalidCourses);
-            showToast('Some courses have invalid data', 'error');
-            return;
-        }
-        
-        // Check if all courses have valid credit values
-        const invalidCredits = allCourses.filter(course => !Number.isInteger(course.credits) || course.credits <= 0);
-        if (invalidCredits.length > 0) {
-            console.error('Found courses with invalid credit values:', invalidCredits);
-            showToast('Some courses have invalid credit values', 'error');
+        // Basic course database validation
+        if (!courseDatabase) {
+            console.error('Course database not loaded');
             return;
         }
         
@@ -816,9 +733,8 @@ function renderAllCourses() {
         // Update all analytics after rendering
         updateAnalytics();
         
-        // Initialize charts and progress circles after courses are rendered
+        // Initialize progress circles after courses are rendered
         setTimeout(() => {
-            initializeChartsWhenReady();
             updateProgress();
         }, 100);
         
@@ -950,15 +866,15 @@ function createCourseCard(course, section, index) {
         </div>
         <div class="course-controls">
             <div class="credits-display">${course.credits} credits</div>
-            <div class="grade-select-wrapper">
-                <div class="grade-selector ${grade ? `grade-${grade.toLowerCase()} has-selection` : ''}" data-course-id="${section}-${index}">
-                    <button class="grade-option clear ${!grade ? 'selected' : ''}" data-value="">-</button>
-                    <button class="grade-option grade-s ${grade === 'S' ? 'selected' : ''}" data-value="S">S</button>
-                    <button class="grade-option grade-a ${grade === 'A' ? 'selected' : ''}" data-value="A">A</button>
-                    <button class="grade-option grade-b ${grade === 'B' ? 'selected' : ''}" data-value="B">B</button>
-                    <button class="grade-option grade-c ${grade === 'C' ? 'selected' : ''}" data-value="C">C</button>
-                    <button class="grade-option grade-d ${grade === 'D' ? 'selected' : ''}" data-value="D">D</button>
-                    <button class="grade-option grade-e ${grade === 'E' ? 'selected' : ''}" data-value="E">E</button>
+            <div class="grade-selector-container">
+                <div class="grade-buttons-row" data-course-id="${section}-${index}">
+                    <button class="grade-btn ${!grade ? 'active' : ''}" data-grade="">-</button>
+                    <button class="grade-btn grade-s ${grade === 'S' ? 'active' : ''}" data-grade="S">S</button>
+                    <button class="grade-btn grade-a ${grade === 'A' ? 'active' : ''}" data-grade="A">A</button>
+                    <button class="grade-btn grade-b ${grade === 'B' ? 'active' : ''}" data-grade="B">B</button>
+                    <button class="grade-btn grade-c ${grade === 'C' ? 'active' : ''}" data-grade="C">C</button>
+                    <button class="grade-btn grade-d ${grade === 'D' ? 'active' : ''}" data-grade="D">D</button>
+                    <button class="grade-btn grade-e ${grade === 'E' ? 'active' : ''}" data-grade="E">E</button>
                 </div>
             </div>
             ${removeBtn}
@@ -967,23 +883,25 @@ function createCourseCard(course, section, index) {
     
     // Add grade selector functionality
     const gradeContainer = div.querySelector('.grade-buttons-row');
-    const gradeButtons = gradeContainer.querySelectorAll('.grade-btn');
-    
-    gradeButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            
-            const grade = btn.dataset.grade;
-            const courseId = gradeContainer.dataset.courseId;
-            
-            // Update visual state
-            gradeButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            // Handle grade change
-            handleGradeChange(courseId, grade);
+    if (gradeContainer) {
+        const gradeButtons = gradeContainer.querySelectorAll('.grade-btn');
+        
+        gradeButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                const grade = btn.dataset.grade;
+                const courseId = gradeContainer.dataset.courseId;
+                
+                // Update visual state
+                gradeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Handle grade change
+                handleGradeChange(courseId, grade);
+            });
         });
-    });
+    }
     
     return div;
 }
@@ -995,15 +913,12 @@ function handleGradeChange(courseId, grade) {
     
     userData.courses[courseId].grade = grade;
     
-    // Update grade selector styling
-    const gradeSelector = document.querySelector(`[data-course-id="${courseId}"]`);
-    if (gradeSelector) {
-        gradeSelector.className = `grade-selector ${grade ? `grade-${grade.toLowerCase()} has-selection` : ''}`;
-        
-        // Update selected option
-        const options = gradeSelector.querySelectorAll('.grade-option');
-        options.forEach(opt => {
-            opt.classList.toggle('selected', opt.dataset.value === grade);
+    // Update grade button styling
+    const gradeContainer = document.querySelector(`[data-course-id="${courseId}"]`);
+    if (gradeContainer) {
+        const buttons = gradeContainer.querySelectorAll('.grade-btn');
+        buttons.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.grade === grade);
         });
     }
     
@@ -1148,15 +1063,8 @@ function updateAnalytics() {
     updateProgress();
     updateSectionCredits();
     
-    // Update both hero and sidebar CGPA displays
+    // Update hero CGPA display
     updateHeroCGPA();
-    
-    // Update grade distribution chart with a small delay to ensure DOM is ready
-    setTimeout(() => {
-        if (ensureChartJS()) {
-            updateGradeDistribution();
-        }
-    }, 50);
 }
 
 function calculateCGPA() {
@@ -1224,21 +1132,7 @@ function calculateCGPA() {
     window.currentCGPA = totalCredits > 0 ? (totalGradePoints / totalCredits).toFixed(2) : '0.00';
     window.currentCredits = totalCredits;
     
-    // Update section CGPAs
-    const sectionElements = {
-        foundationCgpa: sections.foundation,
-        programmingCgpa: sections.programming,
-        dataScienceCgpa: sections.dataScience,
-        degreeCgpa: sections.degree
-    };
-    
-    Object.entries(sectionElements).forEach(([elementId, sectionData]) => {
-        const element = document.getElementById(elementId);
-        if (element) {
-            element.textContent = sectionData.credits > 0 ? 
-                (sectionData.points / sectionData.credits).toFixed(2) : '0.00';
-        }
-    });
+    // Section CGPAs removed with sidebar
     
     // Update hero section CGPAs
     const heroElements = {
@@ -1304,127 +1198,23 @@ function updateProgress() {
         }
     });
     
-    const percentage = Math.min(100, Math.round((completedCredits / 142) * 100));
-    
-    // Update sidebar progress
-    const progressElement = document.getElementById('progressPercent');
-    const progressCircle = document.getElementById('progressCircle');
-    
-    if (progressElement) progressElement.textContent = `${percentage}%`;
-    
-    if (progressCircle) {
-        const circumference = 2 * Math.PI * 70;
-        const offset = circumference - (percentage / 100 * circumference);
-        progressCircle.style.strokeDashoffset = offset;
-    }
+    const percentage = Math.min(100, (completedCredits / 142) * 100);
     
     // Update hero progress
     const heroProgressElement = document.getElementById('progressPercentHero');
     const heroProgressCircle = document.getElementById('progressCircleHero');
     
-    if (heroProgressElement) heroProgressElement.textContent = `${percentage}%`;
+    if (heroProgressElement) heroProgressElement.textContent = `${Math.round(percentage)}%`;
     
     if (heroProgressCircle) {
         const heroCircumference = 2 * Math.PI * 55;
         const heroOffset = heroCircumference - (percentage / 100 * heroCircumference);
+        heroProgressCircle.style.strokeDasharray = heroCircumference;
         heroProgressCircle.style.strokeDashoffset = heroOffset;
     }
 }
 
-function updateGradeDistribution() {
-    console.log('Updating grade distribution...');
-    
-    // Wait for Chart.js to load if not available
-    if (typeof Chart === 'undefined') {
-        console.log('Chart.js not loaded yet, retrying in 500ms...');
-        setTimeout(updateGradeDistribution, 500);
-        return;
-    }
-    
-    const gradeCounts = { S: 0, A: 0, B: 0, C: 0, D: 0, E: 0 };
-    
-    Object.values(userData.courses).forEach(data => {
-        if (data.grade && gradeCounts.hasOwnProperty(data.grade)) {
-            gradeCounts[data.grade]++;
-        }
-    });
-    
-    const ctx = document.getElementById('gradeChart');
-    if (!ctx) {
-        console.error('Grade chart canvas not found');
-        return;
-    }
-    
-    // Set canvas dimensions
-    ctx.width = 160;
-    ctx.height = 160;
-    
-    // Clear previous chart
-    if (window.gradeChart) {
-        window.gradeChart.destroy();
-    }
-    
-    const hasData = Object.values(gradeCounts).some(count => count > 0);
-    
-    if (hasData) {
-        const colors = ['#22c55e', '#3b82f6', '#06b6d4', '#f59e0b', '#f97316', '#ef4444'];
-        const filteredData = [];
-        const filteredLabels = [];
-        const filteredColors = [];
-        
-        Object.entries(gradeCounts).forEach(([grade, count], index) => {
-            if (count > 0) {
-                filteredData.push(count);
-                filteredLabels.push(grade);
-                filteredColors.push(colors[index]);
-            }
-        });
-        
-        try {
-            window.gradeChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: filteredLabels,
-                    datasets: [{
-                        data: filteredData,
-                        backgroundColor: filteredColors,
-                        borderWidth: 3,
-                        borderColor: '#0c1220',
-                        hoverBorderWidth: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: '#cbd5e1',
-                                padding: 12,
-                                font: { size: 11, weight: '500' },
-                                usePointStyle: true,
-                                pointStyle: 'circle'
-                            }
-                        }
-                    },
-                    elements: {
-                        arc: {
-                            borderRadius: 4
-                        }
-                    }
-                }
-            });
-            
-            console.log('Grade distribution chart created successfully');
-        } catch (error) {
-            console.error('Error creating grade distribution chart:', error);
-            showChartPlaceholder(ctx, 'Chart Error');
-        }
-    } else {
-        showChartPlaceholder(ctx, 'No grades yet');
-    }
-}
+// Grade distribution chart removed
 
 function showChartPlaceholder(ctx, message) {
     const chartCtx = ctx.getContext('2d');

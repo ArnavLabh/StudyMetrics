@@ -260,17 +260,18 @@
                     body: JSON.stringify({ username, pin })
                 });
                 
+                const data = await response.json();
+                
                 if (response.ok) {
-                    const data = await response.json();
                     localStorage.setItem('studymetrics_token', data.token);
                     registerText.textContent = 'Success!';
                     window.location.href = '/';
                 } else {
-                    const error = await response.json();
-                    alert(error.error || 'Registration failed');
+                    alert(data.error || 'Registration failed');
                 }
             } catch (error) {
-                alert('Network error. Please try again.');
+                console.error('Registration error:', error);
+                alert('Registration failed. Please try again.');
             } finally {
                 registerBtn.disabled = false;
                 registerText.textContent = 'Create Account';

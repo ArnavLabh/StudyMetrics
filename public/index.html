@@ -331,9 +331,7 @@
         }
 
         .layout-grid {
-            display: grid;
-            grid-template-columns: 1fr 340px;
-            gap: 2rem;
+            display: block;
         }
 
         .cgpa-top-section {
@@ -1715,64 +1713,7 @@
                     </section>
                 </div>
 
-                <!-- Analytics Sidebar -->
-                <aside class="analytics-sidebar">
 
-                    <!-- Quick Stats -->
-                    <div class="analytics-card">
-                        <h3 class="analytics-title">
-                            <i data-lucide="trending-up" class="analytics-icon"></i>
-                            Quick Stats
-                        </h3>
-                        <div class="section-cgpa-list">
-                            <div class="section-cgpa-item">
-                                <span class="section-cgpa-name">Foundation (32 credits)</span>
-                                <span class="section-cgpa-value" id="foundationCgpa">0.00</span>
-                            </div>
-                            <div class="section-cgpa-item">
-                                <span class="section-cgpa-name">Programming Diploma (27 credits)</span>
-                                <span class="section-cgpa-value" id="programmingCgpa">0.00</span>
-                            </div>
-                            <div class="section-cgpa-item">
-                                <span class="section-cgpa-name">Data Science Diploma (27 credits)</span>
-                                <span class="section-cgpa-value" id="dataScienceCgpa">0.00</span>
-                            </div>
-                            <div class="section-cgpa-item">
-                                <span class="section-cgpa-name">Degree (56 credits)</span>
-                                <span class="section-cgpa-value" id="degreeCgpa">0.00</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Credit Progress -->
-                    <div class="analytics-card">
-                        <h3 class="analytics-title">
-                            <i data-lucide="target" class="analytics-icon"></i>
-                            Credit Progress
-                        </h3>
-                        <div class="progress-circle">
-                            <svg class="progress-svg" width="140" height="140">
-                                <circle class="progress-bg" cx="70" cy="70" r="70"></circle>
-                                <circle class="progress-fill" cx="70" cy="70" r="70" id="progressCircle"></circle>
-                            </svg>
-                            <div class="progress-text">
-                                <div class="progress-value" id="progressPercent">0%</div>
-                                <div class="progress-label">of 142<br>credits</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Grade Distribution -->
-                    <div class="analytics-card">
-                        <h3 class="analytics-title">
-                            <i data-lucide="pie-chart" class="analytics-icon"></i>
-                            Grade Distribution
-                        </h3>
-                        <div class="grade-chart">
-                            <canvas id="gradeChart"></canvas>
-                        </div>
-                    </div>
-                </aside>
             </div>
 
             <!-- Analytics Section -->
