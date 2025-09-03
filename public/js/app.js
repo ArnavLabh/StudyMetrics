@@ -2307,31 +2307,52 @@ async function saveUserDataWithRetry(showNotification = false, retries = 3) {
 }
 
 async function manualSave() {
+    if (!currentUser) {
+        showToast('Please login first', 'error');
+        return false;
+    }
+    
     updateSaveButtonState('saving');
     
     try {
         const token = getStoredToken();
+        if (!token) {
+            showToast('Authentication required', 'error');
+            return false;
+        }
+        
         const response = await fetch('/api/user/data', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ userData })
+            body: JSON.stringify({ 
+                userData: {
+                    courses: userData.courses || {},
+                    electives: userData.electives || [],
+                    dataScienceOptions: userData.dataScienceOptions || { analytics: true, project: true },
+                    targetCGPA: userData.targetCGPA || null,
+                    cgpaHistory: userData.cgpaHistory || []
+                }
+            })
         });
         
         if (response.ok) {
+            const result = await response.json();
             updateSaveButtonState('saved');
-            showToast('Data saved successfully!', 'success');
+            showToast('Data saved to database!', 'success');
             setTimeout(() => updateSaveButtonState('default'), 2000);
             return true;
         } else {
-            throw new Error('Save failed');
+            const error = await response.json();
+            throw new Error(error.message || 'Save failed');
         }
     } catch (error) {
+        console.error('Save error:', error);
         updateSaveButtonState('error');
-        showToast('Save failed', 'error');
-        setTimeout(() => updateSaveButtonState('default'), 2000);
+        showToast(`Save failed: ${error.message}`, 'error');
+        setTimeout(() => updateSaveButtonState('default'), 3000);
         return false;
     }
 }
