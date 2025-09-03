@@ -1,10 +1,19 @@
-// Check if Chart.js is loaded
+// Enhanced Chart.js loading check
 function ensureChartJS() {
-    if (typeof Chart === 'undefined') {
-        console.error('Chart.js not loaded. Please ensure the Chart.js CDN is included.');
-        return false;
+    return typeof Chart !== 'undefined';
+}
+
+// Initialize charts when Chart.js is ready
+function initializeChartsWhenReady() {
+    if (typeof Chart !== 'undefined') {
+        updateGradeDistribution();
+        if (document.getElementById('cgpaTrendChart')) {
+            updateCGPATrendChart();
+        }
+    } else {
+        // Retry after a short delay
+        setTimeout(initializeChartsWhenReady, 200);
     }
-    return true;
 }
 
 // Course Database with corrected credit structure
@@ -205,50 +214,78 @@ async function checkForUpdates() {
 
 function initializeApp() {
     console.log('Initializing app...');
-    const token = getStoredToken();
-    if (token) {
-        verifyAndLoadUser(token);
-    } else {
-        showLoginPage();
-    }
     
     setupEventListeners();
     initializeTimer();
     
-    // Ensure courses are rendered even if API calls fail
-    setTimeout(() => {
-        if (document.getElementById('mainApp').style.display !== 'none' && !userData.courses) {
-            console.log('Fallback: Rendering courses after timeout...');
-            userData = {
-                courses: {},
-                electives: [],
-                dataScienceOptions: { analytics: true, project: true },
-                targetCGPA: null,
-                cgpaHistory: []
-            };
-            renderAllCourses();
-        }
-    }, 3000); // 3 second fallback
+    const token = getStoredToken();
+    if (token && token.length > 10) {
+        console.log('Found stored token, verifying...');
+        verifyAndLoadUser(token);
+    } else {
+        console.log('No valid token found, showing login');
+        showLoginPage();
+    }
 }
 
-// Enhanced token management
+function initializeDefaultUserData() {
+    userData = {
+        courses: {},
+        electives: [],
+        dataScienceOptions: { analytics: true, project: true },
+        targetCGPA: null,
+        cgpaHistory: []
+    };
+    renderAllCourses();
+}
+
+// Enhanced token management with validation
 function getStoredToken() {
-    return localStorage.getItem('studymetrics_token') || sessionStorage.getItem('studymetrics_token');
+    const token = localStorage.getItem('studymetrics_token') || sessionStorage.getItem('studymetrics_token');
+    
+    // Basic token validation
+    if (token && token.length > 10 && token.includes('.')) {
+        try {
+            // Check if token is not expired (basic check)
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.exp && payload.exp * 1000 > Date.now()) {
+                return token;
+            } else {
+                console.log('Token expired, removing...');
+                removeStoredToken();
+                return null;
+            }
+        } catch (e) {
+            console.log('Invalid token format, removing...');
+            removeStoredToken();
+            return null;
+        }
+    }
+    
+    return null;
 }
 
 function storeToken(token, remember = true) {
+    if (!token || token.length < 10) {
+        console.error('Invalid token provided for storage');
+        return;
+    }
+    
     if (remember) {
         localStorage.setItem('studymetrics_token', token);
         sessionStorage.removeItem('studymetrics_token');
+        console.log('Token stored in localStorage');
     } else {
         sessionStorage.setItem('studymetrics_token', token);
         localStorage.removeItem('studymetrics_token');
+        console.log('Token stored in sessionStorage');
     }
 }
 
 function removeStoredToken() {
     localStorage.removeItem('studymetrics_token');
     sessionStorage.removeItem('studymetrics_token');
+    console.log('Tokens removed from storage');
 }
 
 function setupEventListeners() {
@@ -267,6 +304,11 @@ function setupEventListeners() {
 
     // Navigation
     setupNavigation();
+
+    // Save button
+    document.getElementById('saveBtn').addEventListener('click', () => {
+        manualSave();
+    });
 
     // Logout
     document.getElementById('logoutBtn').addEventListener('click', logout);
@@ -450,8 +492,9 @@ async function handleAuth(e) {
             
             showToast(isRegistering ? 'Account created successfully!' : 'Welcome back!', 'success');
         } else {
-            console.error('Authentication failed:', data);
-            showToast(data.message || 'Authentication failed', 'error');
+            const errorData = await response.json().catch(() => ({ message: 'Authentication failed' }));
+            console.error('Authentication failed:', errorData);
+            showToast(errorData.message || 'Authentication failed', 'error');
         }
     } catch (error) {
         console.error('Auth error:', error);
@@ -465,9 +508,16 @@ async function handleAuth(e) {
 async function verifyAndLoadUser(token) {
     try {
         console.log('Verifying user token...');
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
         const response = await fetch(`${API_BASE_URL}/auth/verify`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}` },
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
 
         if (response.ok) {
             const data = await response.json();
@@ -475,28 +525,23 @@ async function verifyAndLoadUser(token) {
             currentUser = data.user;
             showMainApp();
             
-            // Load user data in background, but render courses immediately
             loadUserData().catch(error => {
-                console.error('Failed to load user data, but continuing with empty data:', error);
-                // Ensure courses are rendered even if loadUserData fails
-                if (!userData.courses) {
-                    userData = {
-                        courses: {},
-                        electives: [],
-                        dataScienceOptions: { analytics: true, project: true },
-                        targetCGPA: null,
-                        cgpaHistory: []
-                    };
-                    renderAllCourses();
-                }
+                console.error('Failed to load user data, using defaults:', error);
+                initializeDefaultUserData();
             });
-        } else {
-            console.error('Token verification failed - response not ok:', response.status);
+        } else if (response.status === 401) {
+            console.log('Token expired or invalid, redirecting to login');
             removeStoredToken();
             showLoginPage();
+        } else {
+            throw new Error(`Verification failed: ${response.status}`);
         }
     } catch (error) {
-        console.error('Token verification failed:', error);
+        if (error.name === 'AbortError') {
+            console.error('Token verification timed out');
+        } else {
+            console.error('Token verification failed:', error);
+        }
         removeStoredToken();
         showLoginPage();
     }
@@ -529,11 +574,20 @@ function showMainApp() {
     
     if (avatar && welcome && currentUser) {
         avatar.textContent = currentUser.username[0].toUpperCase();
-        welcome.textContent = `Welcome back, ${currentUser.username}`;
+        welcome.textContent = `Welcome, ${currentUser.username}`;
     }
     
     startAutoSave();
-    populateTimerCourses();
+    
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+    
+    // Populate timer courses after user data is loaded
+    setTimeout(() => {
+        populateTimerCourses();
+    }, 100);
     
     // Ensure courses are rendered even if loadUserData fails
     if (!userData.courses) {
@@ -779,9 +833,10 @@ function renderAllCourses() {
         // Update all analytics after rendering
         updateAnalytics();
         
-        // Initialize charts after courses are rendered
+        // Initialize charts and progress circles after courses are rendered
         setTimeout(() => {
-            updateGradeDistribution();
+            initializeChartsWhenReady();
+            updateProgress();
         }, 100);
         
         console.log('All courses rendered successfully');
@@ -987,10 +1042,24 @@ function handleGradeChange(courseId, grade) {
     
     // Update analytics and save
     updateAnalytics();
-    saveUserData();
+    
+    // Auto-save with debouncing
+    clearTimeout(window.autoSaveTimeout);
+    window.autoSaveTimeout = setTimeout(async () => {
+        const success = await saveUserData(false);
+        if (success) {
+            console.log('Auto-save successful');
+        }
+    }, 2000);
     
     // Update CGPA history
     updateCGPAHistory();
+    
+    // Show visual feedback
+    updateSaveButtonState('saving');
+    setTimeout(() => {
+        updateSaveButtonState('default');
+    }, 1500);
 }
 
 // Global function for data science options (deprecated - now handled by course disabling)
@@ -1100,13 +1169,17 @@ function updateAnalytics() {
     
     calculateCGPA();
     updateProgress();
+    updateSectionCredits();
+    
+    // Update both hero and sidebar CGPA displays
+    updateHeroCGPA();
     
     // Update grade distribution chart with a small delay to ensure DOM is ready
     setTimeout(() => {
-        updateGradeDistribution();
+        if (ensureChartJS()) {
+            updateGradeDistribution();
+        }
     }, 50);
-    
-    updateSectionCredits();
 }
 
 function calculateCGPA() {
@@ -1170,13 +1243,9 @@ function calculateCGPA() {
         }
     });
     
-    // Update main CGPA
-    const cgpa = totalCredits > 0 ? (totalGradePoints / totalCredits).toFixed(2) : '0.00';
-    const cgpaElement = document.getElementById('mainCgpa');
-    const subtitleElement = document.getElementById('cgpaSubtitle');
-    
-    if (cgpaElement) cgpaElement.textContent = cgpa;
-    if (subtitleElement) subtitleElement.textContent = `${totalCredits} out of 142 credits completed`;
+    // Store calculated values for other functions
+    window.currentCGPA = totalCredits > 0 ? (totalGradePoints / totalCredits).toFixed(2) : '0.00';
+    window.currentCredits = totalCredits;
     
     // Update section CGPAs
     const sectionElements = {
@@ -1193,6 +1262,34 @@ function calculateCGPA() {
                 (sectionData.points / sectionData.credits).toFixed(2) : '0.00';
         }
     });
+    
+    // Update hero section CGPAs
+    const heroElements = {
+        foundationCgpaHero: sections.foundation,
+        programmingCgpaHero: sections.programming,
+        dataScienceCgpaHero: sections.dataScience,
+        degreeCgpaHero: sections.degree
+    };
+    
+    Object.entries(heroElements).forEach(([elementId, sectionData]) => {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = sectionData.credits > 0 ? 
+                (sectionData.points / sectionData.credits).toFixed(2) : '0.00';
+        }
+    });
+}
+
+function updateHeroCGPA() {
+    const cgpa = window.currentCGPA || '0.00';
+    const credits = window.currentCredits || 0;
+    
+    // Update hero CGPA display
+    const heroElement = document.getElementById('mainCgpaHero');
+    const heroSubtitle = document.getElementById('cgpaHeroSubtitle');
+    
+    if (heroElement) heroElement.textContent = cgpa;
+    if (heroSubtitle) heroSubtitle.textContent = `${credits} out of 142 credits completed`;
 }
 
 function updateProgress() {
@@ -1231,6 +1328,8 @@ function updateProgress() {
     });
     
     const percentage = Math.min(100, Math.round((completedCredits / 142) * 100));
+    
+    // Update sidebar progress
     const progressElement = document.getElementById('progressPercent');
     const progressCircle = document.getElementById('progressCircle');
     
@@ -1241,14 +1340,27 @@ function updateProgress() {
         const offset = circumference - (percentage / 100 * circumference);
         progressCircle.style.strokeDashoffset = offset;
     }
+    
+    // Update hero progress
+    const heroProgressElement = document.getElementById('progressPercentHero');
+    const heroProgressCircle = document.getElementById('progressCircleHero');
+    
+    if (heroProgressElement) heroProgressElement.textContent = `${percentage}%`;
+    
+    if (heroProgressCircle) {
+        const heroCircumference = 2 * Math.PI * 55;
+        const heroOffset = heroCircumference - (percentage / 100 * heroCircumference);
+        heroProgressCircle.style.strokeDashoffset = heroOffset;
+    }
 }
 
 function updateGradeDistribution() {
     console.log('Updating grade distribution...');
     
-    // Check if Chart.js is available
-    if (!ensureChartJS()) {
-        console.error('Cannot update grade distribution chart - Chart.js not available');
+    // Wait for Chart.js to load if not available
+    if (typeof Chart === 'undefined') {
+        console.log('Chart.js not loaded yet, retrying in 500ms...');
+        setTimeout(updateGradeDistribution, 500);
         return;
     }
     
@@ -1260,15 +1372,11 @@ function updateGradeDistribution() {
         }
     });
     
-    console.log('Grade counts:', gradeCounts);
-    
     const ctx = document.getElementById('gradeChart');
     if (!ctx) {
         console.error('Grade chart canvas not found');
         return;
     }
-    
-    const chartCtx = ctx.getContext('2d');
     
     // Clear previous chart
     if (window.gradeChart) {
@@ -1278,19 +1386,30 @@ function updateGradeDistribution() {
     const hasData = Object.values(gradeCounts).some(count => count > 0);
     
     if (hasData) {
-        // Use actual color values instead of CSS variables for better compatibility
-        const colors = ['#10b981', '#22d3ee', '#3b82f6', '#f59e0b', '#f97316', '#ef4444'];
+        const colors = ['#22c55e', '#3b82f6', '#06b6d4', '#f59e0b', '#f97316', '#ef4444'];
+        const filteredData = [];
+        const filteredLabels = [];
+        const filteredColors = [];
+        
+        Object.entries(gradeCounts).forEach(([grade, count], index) => {
+            if (count > 0) {
+                filteredData.push(count);
+                filteredLabels.push(grade);
+                filteredColors.push(colors[index]);
+            }
+        });
         
         try {
-            window.gradeChart = new Chart(chartCtx, {
+            window.gradeChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(gradeCounts),
+                    labels: filteredLabels,
                     datasets: [{
-                        data: Object.values(gradeCounts),
-                        backgroundColor: colors,
-                        borderWidth: 2,
-                        borderColor: '#0f172a'
+                        data: filteredData,
+                        backgroundColor: filteredColors,
+                        borderWidth: 3,
+                        borderColor: '#0c1220',
+                        hoverBorderWidth: 4
                     }]
                 },
                 options: {
@@ -1301,10 +1420,16 @@ function updateGradeDistribution() {
                             position: 'bottom',
                             labels: {
                                 color: '#cbd5e1',
-                                padding: 8,
-                                font: { size: 10 },
-                                usePointStyle: true
+                                padding: 12,
+                                font: { size: 11, weight: '500' },
+                                usePointStyle: true,
+                                pointStyle: 'circle'
                             }
+                        }
+                    },
+                    elements: {
+                        arc: {
+                            borderRadius: 4
                         }
                     }
                 }
@@ -1313,16 +1438,21 @@ function updateGradeDistribution() {
             console.log('Grade distribution chart created successfully');
         } catch (error) {
             console.error('Error creating grade distribution chart:', error);
+            showChartPlaceholder(ctx, 'Chart Error');
         }
     } else {
-        // Show placeholder for empty state
-        chartCtx.clearRect(0, 0, ctx.width, ctx.height);
-        chartCtx.fillStyle = '#94a3b8';
-        chartCtx.font = '12px Inter';
-        chartCtx.textAlign = 'center';
-        chartCtx.fillText('No grades yet', 80, 80);
-        console.log('Grade distribution chart shows empty state');
+        showChartPlaceholder(ctx, 'No grades yet');
     }
+}
+
+function showChartPlaceholder(ctx, message) {
+    const chartCtx = ctx.getContext('2d');
+    chartCtx.clearRect(0, 0, ctx.width, ctx.height);
+    chartCtx.fillStyle = '#94a3b8';
+    chartCtx.font = '14px Inter';
+    chartCtx.textAlign = 'center';
+    chartCtx.textBaseline = 'middle';
+    chartCtx.fillText(message, ctx.width / 2, ctx.height / 2);
 }
 
 function updateSectionCredits() {
@@ -1442,7 +1572,9 @@ function initializeAnalytics() {
     
     // Update charts with a small delay to ensure DOM is ready
     setTimeout(() => {
-        updateCGPATrendChart();
+        if (ensureChartJS()) {
+            updateCGPATrendChart();
+        }
         if (userData.targetCGPA) {
             const targetInput = document.getElementById('targetCgpaInput');
             if (targetInput) {
@@ -1456,9 +1588,9 @@ function initializeAnalytics() {
 function updateCGPATrendChart() {
     console.log('Updating CGPA trend chart...');
     
-    // Check if Chart.js is available
-    if (!ensureChartJS()) {
-        console.error('Cannot update CGPA trend chart - Chart.js not available');
+    if (typeof Chart === 'undefined') {
+        console.log('Chart.js not loaded yet, retrying in 500ms...');
+        setTimeout(updateCGPATrendChart, 500);
         return;
     }
     
@@ -1468,36 +1600,34 @@ function updateCGPATrendChart() {
         return;
     }
     
-    const chartCtx = ctx.getContext('2d');
-    
     // Clear previous chart
     if (window.cgpaTrendChart) {
         window.cgpaTrendChart.destroy();
     }
     
-    // Generate trend data from CGPA history
     const trendData = userData.cgpaHistory || [];
-    console.log('CGPA trend data:', trendData);
     
-    if (trendData.length > 0) {
-        // Use actual color values instead of CSS variables for better compatibility
+    if (trendData.length > 1) {
         try {
-            window.cgpaTrendChart = new Chart(chartCtx, {
+            const sortedData = [...trendData].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            
+            window.cgpaTrendChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: trendData.map((_, index) => `Update ${index + 1}`),
+                    labels: sortedData.map((entry, index) => `Update ${index + 1}`),
                     datasets: [{
                         label: 'CGPA',
-                        data: trendData.map(entry => parseFloat(entry.cgpa)),
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        data: sortedData.map(entry => parseFloat(entry.cgpa)),
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
                         borderWidth: 3,
                         fill: true,
                         tension: 0.4,
-                        pointBackgroundColor: '#3b82f6',
-                        pointBorderColor: 'white',
-                        pointBorderWidth: 2,
-                        pointRadius: 5
+                        pointBackgroundColor: '#6366f1',
+                        pointBorderColor: '#f8fafc',
+                        pointBorderWidth: 3,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
                     }]
                 },
                 options: {
@@ -1511,23 +1641,31 @@ function updateCGPATrendChart() {
                     scales: {
                         y: {
                             beginAtZero: false,
-                            min: Math.max(0, Math.min(...trendData.map(e => parseFloat(e.cgpa))) - 1),
+                            min: Math.max(0, Math.min(...sortedData.map(e => parseFloat(e.cgpa))) - 0.5),
                             max: 10,
                             grid: {
-                                color: '#475569'
+                                color: '#334155',
+                                lineWidth: 1
                             },
                             ticks: {
-                                color: '#cbd5e1'
+                                color: '#cbd5e1',
+                                font: { size: 12 }
                             }
                         },
                         x: {
                             grid: {
-                                color: '#475569'
+                                color: '#334155',
+                                lineWidth: 1
                             },
                             ticks: {
-                                color: '#cbd5e1'
+                                color: '#cbd5e1',
+                                font: { size: 12 }
                             }
                         }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
                 }
             });
@@ -1535,15 +1673,10 @@ function updateCGPATrendChart() {
             console.log('CGPA trend chart created successfully');
         } catch (error) {
             console.error('Error creating CGPA trend chart:', error);
+            showChartPlaceholder(ctx, 'Chart Error');
         }
     } else {
-        // Show placeholder
-        chartCtx.clearRect(0, 0, ctx.width, ctx.height);
-        chartCtx.fillStyle = '#94a3b8';
-        chartCtx.font = '16px Inter';
-        chartCtx.textAlign = 'center';
-        chartCtx.fillText('CGPA trend will appear as you add grades', ctx.width / 2, ctx.height / 2);
-        console.log('CGPA trend chart shows empty state');
+        showChartPlaceholder(ctx, 'CGPA trend will appear as you add grades');
     }
 }
 
@@ -2149,12 +2282,12 @@ function stopAutoSave() {
     }
 }
 
-async function saveUserData() {
-    if (!currentUser) return;
+async function saveUserData(showNotification = false) {
+    if (!currentUser) return false;
     
     try {
         const token = getStoredToken();
-        await fetch(`${API_BASE_URL}/user/data`, {
+        const response = await fetch(`${API_BASE_URL}/user/data`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -2162,8 +2295,65 @@ async function saveUserData() {
             },
             body: JSON.stringify({ userData })
         });
+        
+        if (response.ok) {
+            if (showNotification) {
+                showToast('Data saved successfully!', 'success');
+                updateSaveButtonState('saved');
+            }
+            return true;
+        } else {
+            throw new Error('Failed to save data');
+        }
     } catch (error) {
         console.error('Failed to save user data:', error);
+        if (showNotification) {
+            showToast('Failed to save data', 'error');
+            updateSaveButtonState('error');
+        }
+        return false;
+    }
+}
+
+async function manualSave() {
+    updateSaveButtonState('saving');
+    const success = await saveUserData(true);
+    
+    setTimeout(() => {
+        updateSaveButtonState('default');
+    }, 2000);
+    
+    return success;
+}
+
+function updateSaveButtonState(state) {
+    const saveBtn = document.getElementById('saveBtn');
+    const saveText = document.getElementById('saveText');
+    
+    if (!saveBtn || !saveText) return;
+    
+    saveBtn.className = 'save-btn';
+    
+    switch (state) {
+        case 'saving':
+            saveBtn.classList.add('saving');
+            saveText.textContent = 'Saving...';
+            saveBtn.disabled = true;
+            break;
+        case 'saved':
+            saveBtn.classList.add('saved');
+            saveText.textContent = 'Saved!';
+            saveBtn.disabled = false;
+            break;
+        case 'error':
+            saveBtn.style.background = 'var(--accent-error)';
+            saveText.textContent = 'Error';
+            saveBtn.disabled = false;
+            break;
+        default:
+            saveText.textContent = 'Save';
+            saveBtn.disabled = false;
+            saveBtn.style.background = '';
     }
 }
 
@@ -2292,15 +2482,40 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // Handle online/offline status
+function updateConnectionStatus() {
+    const status = document.getElementById('connectionStatus');
+    if (!status) return;
+    
+    if (navigator.onLine) {
+        status.textContent = 'Connected';
+        status.className = 'connection-status online';
+        setTimeout(() => {
+            status.classList.remove('show');
+        }, 2000);
+    } else {
+        status.textContent = 'Offline - Changes saved locally';
+        status.className = 'connection-status offline show';
+    }
+}
+
 window.addEventListener('online', () => {
+    updateConnectionStatus();
     showToast('Connection restored', 'success');
     if (currentUser) {
-        saveUserData(); // Sync any pending changes
+        saveUserData(false); // Sync any pending changes
     }
 });
 
 window.addEventListener('offline', () => {
-    showToast('You are offline. Changes will sync when connection is restored.', 'info');
+    updateConnectionStatus();
+    showToast('Working offline', 'info');
+});
+
+// Check initial connection status
+document.addEventListener('DOMContentLoaded', () => {
+    if (!navigator.onLine) {
+        updateConnectionStatus();
+    }
 });
 
 // Progressive Web App installation

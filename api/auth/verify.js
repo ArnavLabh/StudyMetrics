@@ -1,15 +1,11 @@
 const jwt = require('jsonwebtoken');
-const { Pool } = require('@vercel/postgres');
-
-const pool = new Pool({
-    connectionString: process.env.POSTGRES_URL
-});
+const { sql } = require('@vercel/postgres');
 
 module.exports = async (req, res) => {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
 
     if (req.method === 'OPTIONS') {
@@ -21,26 +17,31 @@ module.exports = async (req, res) => {
         return res.status(405).json({ message: 'Method not allowed' });
     }
 
-    const token = req.headers.authorization?.replace('Bearer ', '');
-
-    if (!token) {
-        return res.status(401).json({ message: 'No token provided' });
-    }
-
     try {
+        const token = req.headers.authorization?.replace('Bearer ', '');
+        
+        if (!token) {
+            return res.status(401).json({ message: 'No token provided' });
+        }
+
+        // Verify JWT token
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret-key');
         
-        // Get user info
-        const userResult = await pool.query(
-            'SELECT id, username, created_at FROM users WHERE id = $1 AND is_active = true',
-            [decoded.userId]
-        );
+        // Check if user still exists and is active
+        const userResult = await sql`
+            SELECT id, username, created_at, last_login, is_active 
+            FROM users 
+            WHERE id = ${decoded.userId} AND is_active = true
+        `;
 
         if (userResult.rows.length === 0) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(401).json({ message: 'User not found or inactive' });
         }
 
         const user = userResult.rows[0];
+
+        // Update last login
+        await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
 
         res.status(200).json({
             user: {
@@ -49,11 +50,18 @@ module.exports = async (req, res) => {
                 createdAt: user.created_at
             }
         });
+
     } catch (error) {
-        if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+        console.error('Token verification error:', error);
+        
+        if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ message: 'Invalid token' });
         }
-        console.error('Verify error:', error);
+        
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Token expired' });
+        }
+
         res.status(500).json({ message: 'Server error' });
     }
 };
