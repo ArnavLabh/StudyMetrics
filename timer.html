@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Timer - StudyMetrics</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <style>
+        body {
+            background: #0c1220;
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .timer-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .timer-card {
+            background: linear-gradient(145deg, #1e2a42 0%, #162033 100%);
+            border-radius: 1.5rem;
+            padding: 3rem;
+            border: 2px solid #334155;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .timer-display {
+            font-size: 5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .timer-status {
+            font-size: 1.25rem;
+            color: #cbd5e1;
+            margin-bottom: 2rem;
+        }
+        
+        .timer-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        
+        .timer-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .timer-btn.start { background: #10b981; color: white; }
+        .timer-btn.pause { background: #f59e0b; color: white; }
+        .timer-btn.reset { background: #ef4444; color: white; }
+        
+        .timer-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .timer-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .timer-settings {
+            background: linear-gradient(145deg, #1e2a42 0%, #162033 100%);
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 2px solid #334155;
+        }
+        
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0c1220;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            color: #f8fafc;
+            font-size: 0.875rem;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #6366f1;
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 2rem;
+            transition: all 0.2s ease;
+        }
+        
+        .back-btn:hover {
+            background: #4f46e5;
+            transform: translateY(-1px);
+        }
+        
+        .progress-ring {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 2rem;
+            position: relative;
+        }
+        
+        .progress-ring svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 8;
+        }
+        
+        .progress-ring .bg {
+            stroke: #334155;
+        }
+        
+        .progress-ring .progress {
+            stroke: #6366f1;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container">
+        <a href="index.html" class="back-btn">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Back to Dashboard
+        </a>
+        
+        <div class="timer-card">
+            <div class="progress-ring">
+                <svg>
+                    <circle class="bg" cx="100" cy="100" r="90"></circle>
+                    <circle class="progress" cx="100" cy="100" r="90" id="progressRing"></circle>
+                </svg>
+            </div>
+            
+            <div class="timer-display" id="timerDisplay">25:00</div>
+            <div class="timer-status" id="timerStatus">Ready to Study</div>
+            
+            <div class="timer-controls">
+                <button class="timer-btn start" id="startBtn">
+                    <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+                    Start
+                </button>
+                <button class="timer-btn pause" id="pauseBtn" disabled>
+                    <i data-lucide="pause" style="width: 16px; height: 16px;"></i>
+                    Pause
+                </button>
+                <button class="timer-btn reset" id="resetBtn">
+                    <i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i>
+                    Reset
+                </button>
+            </div>
+        </div>
+        
+        <div class="timer-settings">
+            <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i data-lucide="settings" style="width: 18px; height: 18px; color: #6366f1;"></i>
+                Timer Settings
+            </h3>
+            
+            <div class="settings-grid">
+                <div class="form-group">
+                    <label class="form-label">Study Duration (minutes)</label>
+                    <input type="number" class="form-input" id="studyDuration" value="25" min="1" max="120">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Break Duration (minutes)</label>
+                    <input type="number" class="form-input" id="breakDuration" value="5" min="1" max="30">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Select Course (Optional)</label>
+                    <select class="form-input" id="courseSelect">
+                        <option value="">Select a course...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Study Topic (Optional)</label>
+                    <input type="text" class="form-input" id="studyTopic" placeholder="What are you studying?">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Timer state
+        let timerState = {
+            isRunning: false,
+            isBreak: false,
+            timeLeft: 25 * 60,
+            studyDuration: 25 * 60,
+            breakDuration: 5 * 60,
+            interval: null
+        };
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            updateDisplay();
+            setupEventListeners();
+        });
+        
+        function setupEventListeners() {
+            document.getElementById('startBtn').addEventListener('click', startTimer);
+            document.getElementById('pauseBtn').addEventListener('click', pauseTimer);
+            document.getElementById('resetBtn').addEventListener('click', resetTimer);
+            
+            document.getElementById('studyDuration').addEventListener('change', updateSettings);
+            document.getElementById('breakDuration').addEventListener('change', updateSettings);
+        }
+        
+        function startTimer() {
+            timerState.isRunning = true;
+            updateButtons();
+            
+            timerState.interval = setInterval(() => {
+                timerState.timeLeft--;
+                updateDisplay();
+                
+                if (timerState.timeLeft <= 0) {
+                    completeSession();
+                }
+            }, 1000);
+        }
+        
+        function pauseTimer() {
+            timerState.isRunning = false;
+            clearInterval(timerState.interval);
+            updateButtons();
+        }
+        
+        function resetTimer() {
+            timerState.isRunning = false;
+            clearInterval(timerState.interval);
+            timerState.timeLeft = timerState.isBreak ? timerState.breakDuration : timerState.studyDuration;
+            updateDisplay();
+            updateButtons();
+        }
+        
+        function completeSession() {
+            clearInterval(timerState.interval);
+            timerState.isRunning = false;
+            timerState.isBreak = !timerState.isBreak;
+            timerState.timeLeft = timerState.isBreak ? timerState.breakDuration : timerState.studyDuration;
+            
+            updateDisplay();
+            updateButtons();
+            
+            // Show notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(`${timerState.isBreak ? 'Break' : 'Study'} time!`);
+            }
+        }
+        
+        function updateDisplay() {
+            const minutes = Math.floor(timerState.timeLeft / 60);
+            const seconds = timerState.timeLeft % 60;
+            
+            document.getElementById('timerDisplay').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('timerStatus').textContent = 
+                timerState.isBreak ? 'Break Time' : 'Study Session';
+            
+            // Update progress ring
+            const totalTime = timerState.isBreak ? timerState.breakDuration : timerState.studyDuration;
+            const progress = ((totalTime - timerState.timeLeft) / totalTime) * 100;
+            const circumference = 2 * Math.PI * 90;
+            const offset = circumference - (progress / 100 * circumference);
+            
+            const progressRing = document.getElementById('progressRing');
+            progressRing.style.strokeDasharray = circumference;
+            progressRing.style.strokeDashoffset = offset;
+        }
+        
+        function updateButtons() {
+            document.getElementById('startBtn').disabled = timerState.isRunning;
+            document.getElementById('pauseBtn').disabled = !timerState.isRunning;
+        }
+        
+        function updateSettings() {
+            const studyMin = parseInt(document.getElementById('studyDuration').value) || 25;
+            const breakMin = parseInt(document.getElementById('breakDuration').value) || 5;
+            
+            timerState.studyDuration = studyMin * 60;
+            timerState.breakDuration = breakMin * 60;
+            
+            if (!timerState.isRunning) {
+                timerState.timeLeft = timerState.isBreak ? timerState.breakDuration : timerState.studyDuration;
+                updateDisplay();
+            }
+        }
+        
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>

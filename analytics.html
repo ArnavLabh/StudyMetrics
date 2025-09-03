@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - StudyMetrics</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* Import main styles */
+        @import url('index.html');
+        
+        /* Analytics specific styles */
+        .analytics-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .analytics-card {
+            background: linear-gradient(145deg, #1e2a42 0%, #162033 100%);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 2px solid #334155;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #6366f1;
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 2rem;
+            transition: all 0.2s ease;
+        }
+        
+        .back-btn:hover {
+            background: #4f46e5;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body style="background: #0c1220; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+    <div class="analytics-container">
+        <a href="index.html" class="back-btn">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Back to Dashboard
+        </a>
+        
+        <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 2rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            📈 Analytics Dashboard
+        </h1>
+        
+        <div class="analytics-grid">
+            <div class="analytics-card">
+                <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="trending-up" style="width: 18px; height: 18px; color: #6366f1;"></i>
+                    CGPA Trend Over Time
+                </h3>
+                <div class="chart-container">
+                    <canvas id="cgpaTrendChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="analytics-card">
+                <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="pie-chart" style="width: 18px; height: 18px; color: #6366f1;"></i>
+                    Grade Distribution
+                </h3>
+                <div class="chart-container">
+                    <canvas id="gradeDistChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="analytics-card">
+                <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="target" style="width: 18px; height: 18px; color: #6366f1;"></i>
+                    Target CGPA Calculator
+                </h3>
+                <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem;">
+                    <input type="number" id="targetCgpaInput" placeholder="Target CGPA (e.g., 9.00)" 
+                           style="flex: 1; padding: 0.5rem; background: #0c1220; border: 1px solid #334155; border-radius: 0.5rem; color: white;">
+                    <button onclick="calculateTarget()" 
+                            style="padding: 0.5rem 1rem; background: #6366f1; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
+                        Calculate
+                    </button>
+                </div>
+                <div id="targetResult"></div>
+            </div>
+            
+            <div class="analytics-card">
+                <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="bar-chart" style="width: 18px; height: 18px; color: #6366f1;"></i>
+                    Section Performance
+                </h3>
+                <div class="chart-container">
+                    <canvas id="sectionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js?v=3.1.0"></script>
+    <script>
+        // Initialize analytics page
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            // Load user data and initialize charts
+            loadAnalyticsData();
+        });
+        
+        async function loadAnalyticsData() {
+            // This would load data from the main app or API
+            // For now, we'll use placeholder data
+            initializeAnalyticsCharts();
+        }
+        
+        function initializeAnalyticsCharts() {
+            // Initialize all charts here
+            console.log('Analytics charts initialized');
+        }
+        
+        function calculateTarget() {
+            const target = document.getElementById('targetCgpaInput').value;
+            const result = document.getElementById('targetResult');
+            
+            if (target) {
+                result.innerHTML = `<p style="color: #10b981;">Target CGPA: ${target} - Analysis will be implemented</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

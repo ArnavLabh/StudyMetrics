@@ -1,8 +1,8 @@
-const CACHE_NAME = 'studymetrics-v1';
+const CACHE_NAME = 'studymetrics-v3.1.0';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/app.js',
+  '/app.js?v=3.1.0',
   '/manifest.json',
   'https://cdn.jsdelivr.net/npm/chart.js'
 ];
@@ -12,10 +12,12 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
+        console.log('Opened cache:', CACHE_NAME);
         return cache.addAll(urlsToCache);
-    })
-);
+      })
+  );
+  // Force immediate activation
+  self.skipWaiting();
 });
 
 // Fetch event - serve from cache when offline
@@ -62,17 +64,19 @@ event.respondWith(
 
 // Activate event - clean up old caches
 self.addEventListener('activate', event => {
-const cacheWhitelist = [CACHE_NAME];
-
 event.waitUntil(
   caches.keys().then(cacheNames => {
     return Promise.all(
       cacheNames.map(cacheName => {
-        if (cacheWhitelist.indexOf(cacheName) === -1) {
+        if (cacheName !== CACHE_NAME) {
+          console.log('Deleting old cache:', cacheName);
           return caches.delete(cacheName);
         }
       })
     );
+  }).then(() => {
+    // Force refresh of all clients
+    return self.clients.claim();
   })
 );
 });

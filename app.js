@@ -392,29 +392,10 @@ function setupPinInputs() {
 }
 
 function setupNavigation() {
-    const navTabs = document.querySelectorAll('.nav-tab');
-    navTabs.forEach(tab => {
-        tab.addEventListener('click', (e) => {
-            e.preventDefault();
-            const section = tab.dataset.section;
-            switchSection(section);
-            
-            // Update URL without page reload
-            history.pushState(null, null, `#${section}`);
-        });
-    });
-
-    // Handle back/forward browser navigation
-    window.addEventListener('popstate', () => {
-        const hash = window.location.hash.slice(1) || 'dashboard';
-        switchSection(hash);
-    });
-
-    // Handle direct navigation
-    const initialSection = window.location.hash.slice(1) || 'dashboard';
-    if (['dashboard', 'analytics', 'timer'].includes(initialSection)) {
-        switchSection(initialSection);
-    }
+    // Set active navigation based on current page
+    handleNavigation();
+    
+    // No need for click handlers since we're using actual links now
 }
 
 function toggleAuthMode() {
@@ -968,51 +949,42 @@ function createCourseCard(course, section, index) {
         <div class="course-controls">
             <div class="credits-display">${course.credits} credits</div>
             <div class="grade-select-wrapper">
-                <div class="custom-dropdown ${grade ? `grade-${grade.toLowerCase()}` : ''}" data-course-id="${section}-${index}">
-                    <div class="dropdown-selected">
-                        <span class="selected-text">${grade || '-'}</span>
-                        <span class="dropdown-arrow">▼</span>
-                    </div>
-                    <div class="dropdown-options">
-                        <div class="dropdown-option" data-value="">-</div>
-                        <div class="dropdown-option" data-value="S">S</div>
-                        <div class="dropdown-option" data-value="A">A</div>
-                        <div class="dropdown-option" data-value="B">B</div>
-                        <div class="dropdown-option" data-value="C">C</div>
-                        <div class="dropdown-option" data-value="D">D</div>
-                        <div class="dropdown-option" data-value="E">E</div>
-                    </div>
+                <div class="grade-selector ${grade ? `grade-${grade.toLowerCase()} has-selection` : ''}" data-course-id="${section}-${index}">
+                    <button class="grade-option clear ${!grade ? 'selected' : ''}" data-value="">-</button>
+                    <button class="grade-option grade-s ${grade === 'S' ? 'selected' : ''}" data-value="S">S</button>
+                    <button class="grade-option grade-a ${grade === 'A' ? 'selected' : ''}" data-value="A">A</button>
+                    <button class="grade-option grade-b ${grade === 'B' ? 'selected' : ''}" data-value="B">B</button>
+                    <button class="grade-option grade-c ${grade === 'C' ? 'selected' : ''}" data-value="C">C</button>
+                    <button class="grade-option grade-d ${grade === 'D' ? 'selected' : ''}" data-value="D">D</button>
+                    <button class="grade-option grade-e ${grade === 'E' ? 'selected' : ''}" data-value="E">E</button>
                 </div>
             </div>
             ${removeBtn}
         </div>
     `;
     
-    // Add custom dropdown functionality
-    const dropdown = div.querySelector('.custom-dropdown');
-    const selectedText = dropdown.querySelector('.selected-text');
-    const options = dropdown.querySelectorAll('.dropdown-option');
+    // Add grade selector functionality
+    const gradeSelector = div.querySelector('.grade-selector');
+    const gradeOptions = gradeSelector.querySelectorAll('.grade-option');
     
-    options.forEach(option => {
-        option.addEventListener('click', () => {
+    gradeOptions.forEach(option => {
+        option.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
             const value = option.dataset.value;
-            selectedText.textContent = value || '-';
-            dropdown.className = `custom-dropdown ${value ? `grade-${value.toLowerCase()}` : ''}`;
-            handleGradeChange(dropdown.dataset.courseId, value);
+            const courseId = gradeSelector.dataset.courseId;
+            
+            // Update visual state
+            gradeOptions.forEach(opt => opt.classList.remove('selected'));
+            option.classList.add('selected');
+            
+            // Update selector class
+            gradeSelector.className = `grade-selector ${value ? `grade-${value.toLowerCase()} has-selection` : ''}`;
+            
+            // Handle grade change
+            handleGradeChange(courseId, value);
         });
-    });
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!dropdown.contains(e.target)) {
-            dropdown.classList.remove('open');
-        }
-    });
-    
-    // Toggle dropdown
-    dropdown.querySelector('.dropdown-selected').addEventListener('click', (e) => {
-        e.stopPropagation();
-        dropdown.classList.toggle('open');
     });
     
     return div;
@@ -1025,14 +997,16 @@ function handleGradeChange(courseId, grade) {
     
     userData.courses[courseId].grade = grade;
     
-    // Update custom dropdown styling
-    const dropdown = document.querySelector(`[data-course-id="${courseId}"]`);
-    if (dropdown) {
-        dropdown.className = `custom-dropdown ${grade ? `grade-${grade.toLowerCase()}` : ''}`;
-        const selectedText = dropdown.querySelector('.selected-text');
-        if (selectedText) {
-            selectedText.textContent = grade || '-';
-        }
+    // Update grade selector styling
+    const gradeSelector = document.querySelector(`[data-course-id="${courseId}"]`);
+    if (gradeSelector) {
+        gradeSelector.className = `grade-selector ${grade ? `grade-${grade.toLowerCase()} has-selection` : ''}`;
+        
+        // Update selected option
+        const options = gradeSelector.querySelectorAll('.grade-option');
+        options.forEach(opt => {
+            opt.classList.toggle('selected', opt.dataset.value === grade);
+        });
     }
     
     // Update data science course states if needed
@@ -1378,6 +1352,10 @@ function updateGradeDistribution() {
         return;
     }
     
+    // Set canvas dimensions
+    ctx.width = 160;
+    ctx.height = 160;
+    
     // Clear previous chart
     if (window.gradeChart) {
         window.gradeChart.destroy();
@@ -1447,12 +1425,17 @@ function updateGradeDistribution() {
 
 function showChartPlaceholder(ctx, message) {
     const chartCtx = ctx.getContext('2d');
-    chartCtx.clearRect(0, 0, ctx.width, ctx.height);
+    
+    // Set canvas size
+    ctx.width = 160;
+    ctx.height = 160;
+    
+    chartCtx.clearRect(0, 0, 160, 160);
     chartCtx.fillStyle = '#94a3b8';
-    chartCtx.font = '14px Inter';
+    chartCtx.font = '12px Inter';
     chartCtx.textAlign = 'center';
     chartCtx.textBaseline = 'middle';
-    chartCtx.fillText(message, ctx.width / 2, ctx.height / 2);
+    chartCtx.fillText(message, 80, 80);
 }
 
 function updateSectionCredits() {
@@ -1517,37 +1500,14 @@ function updateSectionCredits() {
     });
 }
 
-function switchSection(section) {
-    // Update nav tabs
+// Navigation now handled by separate pages
+function handleNavigation() {
+    // Set active nav tab based on current page
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     document.querySelectorAll('.nav-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.section === section);
+        const href = tab.getAttribute('href');
+        tab.classList.toggle('active', href === currentPage);
     });
-    
-    // Hide all sections
-    document.querySelectorAll('[id$="Section"]').forEach(content => {
-        content.style.display = 'none';
-    });
-    
-    // Show selected section
-    const targetSection = document.getElementById(`${section}Section`);
-    if (targetSection) {
-        targetSection.style.display = 'block';
-        targetSection.classList.add('fade-in');
-    }
-    
-    // Special handling for different sections
-    if (section === 'analytics') {
-        // Add a small delay to ensure the section is visible before initializing charts
-        setTimeout(() => {
-            initializeAnalytics();
-        }, 100);
-    } else if (section === 'timer') {
-        updateTimerDisplay();
-        loadTimerHistory();
-    }
-    
-    // Scroll to top smoothly
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function initializeAnalytics() {
