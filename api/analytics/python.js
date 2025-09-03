@@ -14,7 +14,7 @@ module.exports = async (req, res) => {
         jwt.verify(token, process.env.JWT_SECRET || 'dev-secret-key');
         
         const { userData } = req.body;
-        const python = spawn('python', ['analytics.py', JSON.stringify(userData)]);
+        const python = spawn('python', ['src/analytics.py', JSON.stringify(userData)]);
         
         let output = '';
         python.stdout.on('data', (data) => output += data);

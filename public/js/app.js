@@ -532,10 +532,7 @@ async function verifyAndLoadUser(token) {
 }
 
 function showLoginPage() {
-    document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('loginPage').style.display = 'flex';
-    document.getElementById('mainApp').style.display = 'none';
-    document.body.style.overflow = 'hidden';
+    window.location.href = '/login';
 }
 
 function showMainApp() {
@@ -969,26 +966,22 @@ function createCourseCard(course, section, index) {
     `;
     
     // Add grade selector functionality
-    const gradeSelector = div.querySelector('.grade-selector');
-    const gradeOptions = gradeSelector.querySelectorAll('.grade-option');
+    const gradeContainer = div.querySelector('.grade-buttons-row');
+    const gradeButtons = gradeContainer.querySelectorAll('.grade-btn');
     
-    gradeOptions.forEach(option => {
-        option.addEventListener('click', (e) => {
+    gradeButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
             e.preventDefault();
-            e.stopPropagation();
             
-            const value = option.dataset.value;
-            const courseId = gradeSelector.dataset.courseId;
+            const grade = btn.dataset.grade;
+            const courseId = gradeContainer.dataset.courseId;
             
             // Update visual state
-            gradeOptions.forEach(opt => opt.classList.remove('selected'));
-            option.classList.add('selected');
-            
-            // Update selector class
-            gradeSelector.className = `grade-selector ${value ? `grade-${value.toLowerCase()} has-selection` : ''}`;
+            gradeButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
             
             // Handle grade change
-            handleGradeChange(courseId, value);
+            handleGradeChange(courseId, grade);
         });
     });
     
@@ -2315,13 +2308,32 @@ async function saveUserDataWithRetry(showNotification = false, retries = 3) {
 
 async function manualSave() {
     updateSaveButtonState('saving');
-    const success = await saveUserDataWithRetry(true);
     
-    setTimeout(() => {
-        updateSaveButtonState('default');
-    }, 2000);
-    
-    return success;
+    try {
+        const token = getStoredToken();
+        const response = await fetch('/api/user/data', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ userData })
+        });
+        
+        if (response.ok) {
+            updateSaveButtonState('saved');
+            showToast('Data saved successfully!', 'success');
+            setTimeout(() => updateSaveButtonState('default'), 2000);
+            return true;
+        } else {
+            throw new Error('Save failed');
+        }
+    } catch (error) {
+        updateSaveButtonState('error');
+        showToast('Save failed', 'error');
+        setTimeout(() => updateSaveButtonState('default'), 2000);
+        return false;
+    }
 }
 
 function updateSaveButtonState(state) {

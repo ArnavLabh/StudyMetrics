@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - StudyMetrics</title>
+    <style>
+        :root {
+            --bg-primary: #0c1220;
+            --bg-card: #1e2a42;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --accent-primary: #6366f1;
+            --border-primary: #334155;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        
+        .login-card {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid var(--border-primary);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .form-button {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .pin-inputs {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        
+        .pin-input {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1 style="text-align: center; margin-bottom: 2rem;">Login to StudyMetrics</h1>
+        
+        <form id="loginForm">
+            <input type="text" class="form-input" id="username" placeholder="Username" required>
+            
+            <div class="pin-inputs">
+                <input type="password" class="form-input pin-input" maxlength="1" required>
+                <input type="password" class="form-input pin-input" maxlength="1" required>
+                <input type="password" class="form-input pin-input" maxlength="1" required>
+                <input type="password" class="form-input pin-input" maxlength="1" required>
+            </div>
+            
+            <button type="submit" class="form-button">Login</button>
+        </form>
+        
+        <p style="text-align: center; margin-top: 1rem;">
+            Don't have an account? <a href="register.html" style="color: var(--accent-primary);">Register</a>
+        </p>
+    </div>
+    
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const pins = document.querySelectorAll('.pin-input');
+            const pin = Array.from(pins).map(p => p.value).join('');
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, pin })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('studymetrics_token', data.token);
+                    window.location.href = '/';
+                } else {
+                    alert('Login failed');
+                }
+            } catch (error) {
+                alert('Login error');
+            }
+        });
+    </script>
+</body>
+</html>

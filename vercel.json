@@ -1,9 +1,29 @@
 {
   "version": 2,
   "buildCommand": "echo 'No build required'",
-  "outputDirectory": ".",
+  "outputDirectory": "public",
   "framework": null,
   "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/register",
+      "destination": "/register.html"
+    },
+    {
+      "source": "/analytics",
+      "destination": "/analytics.html"
+    },
+    {
+      "source": "/timer",
+      "destination": "/timer.html"
+    },
     {
       "source": "/api/:path*",
       "destination": "/api/:path*"
@@ -32,7 +52,7 @@
       ]
     },
     {
-      "source": "/service-worker.js",
+      "source": "/public/service-worker.js",
       "headers": [
         {
           "key": "Cache-Control",
