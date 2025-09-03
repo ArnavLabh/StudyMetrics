@@ -61,11 +61,11 @@ const courseDatabase = {
             optionalCourses: [
                 { 
                     primary: { name: "Business Analytics", code: "BSMS2002", credits: 4 },
-                    alternative: { name: "Introduction to Deep Learning", code: "BSCS2009", credits: 4 }
+                    alternative: { name: "Introduction to GenAI and Deep Learning", code: "BSCS2009", credits: 4 }
                 },
                 { 
                     primary: { name: "Business Data Management - Project", code: "BSMS2001P", credits: 2 },
-                    alternative: { name: "Introduction to Deep Learning - Project", code: "BSCS2009P", credits: 2 }
+                    alternative: { name: "Introduction to GenAI and Deep Learning - Project", code: "BSCS2009P", credits: 2 }
                 }
             ]
         }
@@ -476,9 +476,9 @@ async function handleAuth(e) {
             
             showToast(isRegistering ? 'Account created successfully!' : 'Welcome back!', 'success');
         } else {
-            const errorData = await response.json().catch(() => ({ message: 'Authentication failed' }));
+            const errorData = await response.json().catch(() => ({ error: 'Authentication failed' }));
             console.error('Authentication failed:', errorData);
-            showToast(errorData.message || 'Authentication failed', 'error');
+            showToast(errorData.error || errorData.message || 'Authentication failed', 'error');
         }
     } catch (error) {
         console.error('Auth error:', error);
@@ -1025,17 +1025,16 @@ function handleGradeChange(courseId, grade) {
     // Auto-save with debouncing and retry logic
     clearTimeout(window.autoSaveTimeout);
     window.autoSaveTimeout = setTimeout(async () => {
-        const success = await saveUserDataWithRetry(false);
-        if (success) {
-            console.log('Auto-save successful');
-            updateSaveButtonState('saved');
-            setTimeout(() => updateSaveButtonState('default'), 1000);
-        } else {
-            console.error('Auto-save failed');
-            updateSaveButtonState('error');
-            setTimeout(() => updateSaveButtonState('default'), 2000);
+        try {
+            const success = await saveUserDataWithRetry(false);
+            if (success) {
+                console.log('Auto-save successful');
+                localStorage.setItem('studymetrics_last_save', Date.now().toString());
+            }
+        } catch (error) {
+            console.error('Auto-save failed:', error);
         }
-    }, 1500);
+    }, 1000);
     
     // Update CGPA history
     updateCGPAHistory();

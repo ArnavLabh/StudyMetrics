@@ -505,47 +505,48 @@
             text-align: center;
         }
 
-        /* Modern Grade Selector */
+        /* Modern Grade Selector - Fixed Layout */
         .grade-select-wrapper {
             position: relative;
-            min-width: 280px;
+            width: 280px;
             height: 48px;
+            flex-shrink: 0;
         }
 
         .grade-selector {
-            display: flex;
-            gap: 0.25rem;
-            padding: 0.375rem;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            padding: 4px;
             background: var(--bg-primary);
             border: 2px solid var(--border-primary);
             border-radius: 0.75rem;
-            transition: all 0.3s ease;
-            height: 100%;
-            width: 100%;
             box-sizing: border-box;
         }
 
         .grade-selector:hover {
             border-color: var(--border-accent);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
 
         .grade-option {
-            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            text-align: center;
             font-size: 0.75rem;
             font-weight: 700;
             color: var(--text-muted);
             background: var(--bg-secondary);
             border: 1px solid var(--border-primary);
-            border-radius: 0.5rem;
+            border-radius: 0.375rem;
             cursor: pointer;
             transition: all 0.2s ease;
-            min-width: 32px;
-            height: 32px;
+            height: 100%;
+            width: 100%;
             box-sizing: border-box;
         }
 
@@ -559,7 +560,6 @@
             color: white;
             background: var(--accent-primary);
             border-color: var(--accent-primary);
-            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
         }
 
         .grade-option.grade-s.selected { background: var(--grade-s); }
