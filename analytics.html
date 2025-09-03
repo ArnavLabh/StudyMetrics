@@ -13,8 +13,19 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        /* Import main styles */
-        @import url('index.html');
+        /* Base styles */
+        :root {
+            --bg-primary: #0c1220;
+            --bg-secondary: #162033;
+            --bg-card: #1e2a42;
+            --bg-hover: #2a3651;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --accent-primary: #6366f1;
+            --border-primary: #334155;
+            --border-secondary: #475569;
+        }
         
         /* Analytics specific styles */
         .analytics-container {
@@ -136,23 +147,191 @@
             loadAnalyticsData();
         });
         
+        // Get user data from localStorage or API
+        let userData = JSON.parse(localStorage.getItem('studymetrics_userdata') || '{}');
+        
         async function loadAnalyticsData() {
-            // This would load data from the main app or API
-            // For now, we'll use placeholder data
+            try {
+                const token = localStorage.getItem('studymetrics_token');
+                if (token) {
+                    const response = await fetch('/api/user/data', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        userData = data.userData || {};
+                    }
+                }
+            } catch (error) {
+                console.log('Using offline data');
+            }
             initializeAnalyticsCharts();
         }
         
         function initializeAnalyticsCharts() {
-            // Initialize all charts here
-            console.log('Analytics charts initialized');
+            if (typeof Chart === 'undefined') {
+                setTimeout(initializeAnalyticsCharts, 500);
+                return;
+            }
+            
+            createCGPATrendChart();
+            createGradeDistChart();
+            createSectionChart();
+        }
+        
+        function createCGPATrendChart() {
+            const ctx = document.getElementById('cgpaTrendChart');
+            const history = userData.cgpaHistory || [];
+            
+            if (history.length > 1) {
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: history.map((_, i) => `Update ${i + 1}`),
+                        datasets: [{
+                            label: 'CGPA',
+                            data: history.map(h => parseFloat(h.cgpa)),
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: false, max: 10, grid: { color: '#334155' }, ticks: { color: '#cbd5e1' } },
+                            x: { grid: { color: '#334155' }, ticks: { color: '#cbd5e1' } }
+                        }
+                    }
+                });
+            } else {
+                ctx.getContext('2d').fillText('Add more grades to see trend', 200, 150);
+            }
+        }
+        
+        function createGradeDistChart() {
+            const ctx = document.getElementById('gradeDistChart');
+            const grades = { S: 0, A: 0, B: 0, C: 0, D: 0, E: 0 };
+            
+            Object.values(userData.courses || {}).forEach(course => {
+                if (course.grade && grades.hasOwnProperty(course.grade)) {
+                    grades[course.grade]++;
+                }
+            });
+            
+            const hasData = Object.values(grades).some(count => count > 0);
+            
+            if (hasData) {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(grades).filter(g => grades[g] > 0),
+                        datasets: [{
+                            data: Object.values(grades).filter(count => count > 0),
+                            backgroundColor: ['#22c55e', '#3b82f6', '#06b6d4', '#f59e0b', '#f97316', '#ef4444']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#cbd5e1', padding: 12 }
+                            }
+                        }
+                    }
+                });
+            } else {
+                ctx.getContext('2d').fillText('No grades yet', 200, 150);
+            }
+        }
+        
+        function createSectionChart() {
+            const ctx = document.getElementById('sectionChart');
+            const sections = { Foundation: 0, Programming: 0, 'Data Science': 0, Degree: 0 };
+            
+            Object.entries(userData.courses || {}).forEach(([courseId, data]) => {
+                if (data.grade) {
+                    const [section] = courseId.split('-');
+                    if (section === 'foundation') sections.Foundation++;
+                    else if (section === 'programming') sections.Programming++;
+                    else if (section === 'dataScience') sections['Data Science']++;
+                    else if (section === 'degreeCore' || section === 'elective') sections.Degree++;
+                }
+            });
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(sections),
+                    datasets: [{
+                        label: 'Completed Courses',
+                        data: Object.values(sections),
+                        backgroundColor: '#6366f1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#cbd5e1' } },
+                        x: { grid: { color: '#334155' }, ticks: { color: '#cbd5e1' } }
+                    }
+                }
+            });
         }
         
         function calculateTarget() {
-            const target = document.getElementById('targetCgpaInput').value;
+            const target = parseFloat(document.getElementById('targetCgpaInput').value);
             const result = document.getElementById('targetResult');
             
-            if (target) {
-                result.innerHTML = `<p style="color: #10b981;">Target CGPA: ${target} - Analysis will be implemented</p>`;
+            if (!target || target < 0 || target > 10) {
+                result.innerHTML = '<p style="color: #ef4444;">Please enter a valid CGPA (0-10)</p>';
+                return;
+            }
+            
+            // Calculate current stats
+            let totalPoints = 0, totalCredits = 0;
+            Object.entries(userData.courses || {}).forEach(([courseId, data]) => {
+                if (data.grade) {
+                    const gradePoints = { S: 10, A: 9, B: 8, C: 7, D: 6, E: 4 }[data.grade] || 0;
+                    const credits = 4; // Simplified
+                    totalPoints += gradePoints * credits;
+                    totalCredits += credits;
+                }
+            });
+            
+            const currentCGPA = totalCredits > 0 ? totalPoints / totalCredits : 0;
+            const remainingCredits = 142 - totalCredits;
+            
+            if (remainingCredits <= 0) {
+                result.innerHTML = '<p style="color: #10b981;">🎉 All credits completed!</p>';
+                return;
+            }
+            
+            const requiredPoints = target * (totalCredits + remainingCredits) - totalPoints;
+            const requiredAvg = requiredPoints / remainingCredits;
+            
+            if (requiredAvg > 10) {
+                result.innerHTML = '<p style="color: #ef4444;">❌ Target not achievable with remaining credits</p>';
+            } else if (requiredAvg < 4) {
+                result.innerHTML = '<p style="color: #10b981;">✅ Target easily achievable!</p>';
+            } else {
+                result.innerHTML = `
+                    <div style="color: #10b981; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 0.5rem;">
+                        <strong>📊 Analysis:</strong><br>
+                        Current CGPA: ${currentCGPA.toFixed(2)}<br>
+                        Target CGPA: ${target}<br>
+                        Required average in remaining ${Math.ceil(remainingCredits/4)} courses: ${requiredAvg.toFixed(2)}<br>
+                        <small>Recommendation: Aim for ${requiredAvg > 8 ? 'A grades' : requiredAvg > 7 ? 'B grades' : 'C grades or better'}</small>
+                    </div>
+                `;
             }
         }
     </script>

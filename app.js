@@ -529,6 +529,7 @@ async function verifyAndLoadUser(token) {
 }
 
 function showLoginPage() {
+    document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('loginPage').style.display = 'flex';
     document.getElementById('mainApp').style.display = 'none';
     document.body.style.overflow = 'hidden';
@@ -545,7 +546,8 @@ function showMainApp() {
         return;
     }
     
-    loginPage.style.display = 'none';
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('loginPage').style.display = 'none';
     mainApp.style.display = 'block';
     document.body.style.overflow = 'auto';
     

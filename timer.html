@@ -91,6 +91,35 @@
             border-radius: 1rem;
             padding: 2rem;
             border: 2px solid #334155;
+            margin-bottom: 2rem;
+        }
+        
+        .history-section {
+            background: linear-gradient(145deg, #1e2a42 0%, #162033 100%);
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 2px solid #334155;
+        }
+        
+        .history-item {
+            background: #0c1220;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid #6366f1;
+        }
+        
+        .history-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .history-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+            color: #94a3b8;
+            margin-top: 0.5rem;
         }
         
         .settings-grid {
@@ -205,6 +234,10 @@
                     <i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i>
                     Reset
                 </button>
+                <button class="timer-btn" id="endBtn" style="background: #8b5cf6; display: none;">
+                    <i data-lucide="square" style="width: 16px; height: 16px;"></i>
+                    End Session
+                </button>
             </div>
         </div>
         
@@ -238,6 +271,16 @@
                 </div>
             </div>
         </div>
+        
+        <div class="history-section">
+            <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i data-lucide="clock" style="width: 18px; height: 18px; color: #6366f1;"></i>
+                Study History
+            </h3>
+            <div id="studyHistory">
+                <p style="color: #94a3b8; text-align: center; padding: 2rem;">No study sessions yet. Start your first session!</p>
+            </div>
+        </div>
     </div>
     
     <script>
@@ -265,9 +308,86 @@
             document.getElementById('startBtn').addEventListener('click', startTimer);
             document.getElementById('pauseBtn').addEventListener('click', pauseTimer);
             document.getElementById('resetBtn').addEventListener('click', resetTimer);
+            document.getElementById('endBtn').addEventListener('click', endSession);
             
             document.getElementById('studyDuration').addEventListener('change', updateSettings);
             document.getElementById('breakDuration').addEventListener('change', updateSettings);
+            
+            populateCourses();
+            loadHistory();
+        }
+        
+        function populateCourses() {
+            const select = document.getElementById('courseSelect');
+            const courses = [
+                { code: 'BSMA1001', name: 'Mathematics for Data Science I' },
+                { code: 'BSMA1002', name: 'Statistics for Data Science I' },
+                { code: 'BSCS1001', name: 'Computational Thinking' },
+                { code: 'BSHS1001', name: 'English I' },
+                { code: 'BSCS1002', name: 'Programming in Python' },
+                { code: 'BSCS2001', name: 'Database Management Systems' },
+                { code: 'BSCS2002', name: 'Programming, Data Structures and Algorithms' },
+                { code: 'BSCS2004', name: 'Machine Learning Foundations' }
+            ];
+            
+            courses.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course.code;
+                option.textContent = `${course.code} - ${course.name}`;
+                select.appendChild(option);
+            });
+        }
+        
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('timer_history') || '[]');
+            displayHistory(history);
+        }
+        
+        function saveSession(session) {
+            const history = JSON.parse(localStorage.getItem('timer_history') || '[]');
+            history.unshift(session);
+            if (history.length > 10) history.pop();
+            localStorage.setItem('timer_history', JSON.stringify(history));
+            displayHistory(history);
+        }
+        
+        function displayHistory(history) {
+            const container = document.getElementById('studyHistory');
+            
+            if (history.length === 0) {
+                container.innerHTML = '<p style="color: #94a3b8; text-align: center; padding: 2rem;">No study sessions yet. Start your first session!</p>';
+                return;
+            }
+            
+            container.innerHTML = history.map(session => `
+                <div class="history-item">
+                    <div style="font-weight: 600; color: #f8fafc;">
+                        ${session.type === 'study' ? '📚' : '☕'} ${session.type === 'study' ? 'Study' : 'Break'} Session
+                    </div>
+                    ${session.course ? `<div style="color: #6366f1; font-size: 0.875rem;">${session.course}</div>` : ''}
+                    ${session.topic ? `<div style="color: #cbd5e1; font-size: 0.875rem;">${session.topic}</div>` : ''}
+                    <div class="history-meta">
+                        <span>${Math.floor(session.duration / 60)} minutes</span>
+                        <span>${new Date(session.date).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function endSession() {
+            if (timerState.isRunning) {
+                const session = {
+                    type: timerState.isBreak ? 'break' : 'study',
+                    duration: (timerState.isBreak ? timerState.breakDuration : timerState.studyDuration) - timerState.timeLeft,
+                    course: document.getElementById('courseSelect').value,
+                    topic: document.getElementById('studyTopic').value,
+                    date: new Date().toISOString(),
+                    completed: false
+                };
+                
+                saveSession(session);
+                resetTimer();
+            }
         }
         
         function startTimer() {
@@ -299,6 +419,17 @@
         }
         
         function completeSession() {
+            const session = {
+                type: timerState.isBreak ? 'break' : 'study',
+                duration: timerState.isBreak ? timerState.breakDuration : timerState.studyDuration,
+                course: document.getElementById('courseSelect').value,
+                topic: document.getElementById('studyTopic').value,
+                date: new Date().toISOString(),
+                completed: true
+            };
+            
+            saveSession(session);
+            
             clearInterval(timerState.interval);
             timerState.isRunning = false;
             timerState.isBreak = !timerState.isBreak;
@@ -309,7 +440,7 @@
             
             // Show notification
             if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(`${timerState.isBreak ? 'Break' : 'Study'} time!`);
+                new Notification(`${session.type === 'study' ? 'Study' : 'Break'} session completed!`);
             }
         }
         
@@ -337,6 +468,7 @@
         function updateButtons() {
             document.getElementById('startBtn').disabled = timerState.isRunning;
             document.getElementById('pauseBtn').disabled = !timerState.isRunning;
+            document.getElementById('endBtn').style.display = timerState.isRunning ? 'flex' : 'none';
         }
         
         function updateSettings() {
