@@ -1,18 +1,18 @@
-const { Pool } = require('pg');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-const pool = new Pool({
-    user: process.env.DB_USER || 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    database: process.env.DB_NAME || 'studymetrics',
-    password: process.env.DB_PASSWORD || 'password',
-    port: process.env.DB_PORT || 5432,
-});
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const { sql } = require('@vercel/postgres');
 
 module.exports = async (req, res) => {
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -32,32 +32,26 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Username must be between 3 and 20 characters' });
         }
 
-        // Check if username already exists
-        const existingUser = await pool.query(
-            'SELECT id FROM users WHERE username = $1',
-            [username.toLowerCase()]
-        );
+        const existingUser = await sql`SELECT id FROM users WHERE username = ${username.toLowerCase()}`;
 
         if (existingUser.rows.length > 0) {
             return res.status(409).json({ error: 'Username already exists' });
         }
 
-        // Hash the PIN
         const hashedPin = await bcrypt.hash(pin, 10);
 
-        // Create new user
-        const result = await pool.query(
-            'INSERT INTO users (username, pin_hash, created_at) VALUES ($1, $2, NOW()) RETURNING id, username, created_at',
-            [username.toLowerCase(), hashedPin]
-        );
+        const result = await sql`
+            INSERT INTO users (username, pin_hash, created_at, is_active) 
+            VALUES (${username.toLowerCase()}, ${hashedPin}, NOW(), true) 
+            RETURNING id, username, created_at
+        `;
 
         const user = result.rows[0];
 
-        // Generate JWT token
         const token = jwt.sign(
             { userId: user.id, username: user.username },
-            JWT_SECRET,
-            { expiresIn: '7d' }
+            process.env.JWT_SECRET || 'dev-secret-key',
+            { expiresIn: '30d' }
         );
 
         res.status(201).json({

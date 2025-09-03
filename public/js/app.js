@@ -814,36 +814,32 @@ function renderDataScienceCourses() {
 }
 
 function updateDataScienceCourseStates() {
-    // Check if Business Analytics track is selected
-    const hasAnalyticsGrade = userData.courses['dataScience-opt-analytics']?.grade;
-    const hasAnalyticsProjectGrade = userData.courses['dataScience-opt-analytics-project']?.grade;
-    
-    // Check if Deep Learning track is selected
+    const hasBATheory = userData.courses['dataScience-opt-analytics']?.grade;
+    const hasBDMProject = userData.courses['dataScience-opt-analytics-project']?.grade;
     const hasDLGrade = userData.courses['dataScience-opt-dl']?.grade;
     const hasDLProjectGrade = userData.courses['dataScience-opt-dl-project']?.grade;
     
-    // Disable courses based on selections
     const analyticsCard = document.querySelector('[data-course-id="dataScience-opt-analytics"]');
     const dlCard = document.querySelector('[data-course-id="dataScience-opt-dl"]');
     const analyticsProjectCard = document.querySelector('[data-course-id="dataScience-opt-analytics-project"]');
     const dlProjectCard = document.querySelector('[data-course-id="dataScience-opt-dl-project"]');
     
-    if (hasDLGrade || hasDLProjectGrade) {
-        // Deep Learning track selected, disable Business Analytics courses
-        if (analyticsCard) analyticsCard.classList.add('disabled');
-        if (analyticsProjectCard) analyticsProjectCard.classList.add('disabled');
-    } else {
-        if (analyticsCard) analyticsCard.classList.remove('disabled');
-        if (analyticsProjectCard) analyticsProjectCard.classList.remove('disabled');
-    }
-    
-    if (hasAnalyticsGrade || hasAnalyticsProjectGrade) {
-        // Business Analytics track selected, disable Deep Learning courses
+    // If both BA Theory and BDM Project are completed, disable DL & GenAI courses
+    if (hasBATheory && hasBDMProject) {
         if (dlCard) dlCard.classList.add('disabled');
         if (dlProjectCard) dlProjectCard.classList.add('disabled');
     } else {
         if (dlCard) dlCard.classList.remove('disabled');
         if (dlProjectCard) dlProjectCard.classList.remove('disabled');
+    }
+    
+    // If DL track is selected, disable BA courses
+    if (hasDLGrade || hasDLProjectGrade) {
+        if (analyticsCard) analyticsCard.classList.add('disabled');
+        if (analyticsProjectCard) analyticsProjectCard.classList.add('disabled');
+    } else if (!hasBATheory || !hasBDMProject) {
+        if (analyticsCard) analyticsCard.classList.remove('disabled');
+        if (analyticsProjectCard) analyticsProjectCard.classList.remove('disabled');
     }
 }
 
