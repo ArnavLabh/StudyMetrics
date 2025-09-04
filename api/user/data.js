@@ -124,18 +124,22 @@ module.exports = async (req, res) => {
             `;
 
             const cgpaHistory = historyResult.rows.map(row => ({
-                cgpa: parseFloat(row.cgpa).toFixed(2),
-                credits: row.total_credits,
+                cgpa: parseFloat(row.cgpa || 0).toFixed(2),
+                credits: parseInt(row.total_credits || 0),
                 timestamp: row.recorded_at
             }));
 
+            const courseData = userData.course_data || {};
+            
             res.status(200).json({
                 userData: {
-                    ...userData.course_data,
+                    courses: courseData.courses || {},
+                    electives: courseData.electives || [],
+                    dataScienceOptions: courseData.dataScienceOptions || { analytics: true, project: true },
                     targetCGPA: userData.target_cgpa,
                     cgpaHistory
                 },
-                timerSettings: userData.timer_settings
+                timerSettings: userData.timer_settings || { studyDuration: 1500, breakDuration: 300 }
             });
 
         } else if (req.method === 'POST') {

@@ -188,8 +188,27 @@ document.addEventListener('DOMContentLoaded', () => {
 async function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         try {
-            const registration = await navigator.serviceWorker.register('/service-worker.js');
+            // Unregister old service workers first
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (let registration of registrations) {
+                await registration.unregister();
+            }
+            
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=3.5.1');
             console.log('Service Worker registered:', registration);
+            
+            // Force immediate update check
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        showToast('New version available! Refreshing...', 'info');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                });
+            });
             
             setInterval(() => {
                 registration.update();
@@ -209,11 +228,41 @@ async function checkForUpdates() {
                 window.location.reload();
             }, 2000);
         });
+        
+        // Force update check for existing users
+        const currentVersion = '3.5.1';
+        const storedVersion = localStorage.getItem('studymetrics_version');
+        
+        if (storedVersion && storedVersion !== currentVersion) {
+            console.log('Version mismatch detected, forcing refresh...');
+            localStorage.setItem('studymetrics_version', currentVersion);
+            
+            // Clear old cache
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        if (name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.1') {
+                            caches.delete(name);
+                        }
+                    });
+                });
+            }
+            
+            showToast('App updated! Please refresh the page.', 'info');
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 3000);
+        } else if (!storedVersion) {
+            localStorage.setItem('studymetrics_version', currentVersion);
+        }
     }
 }
 
 function initializeApp() {
     console.log('Initializing app...');
+    
+    // Clear old caches on app start
+    clearOldCaches();
     
     setupEventListeners();
     initializeTimer();
@@ -225,6 +274,29 @@ function initializeApp() {
     } else {
         console.log('No valid token found, showing login');
         showLoginPage();
+    }
+}
+
+// Clear old caches to ensure users get the latest version
+async function clearOldCaches() {
+    if ('caches' in window) {
+        try {
+            const cacheNames = await caches.keys();
+            const oldCaches = cacheNames.filter(name => 
+                name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.1'
+            );
+            
+            await Promise.all(oldCaches.map(name => {
+                console.log('Clearing old cache:', name);
+                return caches.delete(name);
+            }));
+            
+            if (oldCaches.length > 0) {
+                console.log('Cleared', oldCaches.length, 'old caches');
+            }
+        } catch (error) {
+            console.error('Error clearing old caches:', error);
+        }
     }
 }
 
@@ -814,33 +886,18 @@ function renderDataScienceCourses() {
 }
 
 function updateDataScienceCourseStates() {
-    const hasBATheory = userData.courses['dataScience-opt-analytics']?.grade;
-    const hasBDMProject = userData.courses['dataScience-opt-analytics-project']?.grade;
-    const hasDLGrade = userData.courses['dataScience-opt-dl']?.grade;
-    const hasDLProjectGrade = userData.courses['dataScience-opt-dl-project']?.grade;
-    
+    // Remove all validations for BA, BDM Proj, Intro to GenAI Theory and Project
+    // Let users freely add whatever they have completed
     const analyticsCard = document.querySelector('[data-course-id="dataScience-opt-analytics"]');
     const dlCard = document.querySelector('[data-course-id="dataScience-opt-dl"]');
     const analyticsProjectCard = document.querySelector('[data-course-id="dataScience-opt-analytics-project"]');
     const dlProjectCard = document.querySelector('[data-course-id="dataScience-opt-dl-project"]');
     
-    // If both BA Theory and BDM Project are completed, disable DL & GenAI courses
-    if (hasBATheory && hasBDMProject) {
-        if (dlCard) dlCard.classList.add('disabled');
-        if (dlProjectCard) dlProjectCard.classList.add('disabled');
-    } else {
-        if (dlCard) dlCard.classList.remove('disabled');
-        if (dlProjectCard) dlProjectCard.classList.remove('disabled');
-    }
-    
-    // If DL track is selected, disable BA courses
-    if (hasDLGrade || hasDLProjectGrade) {
-        if (analyticsCard) analyticsCard.classList.add('disabled');
-        if (analyticsProjectCard) analyticsProjectCard.classList.add('disabled');
-    } else if (!hasBATheory || !hasBDMProject) {
-        if (analyticsCard) analyticsCard.classList.remove('disabled');
-        if (analyticsProjectCard) analyticsProjectCard.classList.remove('disabled');
-    }
+    // Remove all disabled states - allow free selection
+    if (analyticsCard) analyticsCard.classList.remove('disabled');
+    if (dlCard) dlCard.classList.remove('disabled');
+    if (analyticsProjectCard) analyticsProjectCard.classList.remove('disabled');
+    if (dlProjectCard) dlProjectCard.classList.remove('disabled');
 }
 
 function createCourseCard(course, section, index) {
@@ -1270,6 +1327,29 @@ function updateSectionCredits() {
             }
         }
     });
+    
+    // Calculate dynamic total for data science based on completed courses
+    let dataScienceTotal = 18; // Base courses: 6 courses * 3-4 credits = 18 credits
+    const hasAnalytics = userData.courses['dataScience-opt-analytics']?.grade;
+    const hasAnalyticsProject = userData.courses['dataScience-opt-analytics-project']?.grade;
+    const hasDL = userData.courses['dataScience-opt-dl']?.grade;
+    const hasDLProject = userData.courses['dataScience-opt-dl-project']?.grade;
+    
+    if (hasAnalytics) dataScienceTotal += 4;
+    if (hasAnalyticsProject) dataScienceTotal += 2;
+    if (hasDL) dataScienceTotal += 4;
+    if (hasDLProject) dataScienceTotal += 2;
+    
+    // Ensure minimum of 27 credits for data science
+    if (dataScienceTotal < 27 && (hasAnalytics || hasAnalyticsProject || hasDL || hasDLProject)) {
+        dataScienceTotal = Math.max(27, sectionCredits.dataScience.completed);
+    } else if (dataScienceTotal >= 27) {
+        dataScienceTotal = Math.max(27, sectionCredits.dataScience.completed);
+    } else {
+        dataScienceTotal = 27; // Default when no optional courses selected
+    }
+    
+    sectionCredits.dataScience.total = dataScienceTotal;
     
     // Update credit badges
     const badgeElements = {
@@ -2482,6 +2562,9 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'SKIP_WAITING') {
             window.location.reload();
+        } else if (event.data && event.data.type === 'CACHE_UPDATED') {
+            console.log('Cache updated to version:', event.data.version);
+            showToast('App updated successfully!', 'success');
         }
     });
 }

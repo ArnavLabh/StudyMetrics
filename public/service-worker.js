@@ -1,8 +1,8 @@
-const CACHE_NAME = 'studymetrics-v3.1.0';
+const CACHE_NAME = 'studymetrics-v3.5.1';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/app.js?v=3.1.0',
+  '/js/app.js?v=3.5.1',
   '/manifest.json',
   'https://cdn.jsdelivr.net/npm/chart.js'
 ];
@@ -75,8 +75,18 @@ event.waitUntil(
       })
     );
   }).then(() => {
-    // Force refresh of all clients
-    return self.clients.claim();
+    // Force refresh of all clients to get new version
+    return self.clients.claim().then(() => {
+      // Notify all clients about the update
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'CACHE_UPDATED',
+            version: 'v3.5.1'
+          });
+        });
+      });
+    });
   })
 );
 });
