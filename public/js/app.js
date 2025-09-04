@@ -188,7 +188,7 @@ async function registerServiceWorker() {
                 await registration.unregister();
             }
             
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=3.5.2');
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=3.5.3');
             console.log('Service Worker registered:', registration);
             
             // Force immediate update check
@@ -224,7 +224,7 @@ async function checkForUpdates() {
         });
         
         // Force update check for existing users
-        const currentVersion = '3.5.2';
+        const currentVersion = '3.5.3';
         const storedVersion = localStorage.getItem('studymetrics_version');
         
         if (storedVersion && storedVersion !== currentVersion) {
@@ -235,7 +235,7 @@ async function checkForUpdates() {
             if ('caches' in window) {
                 caches.keys().then(names => {
                     names.forEach(name => {
-                        if (name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.2') {
+                        if (name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.3') {
                             caches.delete(name);
                         }
                     });
@@ -277,7 +277,7 @@ async function clearOldCaches() {
         try {
             const cacheNames = await caches.keys();
             const oldCaches = cacheNames.filter(name => 
-                name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.2'
+                name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.3'
             );
             
             await Promise.all(oldCaches.map(name => {
@@ -295,6 +295,7 @@ async function clearOldCaches() {
 }
 
 function initializeDefaultUserData() {
+    console.log('Initializing default user data...');
     userData = {
         courses: {},
         electives: [],
@@ -302,7 +303,26 @@ function initializeDefaultUserData() {
         targetCGPA: null,
         cgpaHistory: []
     };
+    console.log('Default userData initialized:', userData);
     renderAllCourses();
+}
+
+// Validate and fix userData structure
+function validateUserData() {
+    if (!userData || typeof userData !== 'object') {
+        console.log('Invalid userData, initializing defaults');
+        initializeDefaultUserData();
+        return false;
+    }
+    
+    // Ensure all required properties exist
+    if (!userData.courses) userData.courses = {};
+    if (!userData.electives) userData.electives = [];
+    if (!userData.dataScienceOptions) userData.dataScienceOptions = { analytics: true, project: true };
+    if (!userData.cgpaHistory) userData.cgpaHistory = [];
+    
+    console.log('UserData validated and fixed:', userData);
+    return true;
 }
 
 // Enhanced token management with validation
@@ -524,21 +544,15 @@ async function handleAuth(e) {
             currentUser = data.user;
             showMainApp();
             
-            // Load user data in background, but render courses immediately
-            loadUserData().catch(error => {
-                console.error('Failed to load user data, but continuing with empty data:', error);
-                // Ensure courses are rendered even if loadUserData fails
-                if (!userData.courses) {
-                    userData = {
-                        courses: {},
-                        electives: [],
-                        dataScienceOptions: { analytics: true, project: true },
-                        targetCGPA: null,
-                        cgpaHistory: []
-                    };
-                    renderAllCourses();
-                }
-            });
+            // Load user data and wait for completion before proceeding
+            try {
+                await loadUserData();
+                console.log('User data loaded successfully');
+            } catch (error) {
+                console.error('Failed to load user data:', error);
+                initializeDefaultUserData();
+                showToast('Using default data due to loading error', 'warning');
+            }
             
             showToast(isRegistering ? 'Account created successfully!' : 'Welcome back!', 'success');
         } else {
@@ -575,10 +589,15 @@ async function verifyAndLoadUser(token) {
             currentUser = data.user;
             showMainApp();
             
-            loadUserData().catch(error => {
-                console.error('Failed to load user data, using defaults:', error);
+            // Load user data with proper error handling
+            try {
+                await loadUserData();
+                console.log('User data loaded after verification');
+            } catch (error) {
+                console.error('Failed to load user data after verification:', error);
                 initializeDefaultUserData();
-            });
+                showToast('Using default data', 'warning');
+            }
         } else if (response.status === 401) {
             console.log('Token expired or invalid, redirecting to login');
             removeStoredToken();
@@ -612,8 +631,10 @@ function showMainApp() {
         return;
     }
     
-    document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('loginPage').style.display = 'none';
+    // Hide loading and login, show main app
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) loadingScreen.style.display = 'none';
+    loginPage.style.display = 'none';
     mainApp.style.display = 'block';
     document.body.style.overflow = 'auto';
     
@@ -626,6 +647,7 @@ function showMainApp() {
         welcome.textContent = `Welcome, ${currentUser.username}`;
     }
     
+    // Start auto-save
     startAutoSave();
     
     // Initialize Lucide icons
@@ -633,25 +655,8 @@ function showMainApp() {
         lucide.createIcons();
     }
     
-    // Populate timer courses after user data is loaded
-    setTimeout(() => {
-        populateTimerCourses();
-    }, 100);
-    
-    // Ensure courses are rendered even if loadUserData fails
-    if (!userData.courses) {
-        console.log('Initializing empty user data and rendering courses...');
-        userData = {
-            courses: {},
-            electives: [],
-            dataScienceOptions: { analytics: true, project: true },
-            targetCGPA: null,
-            cgpaHistory: []
-        };
-        renderAllCourses();
-    }
-    
-    // Charts removed from main app
+    // Validate userData structure
+    validateUserData();
     
     console.log('Main app shown successfully');
 }
@@ -661,12 +666,20 @@ async function loadUserData() {
         console.log('Loading user data...');
         const token = getStoredToken();
         
-        // Add timeout to prevent hanging
+        if (!token) {
+            console.error('No token available for data loading');
+            initializeDefaultUserData();
+            return;
+        }
+        
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         
         const response = await fetch(`${API_BASE_URL}/user/data`, {
-            headers: { 'Authorization': `Bearer ${token}` },
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
             signal: controller.signal
         });
         
@@ -674,80 +687,75 @@ async function loadUserData() {
 
         if (response.ok) {
             const data = await response.json();
-            console.log('User data loaded:', data);
+            console.log('API Response:', data);
             
-            // Ensure proper data structure from API response
-            const apiUserData = data.userData || {};
-            userData = {
-                courses: apiUserData.courses || {},
-                electives: apiUserData.electives || [],
-                dataScienceOptions: apiUserData.dataScienceOptions || { analytics: true, project: true },
-                targetCGPA: apiUserData.targetCGPA || null,
-                cgpaHistory: apiUserData.cgpaHistory || []
-            };
-            
-            console.log('Loaded user data:', userData);
-            
-            // Load target CGPA input
-            const targetInput = document.getElementById('targetCgpaInput');
-            if (targetInput && userData.targetCGPA) {
-                targetInput.value = userData.targetCGPA;
+            if (data.success && data.userData) {
+                // Properly structure the user data
+                userData = {
+                    courses: data.userData.courses || {},
+                    electives: data.userData.electives || [],
+                    dataScienceOptions: data.userData.dataScienceOptions || { analytics: true, project: true },
+                    targetCGPA: data.userData.targetCGPA || null,
+                    cgpaHistory: data.userData.cgpaHistory || []
+                };
+                
+                console.log('Processed user data:', userData);
+                
+                // Update target CGPA input
+                const targetInput = document.getElementById('targetCgpaInput');
+                if (targetInput && userData.targetCGPA) {
+                    targetInput.value = userData.targetCGPA;
+                }
+                
+                // Render courses and update analytics
+                renderAllCourses();
+                updateAnalytics();
+                updateCGPAHistory();
+                
+                showToast('Data loaded successfully', 'success');
+            } else {
+                console.error('Invalid API response structure:', data);
+                initializeDefaultUserData();
+                showToast('Invalid data format received', 'error');
             }
-            
-            console.log('About to render all courses...');
-            renderAllCourses();
-            updateAnalytics();
-            updateCGPAHistory();
-            
-            // Charts removed
+        } else if (response.status === 401) {
+            console.error('Authentication failed during data load');
+            logout();
+            return;
         } else {
-            console.error('Failed to load user data - response not ok:', response.status);
-            // Even if API fails, render courses with empty data
-            userData = {
-                courses: {},
-                electives: [],
-                dataScienceOptions: { analytics: true, project: true },
-                targetCGPA: null,
-                cgpaHistory: []
-            };
-            renderAllCourses();
-            
-            // Charts removed
+            const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+            console.error('Failed to load user data:', response.status, errorData);
+            initializeDefaultUserData();
+            showToast(`Failed to load data: ${errorData.message}`, 'error');
         }
     } catch (error) {
-        console.error('Failed to load user data:', error);
-        showToast('Failed to load your data', 'error');
+        if (error.name === 'AbortError') {
+            console.error('Data loading timed out');
+            showToast('Loading timed out, using default data', 'error');
+        } else {
+            console.error('Error loading user data:', error);
+            showToast('Network error while loading data', 'error');
+        }
         
-        // Even if there's an error, render courses with empty data
-        userData = {
-            courses: {},
-            electives: [],
-            dataScienceOptions: { analytics: true, project: true },
-            targetCGPA: null,
-            cgpaHistory: []
-        };
-        renderAllCourses();
-        
-        // Charts removed
+        initializeDefaultUserData();
     }
 }
 
 function renderAllCourses() {
     try {
-        console.log('Rendering all courses...');
+        console.log('Rendering all courses with userData:', userData);
+        
+        // Validate userData structure
+        if (!userData || typeof userData !== 'object') {
+            console.error('Invalid userData structure:', userData);
+            initializeDefaultUserData();
+            return;
+        }
         
         // Check if main app is visible
         const mainApp = document.getElementById('mainApp');
         if (!mainApp || mainApp.style.display === 'none') {
             console.log('Main app not visible, deferring course rendering...');
-            setTimeout(() => renderAllCourses(), 100);
-            return;
-        }
-        
-        // Check if dashboard section is visible
-        const dashboardSection = document.getElementById('dashboardSection');
-        if (!dashboardSection || dashboardSection.style.display === 'none') {
-            console.log('Dashboard section not visible, deferring course rendering...');
             setTimeout(() => renderAllCourses(), 100);
             return;
         }
@@ -923,11 +931,23 @@ function createCourseCard(course, section, index) {
 }
 
 function handleGradeChange(courseId, grade) {
+    console.log(`Grade change: ${courseId} -> ${grade}`);
+    
+    // Validate userData structure
+    if (!validateUserData()) {
+        console.error('Invalid userData structure during grade change');
+        return;
+    }
+    
+    // Initialize course data if needed
     if (!userData.courses[courseId]) {
         userData.courses[courseId] = {};
     }
     
-    userData.courses[courseId].grade = grade;
+    // Update grade (empty string for no grade)
+    userData.courses[courseId].grade = grade || '';
+    
+    console.log('Updated userData.courses:', userData.courses);
     
     // Update grade button styling
     const gradeContainer = document.querySelector(`[data-course-id="${courseId}"]`);
@@ -938,31 +958,34 @@ function handleGradeChange(courseId, grade) {
         });
     }
     
-    // Update analytics and save
+    // Update analytics immediately
     updateAnalytics();
+    updateCGPAHistory();
     
-    // Auto-save with debouncing and retry logic
+    // Auto-save with debouncing
     clearTimeout(window.autoSaveTimeout);
     window.autoSaveTimeout = setTimeout(async () => {
+        updateSaveButtonState('saving');
         try {
             const success = await saveUserDataWithRetry(false);
             if (success) {
-                console.log('Auto-save successful');
+                console.log('Auto-save successful for grade change');
+                updateSaveButtonState('saved');
                 localStorage.setItem('studymetrics_last_save', Date.now().toString());
+            } else {
+                console.error('Auto-save failed');
+                updateSaveButtonState('error');
             }
         } catch (error) {
-            console.error('Auto-save failed:', error);
+            console.error('Auto-save error:', error);
+            updateSaveButtonState('error');
         }
+        
+        // Reset button state after delay
+        setTimeout(() => {
+            updateSaveButtonState('default');
+        }, 2000);
     }, 1000);
-    
-    // Update CGPA history
-    updateCGPAHistory();
-    
-    // Show visual feedback
-    updateSaveButtonState('saving');
-    setTimeout(() => {
-        updateSaveButtonState('default');
-    }, 1500);
 }
 
 // Global function for data science options (deprecated - now handled by course disabling)
@@ -1956,12 +1979,32 @@ function stopAutoSave() {
 }
 
 async function saveUserData(showNotification = false) {
-    if (!currentUser) return false;
+    if (!currentUser) {
+        console.log('No current user, skipping save');
+        return false;
+    }
     
     try {
         const token = getStoredToken();
+        if (!token) {
+            console.error('No token available for saving');
+            if (showNotification) showToast('Authentication required', 'error');
+            return false;
+        }
+        
+        // Validate userData before sending
+        const dataToSave = {
+            courses: userData.courses || {},
+            electives: userData.electives || [],
+            dataScienceOptions: userData.dataScienceOptions || { analytics: true, project: true },
+            targetCGPA: userData.targetCGPA || null,
+            cgpaHistory: userData.cgpaHistory || []
+        };
+        
+        console.log('Saving user data:', dataToSave);
+        
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         
         const response = await fetch(`${API_BASE_URL}/user/data`, {
             method: 'POST',
@@ -1970,7 +2013,7 @@ async function saveUserData(showNotification = false) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ 
-                userData,
+                userData: dataToSave,
                 timerSettings: {
                     studyDuration: timerState.studyDuration,
                     breakDuration: timerState.breakDuration
@@ -1983,21 +2026,30 @@ async function saveUserData(showNotification = false) {
         
         if (response.ok) {
             const result = await response.json();
-            if (showNotification) {
-                showToast('Data saved successfully!', 'success');
-                updateSaveButtonState('saved');
+            console.log('Save response:', result);
+            
+            if (result.success) {
+                if (showNotification) {
+                    showToast('Data saved successfully!', 'success');
+                    updateSaveButtonState('saved');
+                }
+                return true;
+            } else {
+                throw new Error(result.message || 'Save failed');
             }
-            return true;
         } else if (response.status === 401) {
+            console.error('Authentication failed during save');
             logout();
             return false;
         } else {
-            throw new Error(`Save failed: ${response.status}`);
+            const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+            throw new Error(`Save failed (${response.status}): ${errorData.message}`);
         }
     } catch (error) {
         console.error('Failed to save user data:', error);
         if (showNotification) {
-            showToast('Failed to save data', 'error');
+            const message = error.name === 'AbortError' ? 'Save timed out' : `Save failed: ${error.message}`;
+            showToast(message, 'error');
             updateSaveButtonState('error');
         }
         return false;
@@ -2025,41 +2077,17 @@ async function manualSave() {
     updateSaveButtonState('saving');
     
     try {
-        const token = getStoredToken();
-        if (!token) {
-            showToast('Authentication required', 'error');
-            return false;
-        }
-        
-        const response = await fetch('/api/user/data', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-                userData: {
-                    courses: userData.courses || {},
-                    electives: userData.electives || [],
-                    dataScienceOptions: userData.dataScienceOptions || { analytics: true, project: true },
-                    targetCGPA: userData.targetCGPA || null,
-                    cgpaHistory: userData.cgpaHistory || []
-                }
-            })
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            updateSaveButtonState('saved');
-            showToast('Data saved to database!', 'success');
+        const success = await saveUserData(true);
+        if (success) {
             setTimeout(() => updateSaveButtonState('default'), 2000);
             return true;
         } else {
-            const error = await response.json();
-            throw new Error(error.message || 'Save failed');
+            updateSaveButtonState('error');
+            setTimeout(() => updateSaveButtonState('default'), 3000);
+            return false;
         }
     } catch (error) {
-        console.error('Save error:', error);
+        console.error('Manual save error:', error);
         updateSaveButtonState('error');
         showToast(`Save failed: ${error.message}`, 'error');
         setTimeout(() => updateSaveButtonState('default'), 3000);
@@ -2521,6 +2549,31 @@ if ('IntersectionObserver' in window) {
     mutationObserver.observe(document.body, { childList: true, subtree: true });
 }
 
+// Debug function for troubleshooting
+window.debugStudyMetrics = function() {
+    console.log('=== StudyMetrics Debug Info ===');
+    console.log('Current User:', currentUser);
+    console.log('User Data:', userData);
+    console.log('Token:', getStoredToken() ? 'Present' : 'Missing');
+    console.log('API Base URL:', API_BASE_URL);
+    console.log('Course Database:', {
+        foundation: courseDatabase.foundation?.courses?.length || 0,
+        programming: courseDatabase.diploma?.programming?.courses?.length || 0,
+        dataScience: courseDatabase.diploma?.dataScience?.courses?.length || 0,
+        degreeCore: courseDatabase.degree?.core?.courses?.length || 0,
+        electives: courseDatabase.degree?.electives?.length || 0
+    });
+    console.log('DOM Elements:', {
+        mainApp: !!document.getElementById('mainApp'),
+        foundationCourses: !!document.getElementById('foundationCourses'),
+        programmingCourses: !!document.getElementById('programmingCourses'),
+        dataScienceCourses: !!document.getElementById('dataScienceCourses'),
+        degreeCourses: !!document.getElementById('degreeCourses'),
+        electiveCourses: !!document.getElementById('electiveCourses')
+    });
+    console.log('===============================');
+};
+
 // Export functions for global access
 window.exportData = exportData;
 window.calculateTargetCGPA = calculateTargetCGPA;
@@ -2528,6 +2581,8 @@ window.addWhatIfCourse = addWhatIfCourse;
 window.removeWhatIfCourse = removeWhatIfCourse;
 window.updateWhatIfCourse = updateWhatIfCourse;
 window.calculateWhatIf = calculateWhatIf;
+window.validateUserData = validateUserData;
+window.initializeDefaultUserData = initializeDefaultUserData;
 
 // Initialize everything when DOM is ready
 if (document.readyState === 'loading') {

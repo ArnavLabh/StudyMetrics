@@ -101,6 +101,7 @@ module.exports = async (req, res) => {
                 `;
 
                 return res.status(200).json({
+                    success: true,
                     userData: {
                         courses: {},
                         electives: [],
@@ -129,25 +130,30 @@ module.exports = async (req, res) => {
                 timestamp: row.recorded_at
             }));
 
-            // Ensure proper data structure
+            // Parse and validate course data
             let courseData = {};
             try {
-                courseData = typeof userData.course_data === 'string' ? 
-                    JSON.parse(userData.course_data) : 
-                    (userData.course_data || {});
+                if (userData.course_data) {
+                    courseData = typeof userData.course_data === 'string' ? 
+                        JSON.parse(userData.course_data) : userData.course_data;
+                }
             } catch (e) {
                 console.error('Error parsing course_data:', e);
-                courseData = {};
+                courseData = { courses: {}, electives: [], dataScienceOptions: { analytics: true, project: true } };
             }
             
+            // Ensure all required fields exist
+            const responseData = {
+                courses: courseData.courses || {},
+                electives: courseData.electives || [],
+                dataScienceOptions: courseData.dataScienceOptions || { analytics: true, project: true },
+                targetCGPA: userData.target_cgpa || null,
+                cgpaHistory: cgpaHistory || []
+            };
+            
             res.status(200).json({
-                userData: {
-                    courses: courseData.courses || {},
-                    electives: courseData.electives || [],
-                    dataScienceOptions: courseData.dataScienceOptions || { analytics: true, project: true },
-                    targetCGPA: userData.target_cgpa,
-                    cgpaHistory
-                },
+                success: true,
+                userData: responseData,
                 timerSettings: userData.timer_settings || { studyDuration: 1500, breakDuration: 300 }
             });
 
@@ -199,6 +205,7 @@ module.exports = async (req, res) => {
             }
 
             res.status(200).json({ 
+                success: true,
                 message: 'Data saved successfully',
                 stats: {
                     cgpa: stats.cgpa.toFixed(2),
