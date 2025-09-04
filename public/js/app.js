@@ -1329,27 +1329,21 @@ function updateSectionCredits() {
     });
     
     // Calculate dynamic total for data science based on completed courses
-    let dataScienceTotal = 18; // Base courses: 6 courses * 3-4 credits = 18 credits
+    const baseCredits = 21; // 6 base courses: 4+4+4+4+2+3 = 21 credits
     const hasAnalytics = userData.courses['dataScience-opt-analytics']?.grade;
     const hasAnalyticsProject = userData.courses['dataScience-opt-analytics-project']?.grade;
     const hasDL = userData.courses['dataScience-opt-dl']?.grade;
     const hasDLProject = userData.courses['dataScience-opt-dl-project']?.grade;
     
-    if (hasAnalytics) dataScienceTotal += 4;
-    if (hasAnalyticsProject) dataScienceTotal += 2;
-    if (hasDL) dataScienceTotal += 4;
-    if (hasDLProject) dataScienceTotal += 2;
+    let optionalCredits = 0;
+    if (hasAnalytics) optionalCredits += 4;
+    if (hasAnalyticsProject) optionalCredits += 2;
+    if (hasDL) optionalCredits += 4;
+    if (hasDLProject) optionalCredits += 2;
     
-    // Ensure minimum of 27 credits for data science
-    if (dataScienceTotal < 27 && (hasAnalytics || hasAnalyticsProject || hasDL || hasDLProject)) {
-        dataScienceTotal = Math.max(27, sectionCredits.dataScience.completed);
-    } else if (dataScienceTotal >= 27) {
-        dataScienceTotal = Math.max(27, sectionCredits.dataScience.completed);
-    } else {
-        dataScienceTotal = 27; // Default when no optional courses selected
-    }
-    
-    sectionCredits.dataScience.total = dataScienceTotal;
+    // Total should be base + completed optional, but minimum 27
+    const calculatedTotal = baseCredits + optionalCredits;
+    sectionCredits.dataScience.total = Math.max(27, calculatedTotal);
     
     // Update credit badges
     const badgeElements = {
