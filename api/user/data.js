@@ -129,7 +129,16 @@ module.exports = async (req, res) => {
                 timestamp: row.recorded_at
             }));
 
-            const courseData = userData.course_data || {};
+            // Ensure proper data structure
+            let courseData = {};
+            try {
+                courseData = typeof userData.course_data === 'string' ? 
+                    JSON.parse(userData.course_data) : 
+                    (userData.course_data || {});
+            } catch (e) {
+                console.error('Error parsing course_data:', e);
+                courseData = {};
+            }
             
             res.status(200).json({
                 userData: {

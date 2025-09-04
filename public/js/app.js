@@ -56,17 +56,11 @@ const courseDatabase = {
                 { name: "Machine Learning Techniques", code: "BSCS2007", credits: 4 },
                 { name: "Machine Learning Practice", code: "BSCS2008", credits: 4 },
                 { name: "Machine Learning Practice - Project", code: "BSCS2008P", credits: 2 },
-                { name: "Tools in Data Science", code: "BSSE2002", credits: 3 }
-            ],
-            optionalCourses: [
-                { 
-                    primary: { name: "Business Analytics", code: "BSMS2002", credits: 4 },
-                    alternative: { name: "Introduction to GenAI and Deep Learning", code: "BSCS2009", credits: 4 }
-                },
-                { 
-                    primary: { name: "Business Data Management - Project", code: "BSMS2001P", credits: 2 },
-                    alternative: { name: "Introduction to GenAI and Deep Learning - Project", code: "BSCS2009P", credits: 2 }
-                }
+                { name: "Tools in Data Science", code: "BSSE2002", credits: 3 },
+                { name: "Business Analytics", code: "BSMS2002", credits: 4 },
+                { name: "Business Data Management - Project", code: "BSMS2001P", credits: 2 },
+                { name: "Introduction to GenAI and Deep Learning", code: "BSCS2009", credits: 4 },
+                { name: "Introduction to GenAI and Deep Learning - Project", code: "BSCS2009P", credits: 2 }
             ]
         }
     },
@@ -194,7 +188,7 @@ async function registerServiceWorker() {
                 await registration.unregister();
             }
             
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=3.5.1');
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=3.5.2');
             console.log('Service Worker registered:', registration);
             
             // Force immediate update check
@@ -230,7 +224,7 @@ async function checkForUpdates() {
         });
         
         // Force update check for existing users
-        const currentVersion = '3.5.1';
+        const currentVersion = '3.5.2';
         const storedVersion = localStorage.getItem('studymetrics_version');
         
         if (storedVersion && storedVersion !== currentVersion) {
@@ -241,7 +235,7 @@ async function checkForUpdates() {
             if ('caches' in window) {
                 caches.keys().then(names => {
                     names.forEach(name => {
-                        if (name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.1') {
+                        if (name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.2') {
                             caches.delete(name);
                         }
                     });
@@ -283,7 +277,7 @@ async function clearOldCaches() {
         try {
             const cacheNames = await caches.keys();
             const oldCaches = cacheNames.filter(name => 
-                name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.1'
+                name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.2'
             );
             
             await Promise.all(oldCaches.map(name => {
@@ -682,13 +676,17 @@ async function loadUserData() {
             const data = await response.json();
             console.log('User data loaded:', data);
             
+            // Ensure proper data structure from API response
+            const apiUserData = data.userData || {};
             userData = {
-                courses: data.userData?.courses || {},
-                electives: data.userData?.electives || [],
-                dataScienceOptions: data.userData?.dataScienceOptions || { analytics: true, project: true },
-                targetCGPA: data.userData?.targetCGPA || null,
-                cgpaHistory: data.userData?.cgpaHistory || []
+                courses: apiUserData.courses || {},
+                electives: apiUserData.electives || [],
+                dataScienceOptions: apiUserData.dataScienceOptions || { analytics: true, project: true },
+                targetCGPA: apiUserData.targetCGPA || null,
+                cgpaHistory: apiUserData.cgpaHistory || []
             };
+            
+            console.log('Loaded user data:', userData);
             
             // Load target CGPA input
             const targetInput = document.getElementById('targetCgpaInput');
@@ -856,49 +854,14 @@ function renderDataScienceCourses() {
     
     container.innerHTML = '';
     
-    // Render all fixed courses
+    // Render all courses normally
     courseDatabase.diploma.dataScience.courses.forEach((course, index) => {
         const courseCard = createCourseCard(course, 'dataScience', index);
         container.appendChild(courseCard);
     });
-    
-    // Render all optional courses
-    const optionalCourses = courseDatabase.diploma.dataScience.optionalCourses;
-    
-    // Business Analytics course
-    const analyticsCard = createCourseCard(optionalCourses[0].primary, 'dataScience', 'opt-analytics');
-    container.appendChild(analyticsCard);
-    
-    // Deep Learning course
-    const dlCard = createCourseCard(optionalCourses[0].alternative, 'dataScience', 'opt-dl');
-    container.appendChild(dlCard);
-    
-    // Business Analytics Project
-    const analyticsProjectCard = createCourseCard(optionalCourses[1].primary, 'dataScience', 'opt-analytics-project');
-    container.appendChild(analyticsProjectCard);
-    
-    // Deep Learning Project
-    const dlProjectCard = createCourseCard(optionalCourses[1].alternative, 'dataScience', 'opt-dl-project');
-    container.appendChild(dlProjectCard);
-    
-    // Apply disabling logic
-    updateDataScienceCourseStates();
 }
 
-function updateDataScienceCourseStates() {
-    // Remove all validations for BA, BDM Proj, Intro to GenAI Theory and Project
-    // Let users freely add whatever they have completed
-    const analyticsCard = document.querySelector('[data-course-id="dataScience-opt-analytics"]');
-    const dlCard = document.querySelector('[data-course-id="dataScience-opt-dl"]');
-    const analyticsProjectCard = document.querySelector('[data-course-id="dataScience-opt-analytics-project"]');
-    const dlProjectCard = document.querySelector('[data-course-id="dataScience-opt-dl-project"]');
-    
-    // Remove all disabled states - allow free selection
-    if (analyticsCard) analyticsCard.classList.remove('disabled');
-    if (dlCard) dlCard.classList.remove('disabled');
-    if (analyticsProjectCard) analyticsProjectCard.classList.remove('disabled');
-    if (dlProjectCard) dlProjectCard.classList.remove('disabled');
-}
+
 
 function createCourseCard(course, section, index) {
     const div = document.createElement('div');
@@ -973,11 +936,6 @@ function handleGradeChange(courseId, grade) {
         buttons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.grade === grade);
         });
-    }
-    
-    // Update data science course states if needed
-    if (courseId.startsWith('dataScience-opt-')) {
-        updateDataScienceCourseStates();
     }
     
     // Update analytics and save
@@ -1149,18 +1107,8 @@ function calculateCGPA() {
                 sections.programming.points += gradeScale[data.grade] * credits;
                 sections.programming.credits += credits;
             } else if (section === 'dataScience') {
-                if (index === 'opt-analytics') {
-                    credits = 4;
-                } else if (index === 'opt-dl') {
-                    credits = 4;
-                } else if (index === 'opt-analytics-project') {
-                    credits = 2;
-                } else if (index === 'opt-dl-project') {
-                    credits = 2;
-                } else {
-                    const course = courseDatabase.diploma.dataScience.courses[parseInt(index)];
-                    credits = course ? course.credits : 4;
-                }
+                const course = courseDatabase.diploma.dataScience.courses[parseInt(index)];
+                credits = course ? course.credits : 4;
                 sections.dataScience.points += gradeScale[data.grade] * credits;
                 sections.dataScience.credits += credits;
             } else if (section === 'degreeCore') {
@@ -1229,17 +1177,7 @@ function updateProgress() {
             } else if (section === 'programming') {
                 credits = courseDatabase.diploma.programming.courses[parseInt(index)]?.credits || 4;
             } else if (section === 'dataScience') {
-                if (index === 'opt-analytics') {
-                    credits = 4;
-                } else if (index === 'opt-dl') {
-                    credits = 4;
-                } else if (index === 'opt-analytics-project') {
-                    credits = 2;
-                } else if (index === 'opt-dl-project') {
-                    credits = 2;
-                } else {
-                    credits = courseDatabase.diploma.dataScience.courses[parseInt(index)]?.credits || 4;
-                }
+                credits = courseDatabase.diploma.dataScience.courses[parseInt(index)]?.credits || 4;
             } else if (section === 'degreeCore') {
                 credits = courseDatabase.degree.core.courses[parseInt(index)]?.credits || 4;
             } else if (section === 'elective') {
@@ -1305,17 +1243,7 @@ function updateSectionCredits() {
                 credits = courseDatabase.diploma.programming.courses[parseInt(index)]?.credits || 4;
                 sectionCredits.programming.completed += credits;
             } else if (section === 'dataScience') {
-                if (index === 'opt-analytics') {
-                    credits = 4;
-                } else if (index === 'opt-dl') {
-                    credits = 4;
-                } else if (index === 'opt-analytics-project') {
-                    credits = 2;
-                } else if (index === 'opt-dl-project') {
-                    credits = 2;
-                } else {
-                    credits = courseDatabase.diploma.dataScience.courses[parseInt(index)]?.credits || 4;
-                }
+                credits = courseDatabase.diploma.dataScience.courses[parseInt(index)]?.credits || 4;
                 sectionCredits.dataScience.completed += credits;
             } else if (section === 'degreeCore') {
                 credits = courseDatabase.degree.core.courses[parseInt(index)]?.credits || 4;
@@ -1328,22 +1256,8 @@ function updateSectionCredits() {
         }
     });
     
-    // Calculate dynamic total for data science based on completed courses
-    const baseCredits = 21; // 6 base courses: 4+4+4+4+2+3 = 21 credits
-    const hasAnalytics = userData.courses['dataScience-opt-analytics']?.grade;
-    const hasAnalyticsProject = userData.courses['dataScience-opt-analytics-project']?.grade;
-    const hasDL = userData.courses['dataScience-opt-dl']?.grade;
-    const hasDLProject = userData.courses['dataScience-opt-dl-project']?.grade;
-    
-    let optionalCredits = 0;
-    if (hasAnalytics) optionalCredits += 4;
-    if (hasAnalyticsProject) optionalCredits += 2;
-    if (hasDL) optionalCredits += 4;
-    if (hasDLProject) optionalCredits += 2;
-    
-    // Total should be base + completed optional, but minimum 27
-    const calculatedTotal = baseCredits + optionalCredits;
-    sectionCredits.dataScience.total = Math.max(27, calculatedTotal);
+    // Keep data science total fixed at 27
+    sectionCredits.dataScience.total = 27;
     
     // Update credit badges
     const badgeElements = {
@@ -1546,18 +1460,8 @@ function calculateCurrentStats() {
                 const course = courseDatabase.diploma.programming.courses[parseInt(index)];
                 credits = course ? course.credits : 4;
             } else if (section === 'dataScience') {
-                if (index === 'opt-analytics') {
-                    credits = 4;
-                } else if (index === 'opt-dl') {
-                    credits = 4;
-                } else if (index === 'opt-analytics-project') {
-                    credits = 2;
-                } else if (index === 'opt-dl-project') {
-                    credits = 2;
-                } else {
-                    const course = courseDatabase.diploma.dataScience.courses[parseInt(index)];
-                    credits = course ? course.credits : 4;
-                }
+                const course = courseDatabase.diploma.dataScience.courses[parseInt(index)];
+                credits = course ? course.credits : 4;
             } else if (section === 'degreeCore') {
                 const course = courseDatabase.degree.core.courses[parseInt(index)];
                 credits = course ? course.credits : 4;
