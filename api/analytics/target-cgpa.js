@@ -1,9 +1,10 @@
 const jwt = require('jsonwebtoken');
-const { Pool } = require('@vercel/postgres');
+const { createClient } = require('@supabase/supabase-js');
 
-const pool = new Pool({
-    connectionString: process.env.POSTGRES_URL
-});
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 const verifyToken = (req) => {
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -36,12 +37,13 @@ module.exports = async (req, res) => {
         }
 
         // Get current user data
-        const result = await pool.query(
-            'SELECT course_data FROM user_data WHERE user_id = $1',
-            [decoded.userId]
-        );
+        const { data: result } = await supabase
+            .from('user_data')
+            .select('course_data')
+            .eq('user_id', decoded.userId)
+            .single();
 
-        const courseData = result.rows[0]?.course_data || { courses: {}, electives: [] };
+        const courseData = result?.course_data || { courses: {}, electives: [] };
         const currentStats = calculateCurrentStats(courseData);
         
         // Calculate required grade points

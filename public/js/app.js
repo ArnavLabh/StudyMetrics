@@ -188,7 +188,7 @@ async function registerServiceWorker() {
                 await registration.unregister();
             }
             
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=3.5.4');
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=3.5.5');
             console.log('Service Worker registered:', registration);
             
             // Force immediate update check
@@ -224,7 +224,7 @@ async function checkForUpdates() {
         });
         
         // Force update check for existing users
-        const currentVersion = '3.5.4';
+        const currentVersion = '3.5.5';
         const storedVersion = localStorage.getItem('studymetrics_version');
         
         if (storedVersion && storedVersion !== currentVersion) {
@@ -235,7 +235,7 @@ async function checkForUpdates() {
             if ('caches' in window) {
                 caches.keys().then(names => {
                     names.forEach(name => {
-                        if (name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.4') {
+                        if (name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.5') {
                             caches.delete(name);
                         }
                     });
@@ -277,7 +277,7 @@ async function clearOldCaches() {
         try {
             const cacheNames = await caches.keys();
             const oldCaches = cacheNames.filter(name => 
-                name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.4'
+                name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.5'
             );
             
             await Promise.all(oldCaches.map(name => {

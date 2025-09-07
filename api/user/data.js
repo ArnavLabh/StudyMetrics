@@ -1,5 +1,10 @@
 const jwt = require('jsonwebtoken');
-const { sql } = require('@vercel/postgres');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // Middleware to verify token
 const verifyToken = (req) => {
@@ -87,18 +92,22 @@ module.exports = async (req, res) => {
 
         if (req.method === 'GET') {
             // Get user data
-            const result = await sql`
-                SELECT course_data, target_cgpa, timer_settings, updated_at
-                FROM user_data 
-                WHERE user_id = ${userId}
-            `;
+            const { data: result, error } = await supabase
+                .from('user_data')
+                .select('course_data, target_cgpa, timer_settings, updated_at')
+                .eq('user_id', userId)
+                .single();
 
-            if (result.rows.length === 0) {
+            if (error || !result) {
                 // Create default user data if none exists
-                await sql`
-                    INSERT INTO user_data (user_id, course_data, target_cgpa, timer_settings)
-                    VALUES (${userId}, '{"courses": {}, "electives": [], "dataScienceOptions": {"analytics": true, "project": true}}', NULL, '{"studyDuration": 1500, "breakDuration": 300}')
-                `;
+                await supabase
+                    .from('user_data')
+                    .insert({
+                        user_id: userId,
+                        course_data: { courses: {}, electives: [], dataScienceOptions: { analytics: true, project: true } },
+                        target_cgpa: null,
+                        timer_settings: { studyDuration: 1500, breakDuration: 300 }
+                    });
 
                 return res.status(200).json({
                     success: true,
@@ -113,18 +122,17 @@ module.exports = async (req, res) => {
                 });
             }
 
-            const userData = result.rows[0];
+            const userData = result;
             
             // Get CGPA history
-            const historyResult = await sql`
-                SELECT cgpa, total_credits, recorded_at
-                FROM cgpa_history 
-                WHERE user_id = ${userId}
-                ORDER BY recorded_at DESC
-                LIMIT 20
-            `;
+            const { data: historyResult } = await supabase
+                .from('cgpa_history')
+                .select('cgpa, total_credits, recorded_at')
+                .eq('user_id', userId)
+                .order('recorded_at', { ascending: false })
+                .limit(20);
 
-            const cgpaHistory = historyResult.rows.map(row => ({
+            const cgpaHistory = (historyResult || []).map(row => ({
                 cgpa: parseFloat(row.cgpa || 0).toFixed(2),
                 credits: parseInt(row.total_credits || 0),
                 timestamp: row.recorded_at
@@ -169,38 +177,41 @@ module.exports = async (req, res) => {
             const stats = calculateStats(userData);
 
             // Update user data
-            await sql`
-                INSERT INTO user_data (user_id, course_data, target_cgpa, timer_settings, updated_at)
-                VALUES (${userId}, ${JSON.stringify(userData)}, ${userData.targetCGPA || null}, ${JSON.stringify(timerSettings || { studyDuration: 1500, breakDuration: 300 })}, NOW())
-                ON CONFLICT (user_id) 
-                DO UPDATE SET 
-                    course_data = EXCLUDED.course_data,
-                    target_cgpa = EXCLUDED.target_cgpa,
-                    timer_settings = EXCLUDED.timer_settings,
-                    updated_at = EXCLUDED.updated_at
-            `;
+            await supabase
+                .from('user_data')
+                .upsert({
+                    user_id: userId,
+                    course_data: userData,
+                    target_cgpa: userData.targetCGPA || null,
+                    timer_settings: timerSettings || { studyDuration: 1500, breakDuration: 300 },
+                    updated_at: new Date().toISOString()
+                });
 
             // Record CGPA history if there are completed courses
             if (stats.totalCredits > 0) {
                 // Check if we should add a new history entry
-                const lastEntry = await sql`
-                    SELECT cgpa, total_credits, recorded_at
-                    FROM cgpa_history 
-                    WHERE user_id = ${userId}
-                    ORDER BY recorded_at DESC
-                    LIMIT 1
-                `;
+                const { data: lastEntry } = await supabase
+                    .from('cgpa_history')
+                    .select('cgpa, total_credits, recorded_at')
+                    .eq('user_id', userId)
+                    .order('recorded_at', { ascending: false })
+                    .limit(1)
+                    .single();
 
-                const shouldAddEntry = lastEntry.rows.length === 0 || 
-                    Math.abs(parseFloat(lastEntry.rows[0].cgpa) - stats.cgpa) > 0.01 ||
-                    lastEntry.rows[0].total_credits !== stats.totalCredits ||
-                    new Date() - new Date(lastEntry.rows[0].recorded_at) > 3600000; // 1 hour
+                const shouldAddEntry = !lastEntry || 
+                    Math.abs(parseFloat(lastEntry.cgpa) - stats.cgpa) > 0.01 ||
+                    lastEntry.total_credits !== stats.totalCredits ||
+                    new Date() - new Date(lastEntry.recorded_at) > 3600000; // 1 hour
 
                 if (shouldAddEntry) {
-                    await sql`
-                        INSERT INTO cgpa_history (user_id, cgpa, total_credits, grade_points)
-                        VALUES (${userId}, ${stats.cgpa.toFixed(2)}, ${stats.totalCredits}, ${stats.totalPoints.toFixed(2)})
-                    `;
+                    await supabase
+                        .from('cgpa_history')
+                        .insert({
+                            user_id: userId,
+                            cgpa: stats.cgpa.toFixed(2),
+                            total_credits: stats.totalCredits,
+                            grade_points: stats.totalPoints.toFixed(2)
+                        });
                 }
             }
 
