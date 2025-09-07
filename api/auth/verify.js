@@ -1,5 +1,11 @@
 const jwt = require('jsonwebtoken');
-const { sql } = require('@vercel/postgres');
+const { createClient } = require('@supabase/supabase-js');
+
+// Initialize Supabase client
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY // Use service role key for admin operations
+);
 
 module.exports = async (req, res) => {
     // Enable CORS
@@ -28,20 +34,26 @@ module.exports = async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret-key');
         
         // Check if user still exists and is active
-        const userResult = await sql`
-            SELECT id, username, created_at, last_login, is_active 
-            FROM users 
-            WHERE id = ${decoded.userId} AND is_active = true
-        `;
+        const { data: user, error: fetchError } = await supabase
+            .from('users')
+            .select('id, username, created_at, last_login, is_active')
+            .eq('id', decoded.userId)
+            .eq('is_active', true)
+            .single();
 
-        if (userResult.rows.length === 0) {
+        if (fetchError || !user) {
             return res.status(401).json({ message: 'User not found or inactive' });
         }
 
-        const user = userResult.rows[0];
-
         // Update last login
-        await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', user.id);
+
+        if (updateError) {
+            console.error('Error updating last login:', updateError);
+        }
 
         res.status(200).json({
             user: {

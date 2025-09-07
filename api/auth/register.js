@@ -1,6 +1,12 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { sql } = require('@vercel/postgres');
+const { createClient } = require('@supabase/supabase-js');
+
+// Initialize Supabase client
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY // Use service role key for admin operations
+);
 
 module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Credentials', true);
@@ -32,21 +38,36 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Username must be between 3 and 20 characters' });
         }
 
-        const existingUser = await sql`SELECT id FROM users WHERE username = ${username.toLowerCase()}`;
+        // Check if user already exists
+        const { data: existingUser, error: checkError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('username', username.toLowerCase())
+            .single();
 
-        if (existingUser.rows.length > 0) {
+        // If no error and data exists, user already exists
+        if (existingUser) {
             return res.status(409).json({ error: 'Username already exists' });
         }
 
         const hashedPin = await bcrypt.hash(pin, 10);
 
-        const result = await sql`
-            INSERT INTO users (username, pin_hash, created_at, is_active) 
-            VALUES (${username.toLowerCase()}, ${hashedPin}, NOW(), true) 
-            RETURNING id, username, created_at
-        `;
+        // Insert new user
+        const { data: user, error: insertError } = await supabase
+            .from('users')
+            .insert([{
+                username: username.toLowerCase(),
+                pin_hash: hashedPin,
+                created_at: new Date().toISOString(),
+                is_active: true
+            }])
+            .select('id, username, created_at')
+            .single();
 
-        const user = result.rows[0];
+        if (insertError) {
+            console.error('Insert error:', insertError);
+            return res.status(500).json({ error: 'Failed to create user' });
+        }
 
         const token = jwt.sign(
             { userId: user.id, username: user.username },

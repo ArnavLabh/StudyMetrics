@@ -1,6 +1,12 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { sql } = require('@vercel/postgres');
+const { createClient } = require('@supabase/supabase-js');
+
+// Initialize Supabase client
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY // Use service role key for admin operations
+);
 
 module.exports = async (req, res) => {
     // Enable CORS
@@ -26,13 +32,17 @@ module.exports = async (req, res) => {
 
     try {
         // Find user
-        const userResult = await sql`SELECT * FROM users WHERE username = ${username.toLowerCase()}`;
+        const { data: users, error: fetchError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('username', username.toLowerCase())
+            .single();
 
-        if (userResult.rows.length === 0) {
+        if (fetchError || !users) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const user = userResult.rows[0];
+        const user = users;
 
         // Verify PIN
         const isValidPin = await bcrypt.compare(pin, user.pin_hash);
@@ -41,7 +51,14 @@ module.exports = async (req, res) => {
         }
 
         // Update last login
-        await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', user.id);
+
+        if (updateError) {
+            console.error('Error updating last login:', updateError);
+        }
 
         // Generate JWT
         const token = jwt.sign(

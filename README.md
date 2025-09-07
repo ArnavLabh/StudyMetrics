@@ -3,7 +3,7 @@
 **A comprehensive CGPA calculator and academic progress tracker designed exclusively for IIT Madras Bachelor of Science (IITMBS) students.**
 
 ![StudyMetrics Logo](https://img.shields.io/badge/StudyMetrics-IITMBS-blue)
-![Version](https://img.shields.io/badge/version-3.5.3-green)
+![Version](https://img.shields.io/badge/version-3.5.4-green)
 ![License](https://img.shields.io/badge/license-MIT-yellow)
 
 ---

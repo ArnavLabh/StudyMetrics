@@ -1,7 +1,7 @@
 {
   "name": "StudyMetrics - IITM BS CGPA Calculator",
   "short_name": "StudyMetrics",
-  "version": "3.5.3",
+  "version": "3.5.4",
   "description": "Track your academic progress at IIT Madras BS Program",
   "start_url": "/",
   "display": "standalone",
