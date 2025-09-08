@@ -94,7 +94,7 @@ module.exports = async (req, res) => {
             // Get user data
             const { data: result, error } = await supabase
                 .from('user_data')
-                .select('course_data, current_cgpa, total_credits, target_cgpa, timer_settings, updated_at')
+                .select('course_data, target_cgpa, timer_settings, updated_at')
                 .eq('user_id', userId);
 
             const userData = result && result.length > 0 ? result[0] : null;
