@@ -94,7 +94,7 @@ module.exports = async (req, res) => {
             // Get user data
             const { data: result, error } = await supabase
                 .from('user_data')
-                .select('course_data, target_cgpa, timer_settings, updated_at')
+                .select('course_data, current_cgpa, total_credits, target_cgpa, timer_settings, updated_at')
                 .eq('user_id', userId);
 
             const userData = result && result.length > 0 ? result[0] : null;
@@ -175,12 +175,14 @@ module.exports = async (req, res) => {
             // Calculate current stats for CGPA history
             const stats = calculateStats(userData);
 
-            // Update user data
+            // Update user data with calculated CGPA
             await supabase
                 .from('user_data')
                 .upsert({
                     user_id: userId,
                     course_data: userData,
+                    current_cgpa: stats.totalCredits > 0 ? parseFloat(stats.cgpa.toFixed(2)) : null,
+                    total_credits: stats.totalCredits,
                     target_cgpa: userData.targetCGPA || null,
                     timer_settings: timerSettings || { studyDuration: 1500, breakDuration: 300 },
                     updated_at: new Date().toISOString()
