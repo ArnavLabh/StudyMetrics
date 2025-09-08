@@ -95,10 +95,11 @@ module.exports = async (req, res) => {
             const { data: result, error } = await supabase
                 .from('user_data')
                 .select('course_data, target_cgpa, timer_settings, updated_at')
-                .eq('user_id', userId)
-                .single();
+                .eq('user_id', userId);
 
-            if (error || !result) {
+            const userData = result && result.length > 0 ? result[0] : null;
+
+            if (error || !userData) {
                 // Create default user data if none exists
                 await supabase
                     .from('user_data')
@@ -122,7 +123,7 @@ module.exports = async (req, res) => {
                 });
             }
 
-            const userData = result;
+            // userData already defined above
             
             // Get CGPA history
             const { data: historyResult } = await supabase
@@ -190,13 +191,14 @@ module.exports = async (req, res) => {
             // Record CGPA history if there are completed courses
             if (stats.totalCredits > 0) {
                 // Check if we should add a new history entry
-                const { data: lastEntry } = await supabase
+                const { data: lastEntries } = await supabase
                     .from('cgpa_history')
                     .select('cgpa, total_credits, recorded_at')
                     .eq('user_id', userId)
                     .order('recorded_at', { ascending: false })
-                    .limit(1)
-                    .single();
+                    .limit(1);
+
+                const lastEntry = lastEntries && lastEntries.length > 0 ? lastEntries[0] : null;
 
                 const shouldAddEntry = !lastEntry || 
                     Math.abs(parseFloat(lastEntry.cgpa) - stats.cgpa) > 0.01 ||
@@ -204,14 +206,19 @@ module.exports = async (req, res) => {
                     new Date() - new Date(lastEntry.recorded_at) > 3600000; // 1 hour
 
                 if (shouldAddEntry) {
-                    await supabase
+                    const { error: insertError } = await supabase
                         .from('cgpa_history')
                         .insert({
                             user_id: userId,
-                            cgpa: stats.cgpa.toFixed(2),
+                            cgpa: parseFloat(stats.cgpa.toFixed(2)),
                             total_credits: stats.totalCredits,
-                            grade_points: stats.totalPoints.toFixed(2)
+                            grade_points: parseFloat(stats.totalPoints.toFixed(2)),
+                            recorded_at: new Date().toISOString()
                         });
+                    
+                    if (insertError) {
+                        console.error('CGPA history insert error:', insertError);
+                    }
                 }
             }
 

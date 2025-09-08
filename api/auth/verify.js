@@ -34,16 +34,17 @@ module.exports = async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret-key');
         
         // Check if user still exists and is active
-        const { data: user, error: fetchError } = await supabase
+        const { data: users, error: fetchError } = await supabase
             .from('users')
             .select('id, username, created_at, last_login, is_active')
             .eq('id', decoded.userId)
-            .eq('is_active', true)
-            .single();
+            .eq('is_active', true);
 
-        if (fetchError || !user) {
+        if (fetchError || !users || users.length === 0) {
             return res.status(401).json({ message: 'User not found or inactive' });
         }
+
+        const user = users[0];
 
         // Update last login
         const { error: updateError } = await supabase

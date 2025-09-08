@@ -35,14 +35,13 @@ module.exports = async (req, res) => {
         const { data: users, error: fetchError } = await supabase
             .from('users')
             .select('*')
-            .eq('username', username.toLowerCase())
-            .single();
+            .eq('username', username.toLowerCase());
 
-        if (fetchError || !users) {
+        if (fetchError || !users || users.length === 0) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const user = users;
+        const user = users[0];
 
         // Verify PIN
         const isValidPin = await bcrypt.compare(pin, user.pin_hash);

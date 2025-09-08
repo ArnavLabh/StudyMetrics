@@ -40,10 +40,9 @@ module.exports = async (req, res) => {
         const { data: result } = await supabase
             .from('user_data')
             .select('course_data')
-            .eq('user_id', decoded.userId)
-            .single();
+            .eq('user_id', decoded.userId);
 
-        const courseData = result?.course_data || { courses: {}, electives: [] };
+        const courseData = (result && result.length > 0) ? result[0].course_data : { courses: {}, electives: [] };
         const currentStats = calculateCurrentStats(courseData);
         
         // Calculate required grade points

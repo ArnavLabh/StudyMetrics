@@ -1,8 +1,8 @@
-const CACHE_NAME = 'studymetrics-v3.5.5';
+const CACHE_NAME = 'studymetrics-v3.5.6';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/js/app.js?v=3.5.5',
+  '/js/app.js?v=3.5.6',
   '/manifest.json',
   'https://cdn.jsdelivr.net/npm/chart.js'
 ];
@@ -82,7 +82,7 @@ event.waitUntil(
         clients.forEach(client => {
           client.postMessage({
             type: 'CACHE_UPDATED',
-            version: 'v3.5.5'
+            version: 'v3.5.6'
           });
         });
       });

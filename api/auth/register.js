@@ -39,14 +39,13 @@ module.exports = async (req, res) => {
         }
 
         // Check if user already exists
-        const { data: existingUser, error: checkError } = await supabase
+        const { data: existingUsers, error: checkError } = await supabase
             .from('users')
             .select('id')
-            .eq('username', username.toLowerCase())
-            .single();
+            .eq('username', username.toLowerCase());
 
-        // If no error and data exists, user already exists
-        if (existingUser) {
+        // If data exists, user already exists
+        if (existingUsers && existingUsers.length > 0) {
             return res.status(409).json({ error: 'Username already exists' });
         }
 

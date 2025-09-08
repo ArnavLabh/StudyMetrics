@@ -188,7 +188,7 @@ async function registerServiceWorker() {
                 await registration.unregister();
             }
             
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=3.5.5');
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=3.5.6');
             console.log('Service Worker registered:', registration);
             
             // Force immediate update check
@@ -224,7 +224,7 @@ async function checkForUpdates() {
         });
         
         // Force update check for existing users
-        const currentVersion = '3.5.5';
+        const currentVersion = '3.5.6';
         const storedVersion = localStorage.getItem('studymetrics_version');
         
         if (storedVersion && storedVersion !== currentVersion) {
@@ -235,7 +235,7 @@ async function checkForUpdates() {
             if ('caches' in window) {
                 caches.keys().then(names => {
                     names.forEach(name => {
-                        if (name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.5') {
+                        if (name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.6') {
                             caches.delete(name);
                         }
                     });
@@ -277,7 +277,7 @@ async function clearOldCaches() {
         try {
             const cacheNames = await caches.keys();
             const oldCaches = cacheNames.filter(name => 
-                name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.5'
+                name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.6'
             );
             
             await Promise.all(oldCaches.map(name => {
@@ -962,7 +962,7 @@ function handleGradeChange(courseId, grade) {
     updateAnalytics();
     updateCGPAHistory();
     
-    // Auto-save with debouncing
+    // Auto-save with debouncing (increased delay to reduce API calls)
     clearTimeout(window.autoSaveTimeout);
     window.autoSaveTimeout = setTimeout(async () => {
         updateSaveButtonState('saving');
@@ -985,7 +985,7 @@ function handleGradeChange(courseId, grade) {
         setTimeout(() => {
             updateSaveButtonState('default');
         }, 2000);
-    }, 1000);
+    }, 3000); // Increased from 1s to 3s to reduce API calls
 }
 
 // Global function for data science options (deprecated - now handled by course disabling)
@@ -1968,7 +1968,7 @@ function startAutoSave() {
         if (currentUser) {
             saveUserData();
         }
-    }, 30000); // Save every 30 seconds
+    }, 60000); // Save every 60 seconds (reduced frequency)
 }
 
 function stopAutoSave() {
