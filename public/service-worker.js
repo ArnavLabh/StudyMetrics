@@ -1,4 +1,4 @@
-const CACHE_NAME = 'studymetrics-v3.5.6';
+const CACHE_NAME = 'studymetrics-v3.5.7';
 const urlsToCache = [
   '/',
   '/index.html',

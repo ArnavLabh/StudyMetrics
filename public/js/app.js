@@ -127,10 +127,6 @@ let currentUser = null;
 let userData = {
     courses: {},
     electives: [],
-    dataScienceOptions: {
-        analytics: true,
-        project: true
-    },
     targetCGPA: null,
     cgpaHistory: []
 };
@@ -188,7 +184,7 @@ async function registerServiceWorker() {
                 await registration.unregister();
             }
             
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=3.5.6');
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=3.5.7');
             console.log('Service Worker registered:', registration);
             
             // Force immediate update check
@@ -224,7 +220,7 @@ async function checkForUpdates() {
         });
         
         // Force update check for existing users
-        const currentVersion = '3.5.6';
+        const currentVersion = '3.5.7';
         const storedVersion = localStorage.getItem('studymetrics_version');
         
         if (storedVersion && storedVersion !== currentVersion) {
@@ -235,7 +231,7 @@ async function checkForUpdates() {
             if ('caches' in window) {
                 caches.keys().then(names => {
                     names.forEach(name => {
-                        if (name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.6') {
+                        if (name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.7') {
                             caches.delete(name);
                         }
                     });
@@ -277,7 +273,7 @@ async function clearOldCaches() {
         try {
             const cacheNames = await caches.keys();
             const oldCaches = cacheNames.filter(name => 
-                name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.6'
+                name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.7'
             );
             
             await Promise.all(oldCaches.map(name => {
@@ -299,7 +295,6 @@ function initializeDefaultUserData() {
     userData = {
         courses: {},
         electives: [],
-        dataScienceOptions: { analytics: true, project: true },
         targetCGPA: null,
         cgpaHistory: []
     };
@@ -318,7 +313,6 @@ function validateUserData() {
     // Ensure all required properties exist
     if (!userData.courses) userData.courses = {};
     if (!userData.electives) userData.electives = [];
-    if (!userData.dataScienceOptions) userData.dataScienceOptions = { analytics: true, project: true };
     if (!userData.cgpaHistory) userData.cgpaHistory = [];
     
     console.log('UserData validated and fixed:', userData);
@@ -672,71 +666,45 @@ async function loadUserData() {
             return;
         }
         
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
         const response = await fetch(`${API_BASE_URL}/user/data`, {
             headers: { 
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
-            },
-            signal: controller.signal
+            }
         });
-        
-        clearTimeout(timeoutId);
 
         if (response.ok) {
             const data = await response.json();
             console.log('API Response:', data);
             
             if (data.success && data.userData) {
-                // Properly structure the user data
                 userData = {
                     courses: data.userData.courses || {},
                     electives: data.userData.electives || [],
-                    dataScienceOptions: data.userData.dataScienceOptions || { analytics: true, project: true },
                     targetCGPA: data.userData.targetCGPA || null,
                     cgpaHistory: data.userData.cgpaHistory || []
                 };
                 
-                console.log('Processed user data:', userData);
+                console.log('Loaded user data:', userData);
                 
-                // Update target CGPA input
-                const targetInput = document.getElementById('targetCgpaInput');
-                if (targetInput && userData.targetCGPA) {
-                    targetInput.value = userData.targetCGPA;
+                if (userData.targetCGPA) {
+                    const targetInput = document.getElementById('targetCgpaInput');
+                    if (targetInput) targetInput.value = userData.targetCGPA;
                 }
                 
-                // Render courses and update analytics
                 renderAllCourses();
                 updateAnalytics();
-                updateCGPAHistory();
-                
-                showToast('Data loaded successfully', 'success');
+                showToast('Data loaded', 'success');
             } else {
-                console.error('Invalid API response structure:', data);
                 initializeDefaultUserData();
-                showToast('Invalid data format received', 'error');
             }
         } else if (response.status === 401) {
-            console.error('Authentication failed during data load');
             logout();
-            return;
         } else {
-            const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-            console.error('Failed to load user data:', response.status, errorData);
             initializeDefaultUserData();
-            showToast(`Failed to load data: ${errorData.message}`, 'error');
         }
     } catch (error) {
-        if (error.name === 'AbortError') {
-            console.error('Data loading timed out');
-            showToast('Loading timed out, using default data', 'error');
-        } else {
-            console.error('Error loading user data:', error);
-            showToast('Network error while loading data', 'error');
-        }
-        
+        console.error('Load error:', error);
         initializeDefaultUserData();
     }
 }
@@ -988,11 +956,7 @@ function handleGradeChange(courseId, grade) {
     }, 3000); // Increased from 1s to 3s to reduce API calls
 }
 
-// Global function for data science options (deprecated - now handled by course disabling)
-window.toggleDataScienceOption = function(option, value) {
-    // This function is deprecated - course selection is now handled automatically
-    console.log('Data science options are now handled automatically based on course selections');
-};
+
 
 function renderElectives() {
     const container = document.getElementById('electiveCourses');
@@ -1156,7 +1120,7 @@ function calculateCGPA() {
     window.currentCGPA = totalCredits > 0 ? (totalGradePoints / totalCredits).toFixed(2) : '0.00';
     window.currentCredits = totalCredits;
     
-    // Section CGPAs removed with sidebar
+
     
     // Update hero section CGPAs
     const heroElements = {
@@ -1228,7 +1192,7 @@ function updateProgress() {
     }
 }
 
-// Grade distribution chart removed
+
 
 function showChartPlaceholder(ctx, message) {
     const chartCtx = ctx.getContext('2d');
@@ -1279,8 +1243,7 @@ function updateSectionCredits() {
         }
     });
     
-    // Keep data science total fixed at 27
-    sectionCredits.dataScience.total = 27;
+
     
     // Update credit badges
     const badgeElements = {
@@ -1300,7 +1263,7 @@ function updateSectionCredits() {
     });
 }
 
-// Navigation now handled by separate pages
+
 function handleNavigation() {
     // Set active nav tab based on current page
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
@@ -1979,32 +1942,22 @@ function stopAutoSave() {
 }
 
 async function saveUserData(showNotification = false) {
-    if (!currentUser) {
-        console.log('No current user, skipping save');
-        return false;
-    }
+    if (!currentUser) return false;
     
     try {
         const token = getStoredToken();
         if (!token) {
-            console.error('No token available for saving');
             if (showNotification) showToast('Authentication required', 'error');
             return false;
         }
         
-        // Validate userData before sending
         const dataToSave = {
             courses: userData.courses || {},
             electives: userData.electives || [],
-            dataScienceOptions: userData.dataScienceOptions || { analytics: true, project: true },
-            targetCGPA: userData.targetCGPA || null,
-            cgpaHistory: userData.cgpaHistory || []
+            targetCGPA: userData.targetCGPA || null
         };
         
-        console.log('Saving user data:', dataToSave);
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        console.log('Saving:', dataToSave);
         
         const response = await fetch(`${API_BASE_URL}/user/data`, {
             method: 'POST',
@@ -2012,46 +1965,22 @@ async function saveUserData(showNotification = false) {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ 
-                userData: dataToSave,
-                timerSettings: {
-                    studyDuration: timerState.studyDuration,
-                    breakDuration: timerState.breakDuration
-                }
-            }),
-            signal: controller.signal
+            body: JSON.stringify({ userData: dataToSave })
         });
-        
-        clearTimeout(timeoutId);
         
         if (response.ok) {
             const result = await response.json();
-            console.log('Save response:', result);
-            
             if (result.success) {
-                if (showNotification) {
-                    showToast('Data saved successfully!', 'success');
-                    updateSaveButtonState('saved');
-                }
+                if (showNotification) showToast('Saved!', 'success');
                 return true;
-            } else {
-                throw new Error(result.message || 'Save failed');
             }
         } else if (response.status === 401) {
-            console.error('Authentication failed during save');
             logout();
-            return false;
-        } else {
-            const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-            throw new Error(`Save failed (${response.status}): ${errorData.message}`);
         }
+        return false;
     } catch (error) {
-        console.error('Failed to save user data:', error);
-        if (showNotification) {
-            const message = error.name === 'AbortError' ? 'Save timed out' : `Save failed: ${error.message}`;
-            showToast(message, 'error');
-            updateSaveButtonState('error');
-        }
+        console.error('Save error:', error);
+        if (showNotification) showToast('Save failed', 'error');
         return false;
     }
 }
@@ -2133,7 +2062,6 @@ function logout() {
     userData = { 
         courses: {}, 
         electives: [],
-        dataScienceOptions: { analytics: true, project: true },
         targetCGPA: null,
         cgpaHistory: []
     };
@@ -2303,59 +2231,9 @@ window.addEventListener('appinstalled', (e) => {
     deferredPrompt = null;
 });
 
-// Enhanced error handling for fetch requests
-async function fetchWithRetry(url, options = {}, retries = 3) {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const response = await fetch(url, options);
-            if (response.ok) {
-                return response;
-            } else if (response.status === 401) {
-                // Token expired, logout user
-                logout();
-                throw new Error('Authentication failed');
-            } else if (i === retries - 1) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-        } catch (error) {
-            if (i === retries - 1) {
-                throw error;
-            }
-            // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
-        }
-    }
-}
 
-// Data export functionality (placeholder)
-async function exportData(format = 'json') {
-    showToast('Export feature coming soon!', 'info');
-    
-    // This would be implemented when the backend export endpoint is ready
-    /*
-    try {
-        const token = getStoredToken();
-        const response = await fetchWithRetry(`${API_BASE_URL}/analytics/export?format=${format}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
 
-        if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `studymetrics_${currentUser.username}_${new Date().toISOString().split('T')[0]}.${format}`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-            showToast(`Data exported as ${format.toUpperCase()}`, 'success');
-        }
-    } catch (error) {
-        showToast('Export failed', 'error');
-    }
-    */
-}
+
 
 // Analytics helper functions
 function getGradeCount(grade) {
@@ -2395,26 +2273,7 @@ function getSectionProgress(section) {
     return { completed, total, percentage: total > 0 ? (completed / total) * 100 : 0 };
 }
 
-// Performance monitoring
-const performanceObserver = new PerformanceObserver((list) => {
-    for (const entry of list.getEntries()) {
-        if (entry.entryType === 'navigation') {
-            console.log('Page load time:', entry.loadEventEnd - entry.loadEventStart, 'ms');
-        }
-    }
-});
 
-performanceObserver.observe({ entryTypes: ['navigation'] });
-
-// Memory usage monitoring (for development)
-if (performance.memory) {
-    setInterval(() => {
-        const memory = performance.memory;
-        if (memory.usedJSHeapSize > memory.jsHeapSizeLimit * 0.9) {
-            console.warn('High memory usage detected');
-        }
-    }, 60000); // Check every minute
-}
 
 // Accessibility improvements
 document.addEventListener('keydown', (e) => {
@@ -2574,15 +2433,11 @@ window.debugStudyMetrics = function() {
     console.log('===============================');
 };
 
-// Export functions for global access
-window.exportData = exportData;
 window.calculateTargetCGPA = calculateTargetCGPA;
 window.addWhatIfCourse = addWhatIfCourse;
 window.removeWhatIfCourse = removeWhatIfCourse;
 window.updateWhatIfCourse = updateWhatIfCourse;
 window.calculateWhatIf = calculateWhatIf;
-window.validateUserData = validateUserData;
-window.initializeDefaultUserData = initializeDefaultUserData;
 
 // Initialize everything when DOM is ready
 if (document.readyState === 'loading') {

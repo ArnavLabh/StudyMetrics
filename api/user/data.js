@@ -105,7 +105,7 @@ module.exports = async (req, res) => {
                     .from('user_data')
                     .insert({
                         user_id: userId,
-                        course_data: { courses: {}, electives: [], dataScienceOptions: { analytics: true, project: true } },
+                        course_data: { courses: {}, electives: [] },
                         target_cgpa: null,
                         timer_settings: { studyDuration: 1500, breakDuration: 300 }
                     });
@@ -115,7 +115,6 @@ module.exports = async (req, res) => {
                     userData: {
                         courses: {},
                         electives: [],
-                        dataScienceOptions: { analytics: true, project: true },
                         targetCGPA: null,
                         cgpaHistory: []
                     },
@@ -148,14 +147,13 @@ module.exports = async (req, res) => {
                 }
             } catch (e) {
                 console.error('Error parsing course_data:', e);
-                courseData = { courses: {}, electives: [], dataScienceOptions: { analytics: true, project: true } };
+                courseData = { courses: {}, electives: [] };
             }
             
             // Ensure all required fields exist
             const responseData = {
                 courses: courseData.courses || {},
                 electives: courseData.electives || [],
-                dataScienceOptions: courseData.dataScienceOptions || { analytics: true, project: true },
                 targetCGPA: userData.target_cgpa || null,
                 cgpaHistory: cgpaHistory || []
             };
