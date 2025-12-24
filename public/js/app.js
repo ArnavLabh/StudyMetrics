@@ -287,37 +287,46 @@ async function registerServiceWorker() {
 async function checkForUpdates() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            showToast('New version available! Refreshing...', 'info');
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
+            // Prevent infinite loop: Only reload if we haven't just reloaded for an update
+            if (!sessionStorage.getItem('update_reloaded')) {
+                sessionStorage.setItem('update_reloaded', 'true');
+                showToast('New version available! Refreshing...', 'info');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
         });
 
-        // Force update check for existing users
-        const currentVersion = '4.0.2';
+        // Version Check
+        const currentVersion = '4.0.3'; // v4.0.3
         const storedVersion = localStorage.getItem('studymetrics_version');
 
         if (storedVersion && storedVersion !== currentVersion) {
-            console.log('Version mismatch detected, forcing refresh...');
+            console.log(`Version mismatch: ${storedVersion} -> ${currentVersion}`);
             localStorage.setItem('studymetrics_version', currentVersion);
 
-            // Clear old cache
+            // Clear old caches
             if ('caches' in window) {
-                caches.keys().then(names => {
-                    names.forEach(name => {
-                        if (name.startsWith('studymetrics-v') && name !== 'studymetrics-v3.5.9') {
-                            caches.delete(name);
+                try {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(key => {
+                        if (key.startsWith('studymetrics-v') && !key.includes(currentVersion)) {
+                            return caches.delete(key);
                         }
-                    });
-                });
+                    }));
+                } catch (e) { console.error('Cache clear failed:', e); }
             }
 
-            showToast('App updated! Please refresh the page.', 'info');
-            setTimeout(() => {
-                window.location.reload(true);
-            }, 3000);
-        } else if (!storedVersion) {
+            // Only reload if not recently reloaded to avoid loops
+            if (!sessionStorage.getItem('update_reloaded')) {
+                sessionStorage.setItem('update_reloaded', 'true');
+                showToast('App updated! Refreshing...', 'success');
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        } else {
             localStorage.setItem('studymetrics_version', currentVersion);
+            // Clear the reload flag if versions match
+            sessionStorage.removeItem('update_reloaded');
         }
     }
 }
@@ -2091,7 +2100,8 @@ async function saveUserData(showNotification = false) {
         const dataToSave = {
             courses: userData.courses || {},
             electives: userData.electives || [],
-            targetCGPA: userData.targetCGPA || null
+            targetCGPA: userData.targetCGPA || null,
+            cgpaHistory: userData.cgpaHistory || []
         };
 
         console.log('Saving:', dataToSave);
@@ -2587,12 +2597,11 @@ let predictorState = {
 function initGradePredictor() {
     console.log('Initializing Grade Predictor...');
 
-    // Setup Level Buttons
-    // Setup Level Buttons
-    document.getElementById('btnFoundation').addEventListener('click', () => setPredictorLevel('foundation'));
-    document.getElementById('btnDiploma').addEventListener('click', () => setPredictorLevel('diploma'));
-    const btnDegree = document.getElementById('btnDegree');
-    if (btnDegree) btnDegree.addEventListener('click', () => setPredictorLevel('degree'));
+    // Setup Level Select
+    const levelSelect = document.getElementById('predictorLevelSelect');
+    if (levelSelect) {
+        levelSelect.addEventListener('change', (e) => setPredictorLevel(e.target.value));
+    }
 
     // Setup Course Dropdown
     const courseSelect = document.getElementById('predictorCourseSelect');
@@ -2613,11 +2622,9 @@ function setPredictorLevel(level) {
     predictorState.level = level;
 
     // Update UI
-    // Update UI
-    document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
-    const activeBtnId = level === 'foundation' ? 'btnFoundation' : (level === 'diploma' ? 'btnDiploma' : 'btnDegree');
-    const activeBtn = document.getElementById(activeBtnId);
-    if (activeBtn) activeBtn.classList.add('active');
+    // Update Select Value
+    const levelSelect = document.getElementById('predictorLevelSelect');
+    if (levelSelect && levelSelect.value !== level) levelSelect.value = level;
 
     // Populate Dropdown
     const select = document.getElementById('predictorCourseSelect');

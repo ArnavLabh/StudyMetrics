@@ -79,11 +79,11 @@
             --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.3);
 
             /* Gradients */
-            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            --gradient-card: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
-            --gradient-hero: linear-gradient(to bottom right, #0f172a, #1e1b4b);
-            --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+            --gradient-primary: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            --gradient-success: linear-gradient(135deg, #059669 0%, #10B981 100%);
+            --gradient-card: linear-gradient(180deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+            --gradient-hero: linear-gradient(to bottom right, #1e1b4b, #312e81);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         /* Global Styles */
@@ -2099,14 +2099,11 @@
                     style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; margin-bottom: 2rem;">
                     <div class="form-group">
                         <label class="form-label">Level</label>
-                        <div class="option-buttons">
-                            <button class="option-btn active" id="btnFoundation"
-                                onclick="setPredictorLevel('foundation')">Foundation</button>
-                            <button class="option-btn" id="btnDiploma"
-                                onclick="setPredictorLevel('diploma')">Diploma</button>
-                            <button class="option-btn" id="btnDegree"
-                                onclick="setPredictorLevel('degree')">Degree</button>
-                        </div>
+                        <select id="predictorLevelSelect" class="form-input" style="appearance: auto;">
+                            <option value="foundation">Foundation Level</option>
+                            <option value="diploma">Diploma Level</option>
+                            <option value="degree">Degree Level</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Course</label>
