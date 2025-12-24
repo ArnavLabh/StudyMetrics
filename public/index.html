@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,60 +9,81 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <meta name="version" content="3.5.2">
-    
+
     <!-- PWA Meta Tags -->
     <meta name="description" content="Track your academic progress at IIT Madras BS Program">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="StudyMetrics">
-    
+
     <!-- PWA Links -->
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png">
-    
-    <!-- Professional Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         /* Modern Academic UI Variables */
         :root {
-            --bg-primary: #0c1220;
-            --bg-secondary: #162033;
-            --bg-card: #1e2a42;
-            --bg-hover: #2a3651;
-            --bg-surface: #364260;
-            --bg-accent: #4f46e5;
-            --text-primary: #f8fafc;
-            --text-secondary: #cbd5e1;
-            --text-muted: #94a3b8;
+            /* Premium Modern Palette */
+            --bg-primary: #030712;
+            --bg-secondary: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --bg-hover: rgba(51, 65, 85, 0.5);
+            --bg-surface: #1e293b;
+
+            /* Saturated Accents */
             --accent-primary: #6366f1;
-            --accent-secondary: #06b6d4;
+            /* Indigo */
+            --accent-secondary: #0ea5e9;
+            /* Sky */
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+
+            /* Functional Colors */
             --accent-success: #10b981;
             --accent-warning: #f59e0b;
             --accent-error: #ef4444;
-            --accent-purple: #8b5cf6;
-            --border-primary: #334155;
-            --border-secondary: #475569;
-            --border-accent: #6366f1;
+
+            /* Typography */
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+
+            /* UI Elements */
+            --border-primary: rgba(148, 163, 184, 0.1);
+            --border-secondary: rgba(148, 163, 184, 0.2);
+            --border-accent: rgba(99, 102, 241, 0.5);
+
+            /* Grades */
             --grade-s: #22c55e;
             --grade-a: #3b82f6;
             --grade-b: #06b6d4;
             --grade-c: #f59e0b;
             --grade-d: #f97316;
             --grade-e: #ef4444;
-            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
-            --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.2);
-            --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.25);
-            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%);
+
+            /* Shadows & Glows */
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.3);
+
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            --gradient-card: linear-gradient(145deg, #1e2a42 0%, #162033 100%);
-            --gradient-hero: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            --gradient-card: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+            --gradient-hero: linear-gradient(to bottom right, #0f172a, #1e1b4b);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         /* Global Styles */
@@ -72,7 +94,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Poppins', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
@@ -165,7 +187,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .save-btn::before {
             content: '';
             position: absolute;
@@ -173,25 +195,25 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
             transition: left 0.5s;
         }
-        
+
         .save-btn:hover::before {
             left: 100%;
         }
-        
+
         .save-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
         }
-        
+
         .save-btn.saving {
             background: var(--accent-warning);
             cursor: not-allowed;
             transform: none;
         }
-        
+
         .save-btn.saved {
             background: var(--accent-success);
             transform: scale(1.05);
@@ -353,7 +375,7 @@
             overflow: hidden;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
         .course-section:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-xl);
@@ -398,14 +420,16 @@
             box-shadow: var(--shadow-md);
         }
 
-        .foundation-icon { 
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); 
+        .foundation-icon {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
         }
-        .diploma-icon { 
-            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); 
+
+        .diploma-icon {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
         }
-        .degree-icon { 
-            background: linear-gradient(135deg, #059669 0%, #047857 100%); 
+
+        .degree-icon {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
         }
 
         .credits-badge {
@@ -547,12 +571,29 @@
             color: white;
         }
 
-        .grade-btn.grade-s.active { background: var(--grade-s); }
-        .grade-btn.grade-a.active { background: var(--grade-a); }
-        .grade-btn.grade-b.active { background: var(--grade-b); }
-        .grade-btn.grade-c.active { background: var(--grade-c); }
-        .grade-btn.grade-d.active { background: var(--grade-d); }
-        .grade-btn.grade-e.active { background: var(--grade-e); }
+        .grade-btn.grade-s.active {
+            background: var(--grade-s);
+        }
+
+        .grade-btn.grade-a.active {
+            background: var(--grade-a);
+        }
+
+        .grade-btn.grade-b.active {
+            background: var(--grade-b);
+        }
+
+        .grade-btn.grade-c.active {
+            background: var(--grade-c);
+        }
+
+        .grade-btn.grade-d.active {
+            background: var(--grade-d);
+        }
+
+        .grade-btn.grade-e.active {
+            background: var(--grade-e);
+        }
 
         /* Disabled course styling */
         .course-card.disabled {
@@ -575,7 +616,7 @@
             overflow: hidden;
             margin-bottom: 3rem;
         }
-        
+
         .cgpa-hero::before {
             content: '';
             position: absolute;
@@ -621,10 +662,15 @@
             text-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
             animation: glow 3s ease-in-out infinite alternate;
         }
-        
+
         @keyframes glow {
-            from { filter: drop-shadow(0 0 5px rgba(99, 102, 241, 0.3)); }
-            to { filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.6)); }
+            from {
+                filter: drop-shadow(0 0 5px rgba(99, 102, 241, 0.3));
+            }
+
+            to {
+                filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.6));
+            }
         }
 
         .cgpa-hero-label {
@@ -851,7 +897,7 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .grade-chart canvas {
             max-width: 160px;
             max-height: 160px;
@@ -867,7 +913,7 @@
             background: var(--gradient-hero);
             position: relative;
         }
-        
+
         .login-container::before {
             content: '';
             position: absolute;
@@ -876,7 +922,7 @@
             right: 0;
             bottom: 0;
             background: radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
             pointer-events: none;
         }
 
@@ -1288,13 +1334,27 @@
 
         /* Animations */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         .fade-in {
@@ -1401,7 +1461,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* Enhanced Loading Screen */
@@ -1504,23 +1566,31 @@
         }
 
         @keyframes progress {
-            0% { width: 0; }
-            50% { width: 70%; }
-            100% { width: 100%; }
+            0% {
+                width: 0;
+            }
+
+            50% {
+                width: 70%;
+            }
+
+            100% {
+                width: 100%;
+            }
         }
-        
+
         /* Save button states */
         .save-btn.saving .loading {
             border-top-color: white;
             border-color: rgba(255, 255, 255, 0.3);
         }
-        
+
         /* Course card loading state */
         .course-card.loading {
             opacity: 0.7;
             pointer-events: none;
         }
-        
+
         .course-card.loading::after {
             content: '';
             position: absolute;
@@ -1540,20 +1610,32 @@
         }
 
         @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
         }
-        
+
         /* Enhanced animations */
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
         }
-        
+
         .pulse {
             animation: pulse 2s infinite;
         }
-        
+
         /* Connection status indicator */
         .connection-status {
             position: fixed;
@@ -1567,16 +1649,16 @@
             transition: all 0.3s ease;
             transform: translateY(100px);
         }
-        
+
         .connection-status.show {
             transform: translateY(0);
         }
-        
+
         .connection-status.offline {
             background: var(--accent-error);
             color: white;
         }
-        
+
         .connection-status.online {
             background: var(--accent-success);
             color: white;
@@ -1622,21 +1704,65 @@
         }
 
         /* Utility Classes */
-        .text-center { text-align: center; }
-        .text-sm { font-size: 0.875rem; }
-        .text-xs { font-size: 0.75rem; }
-        .font-medium { font-weight: 500; }
-        .font-semibold { font-weight: 600; }
-        .font-bold { font-weight: 700; }
-        .mb-0 { margin-bottom: 0; }
-        .mb-1 { margin-bottom: 0.25rem; }
-        .mb-2 { margin-bottom: 0.5rem; }
-        .mb-3 { margin-bottom: 0.75rem; }
-        .mb-4 { margin-bottom: 1rem; }
-        .mt-2 { margin-top: 0.5rem; }
-        .mt-4 { margin-top: 1rem; }
-        .hidden { display: none; }
-        .opacity-50 { opacity: 0.5; }
+        .text-center {
+            text-align: center;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+        }
+
+        .text-xs {
+            font-size: 0.75rem;
+        }
+
+        .font-medium {
+            font-weight: 500;
+        }
+
+        .font-semibold {
+            font-weight: 600;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .mb-0 {
+            margin-bottom: 0;
+        }
+
+        .mb-1 {
+            margin-bottom: 0.25rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+
+        .mb-3 {
+            margin-bottom: 0.75rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+
+        .mt-2 {
+            margin-top: 0.5rem;
+        }
+
+        .mt-4 {
+            margin-top: 1rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .opacity-50 {
+            opacity: 0.5;
+        }
 
         /* Smooth scrolling */
         html {
@@ -1655,6 +1781,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Loading Screen -->
     <div id="loadingScreen" class="loading-screen">
@@ -1680,29 +1807,33 @@
         <div class="login-card fade-in">
             <h1 class="login-title">StudyMetrics</h1>
             <p class="login-subtitle">Track your IITM BS academic progress</p>
-            
+
             <form id="loginForm">
                 <div class="form-group">
                     <label class="form-label">Username</label>
                     <input type="text" class="form-input" id="username" required autocomplete="username">
                 </div>
-                
+
                 <div class="form-group">
                     <label class="form-label">4-Digit PIN</label>
                     <div class="pin-inputs">
-                        <input type="password" class="form-input pin-input" maxlength="1" pattern="[0-9]" required autocomplete="current-password">
-                        <input type="password" class="form-input pin-input" maxlength="1" pattern="[0-9]" required autocomplete="current-password">
-                        <input type="password" class="form-input pin-input" maxlength="1" pattern="[0-9]" required autocomplete="current-password">
-                        <input type="password" class="form-input pin-input" maxlength="1" pattern="[0-9]" required autocomplete="current-password">
+                        <input type="password" class="form-input pin-input" maxlength="1" pattern="[0-9]" required
+                            autocomplete="current-password">
+                        <input type="password" class="form-input pin-input" maxlength="1" pattern="[0-9]" required
+                            autocomplete="current-password">
+                        <input type="password" class="form-input pin-input" maxlength="1" pattern="[0-9]" required
+                            autocomplete="current-password">
+                        <input type="password" class="form-input pin-input" maxlength="1" pattern="[0-9]" required
+                            autocomplete="current-password">
                     </div>
                 </div>
-                
+
                 <button type="submit" class="form-button" id="authSubmitBtn">
                     <span id="authBtnText">Login</span>
                     <span id="authLoader" class="loading" style="display: none;"></span>
                 </button>
             </form>
-            
+
             <div class="form-toggle">
                 <span id="toggleText">Don't have an account?</span> <a href="#" id="toggleAuth">Create one</a>
             </div>
@@ -1717,13 +1848,13 @@
                 <div class="logo">StudyMetrics</div>
                 <div class="user-info">
                     <button class="save-btn" id="saveBtn">
-                        <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                        <i class="fas fa-save" style="font-size: 16px;"></i>
                         <span id="saveText">Save</span>
                     </button>
                     <div class="user-avatar" id="userAvatar">A</div>
                     <span class="welcome-text" id="welcomeMessage">Welcome back</span>
                     <button class="logout-btn" id="logoutBtn">
-                        <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
+                        <i class="fas fa-sign-out-alt" style="font-size: 16px;"></i>
                         Logout
                     </button>
                 </div>
@@ -1735,16 +1866,20 @@
             <div class="container">
                 <nav class="nav-tabs">
                     <a href="/" class="nav-tab active">
-                        <i data-lucide="home" class="nav-tab-icon"></i>
+                        <i class="fas fa-home nav-tab-icon"></i>
                         Dashboard
                     </a>
                     <a href="/analytics" class="nav-tab">
-                        <i data-lucide="trending-up" class="nav-tab-icon"></i>
+                        <i class="fas fa-chart-line nav-tab-icon"></i>
                         Analytics
                     </a>
                     <a href="/timer" class="nav-tab">
-                        <i data-lucide="clock" class="nav-tab-icon"></i>
+                        <i class="fas fa-clock nav-tab-icon"></i>
                         Study Timer
+                    </a>
+                    <a href="/grade-predictor" class="nav-tab" id="navGradePredictor">
+                        <i class="fas fa-calculator nav-tab-icon"></i>
+                        Grade Predictor
                     </a>
                 </nav>
             </div>
@@ -1761,8 +1896,9 @@
                         <div class="cgpa-hero-subtitle" id="cgpaHeroSubtitle">0 out of 142 credits completed</div>
                     </div>
                     <div class="section-cgpa-grid">
-                        <h4 style="color: var(--text-primary); font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                            <i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i>
+                        <h4
+                            style="color: var(--text-primary); font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-chart-bar" style="font-size: 18px;"></i>
                             Section-wise Progress
                         </h4>
                         <div class="section-cgpa-compact">
@@ -1785,8 +1921,9 @@
                         </div>
                     </div>
                     <div class="credit-progress-compact">
-                        <h4 style="color: var(--text-primary); font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                            <i data-lucide="target" style="width: 18px; height: 18px;"></i>
+                        <h4
+                            style="color: var(--text-primary); font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-bullseye" style="font-size: 18px;"></i>
                             Credit Progress
                         </h4>
                         <div class="progress-circle-compact">
@@ -1809,181 +1946,276 @@
                 <div class="layout-grid">
                     <!-- Course Sections -->
                     <div class="content-area">
-                    <!-- Foundation Section -->
-                    <section id="foundation" class="course-section">
-                        <div class="section-header">
-                            <div class="section-title">
-                                <div class="section-icon foundation-icon">🎯</div>
-                                <span>Foundation Level</span>
+                        <!-- Foundation Section -->
+                        <section id="foundation" class="course-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <div class="section-icon foundation-icon">🎯</div>
+                                    <span>Foundation Level</span>
+                                </div>
+                                <div class="credits-badge" id="foundationCredits">0/32 credits</div>
                             </div>
-                            <div class="credits-badge" id="foundationCredits">0/32 credits</div>
-                        </div>
-                        <div id="foundationCourses" class="course-list"></div>
-                    </section>
+                            <div id="foundationCourses" class="course-list"></div>
+                        </section>
 
-                    <!-- Programming Diploma Section -->
-                    <section id="programming" class="course-section">
-                        <div class="section-header">
-                            <div class="section-title">
-                                <div class="section-icon diploma-icon">💻</div>
-                                <span>Diploma in Programming</span>
+                        <!-- Programming Diploma Section -->
+                        <section id="programming" class="course-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <div class="section-icon diploma-icon">💻</div>
+                                    <span>Diploma in Programming</span>
+                                </div>
+                                <div class="credits-badge" id="programmingCredits">0/27 credits</div>
                             </div>
-                            <div class="credits-badge" id="programmingCredits">0/27 credits</div>
-                        </div>
-                        <div id="programmingCourses" class="course-list"></div>
-                    </section>
+                            <div id="programmingCourses" class="course-list"></div>
+                        </section>
 
-                    <!-- Data Science Diploma Section -->
-                    <section id="datascience" class="course-section">
-                        <div class="section-header">
-                            <div class="section-title">
-                                <div class="section-icon diploma-icon">📊</div>
-                                <span>Diploma in Data Science</span>
+                        <!-- Data Science Diploma Section -->
+                        <section id="datascience" class="course-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <div class="section-icon diploma-icon">📊</div>
+                                    <span>Diploma in Data Science</span>
+                                </div>
+                                <div class="credits-badge" id="dataScienceCredits">0/27 credits</div>
                             </div>
-                            <div class="credits-badge" id="dataScienceCredits">0/27 credits</div>
-                        </div>
-                        <div id="dataScienceCourses" class="course-list"></div>
-                    </section>
+                            <div id="dataScienceCourses" class="course-list"></div>
+                        </section>
 
-                    <!-- Degree Core Section -->
-                    <section id="degree" class="course-section">
-                        <div class="section-header">
-                            <div class="section-title">
-                                <div class="section-icon degree-icon">🎓</div>
-                                <span>Degree Level - Core Courses</span>
+                        <!-- Degree Core Section -->
+                        <section id="degree" class="course-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <div class="section-icon degree-icon">🎓</div>
+                                    <span>Degree Level - Core Courses</span>
+                                </div>
+                                <div class="credits-badge" id="degreeCredits">0/20 credits</div>
                             </div>
-                            <div class="credits-badge" id="degreeCredits">0/20 credits</div>
-                        </div>
-                        <div id="degreeCourses" class="course-list"></div>
-                    </section>
+                            <div id="degreeCourses" class="course-list"></div>
+                        </section>
 
-                    <!-- Electives Section -->
-                    <section id="electives" class="course-section">
-                        <div class="section-header">
-                            <div class="section-title">
-                                <div class="section-icon degree-icon">📚</div>
-                                <span>Degree Level - Elective Courses</span>
+                        <!-- Electives Section -->
+                        <section id="electives" class="course-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <div class="section-icon degree-icon">📚</div>
+                                    <span>Degree Level - Elective Courses</span>
+                                </div>
+                                <div class="credits-badge" id="electiveCredits">0/36 credits</div>
                             </div>
-                            <div class="credits-badge" id="electiveCredits">0/36 credits</div>
-                        </div>
-                        <div id="electiveCourses" class="course-list"></div>
-                        <button class="add-elective-btn" id="addElectiveBtn">+ Add Elective Course</button>
-                    </section>
+                            <div id="electiveCourses" class="course-list"></div>
+                            <button class="add-elective-btn" id="addElectiveBtn">+ Add Elective Course</button>
+                        </section>
+                    </div>
+
+
                 </div>
 
-
-            </div>
-
-            <!-- Analytics Section -->
-            <div id="analyticsSection" class="section-content" style="display: none;">
-                <div class="analytics-vertical-layout">
-                    <div class="analytics-full-card">
-                        <h3 class="analytics-title">📈 CGPA Trend Over Time</h3>
-                        <div class="chart-container">
-                            <canvas id="cgpaTrendChart"></canvas>
+                <!-- Analytics Section -->
+                <div id="analyticsSection" class="section-content" style="display: none;">
+                    <div class="analytics-vertical-layout">
+                        <div class="analytics-full-card">
+                            <h3 class="analytics-title">📈 CGPA Trend Over Time</h3>
+                            <div class="chart-container">
+                                <canvas id="cgpaTrendChart"></canvas>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="analytics-full-card">
-                        <h3 class="analytics-title">🎯 Target CGPA Calculator</h3>
-                        <div class="target-input-group">
-                            <input type="number" class="target-input" id="targetCgpaInput" 
-                                   min="0" max="10" step="0.01" placeholder="Target CGPA (e.g., 9.00)">
-                            <button class="target-btn" onclick="calculateTargetCGPA()">Calculate</button>
+                        <div class="analytics-full-card">
+                            <h3 class="analytics-title">🎯 Target CGPA Calculator</h3>
+                            <div class="target-input-group">
+                                <input type="number" class="target-input" id="targetCgpaInput" min="0" max="10"
+                                    step="0.01" placeholder="Target CGPA (e.g., 9.00)">
+                                <button class="target-btn" onclick="calculateTargetCGPA()">Calculate</button>
+                            </div>
+                            <div id="targetAnalysisResult"></div>
                         </div>
-                        <div id="targetAnalysisResult"></div>
-                    </div>
 
-                    <div class="analytics-full-card">
-                        <h3 class="analytics-title">📊 What-If Analysis</h3>
-                        <p class="text-sm text-secondary mb-3">Add hypothetical courses to see CGPA impact</p>
-                        <div id="whatIfInputs">
-                            <!-- Dynamic inputs will be added here -->
+                        <div class="analytics-full-card">
+                            <h3 class="analytics-title">📊 What-If Analysis</h3>
+                            <p class="text-sm text-secondary mb-3">Add hypothetical courses to see CGPA impact</p>
+                            <div id="whatIfInputs">
+                                <!-- Dynamic inputs will be added here -->
+                            </div>
+                            <button class="whatif-add-btn" onclick="addWhatIfCourse()">+ Add Course</button>
+                            <div id="whatIfResults" class="mt-4"></div>
                         </div>
-                        <button class="whatif-add-btn" onclick="addWhatIfCourse()">+ Add Course</button>
-                        <div id="whatIfResults" class="mt-4"></div>
-                    </div>
 
-                    <div class="analytics-full-card">
-                        <h3 class="analytics-title">📤 Export Data</h3>
-                        <p class="text-sm text-secondary mb-3">Download your academic data</p>
-                        <div class="coming-soon">
-                            🚧 Coming Soon - Export functionality will be available in the next update
+                        <div class="analytics-full-card">
+                            <h3 class="analytics-title">📤 Export Data</h3>
+                            <p class="text-sm text-secondary mb-3">Download your academic data</p>
+                            <div class="coming-soon">
+                                🚧 Coming Soon - Export functionality will be available in the next update
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Timer Section -->
-            <div id="timerSection" class="section-content" style="display: none;">
-                <div class="analytics-full-card">
-                    <h3 class="analytics-title">⏱️ Pomodoro Study Timer</h3>
-                    
-                    <div class="timer-container text-center mb-4">
-                        <div id="timerDisplay" class="cgpa-value" style="font-size: 4rem; color: var(--accent-primary);">25:00</div>
-                        <div class="cgpa-label" id="timerStatus">Study Session</div>
-                    </div>
+                <!-- Grade Predictor Section -->
+                <div id="gradePredictorSection" class="section-content" style="display: none;">
+                    <div class="analytics-full-card" style="border-top: 4px solid var(--accent-primary);">
+                        <div class="section-header" style="margin-bottom: 2rem;">
+                            <div class="section-title">
+                                <div class="section-icon" style="background: var(--gradient-primary);">
+                                    <i class="fas fa-calculator"></i>
+                                </div>
+                                <span>Grade Predictor 4.0</span>
+                            </div>
+                            <div class="form-toggle" style="margin: 0; display: flex; align-items: center; gap: 1rem;">
+                                <span class="text-sm text-secondary">End Term Attempted?</span>
+                                <label class="switch"
+                                    style="position: relative; display: inline-block; width: 48px; height: 24px;">
+                                    <input type="checkbox" id="endTermToggle">
+                                    <span class="slider round"
+                                        style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--bg-surface); transition: .4s; border-radius: 34px; border: 1px solid var(--border-primary);"></span>
+                                    <style>
+                                        input:checked+.slider {
+                                            background-color: var(--accent-primary);
+                                        }
 
-                    <div class="timer-controls text-center mb-4">
-                        <button id="startTimer" class="form-button" style="width: auto; margin: 0 0.5rem;">Start</button>
-                        <button id="pauseTimer" class="form-button" style="width: auto; margin: 0 0.5rem; background: var(--accent-warning);">Pause</button>
-                        <button id="resetTimer" class="form-button" style="width: auto; margin: 0 0.5rem; background: var(--accent-error);">Reset</button>
-                    </div>
+                                        input:checked+.slider:before {
+                                            transform: translateX(24px);
+                                        }
 
-                    <div class="timer-settings">
-                        <div class="form-group">
-                            <label class="form-label">Course (Optional)</label>
-                            <input type="text" id="timerCourseInput" class="form-input" placeholder="e.g., BSCS1001 - Computational Thinking">
+                                        .slider:before {
+                                            position: absolute;
+                                            content: "";
+                                            height: 16px;
+                                            width: 16px;
+                                            left: 4px;
+                                            bottom: 3px;
+                                            background-color: white;
+                                            transition: .4s;
+                                            border-radius: 50%;
+                                        }
+                                    </style>
+                                </label>
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">What are you studying? (Optional)</label>
-                            <input type="text" id="timerActivity" class="form-input" placeholder="e.g., Differential Calculus, Python Programming...">
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <!-- Controls -->
+                        <div class="grid-controls"
+                            style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; margin-bottom: 2rem;">
                             <div class="form-group">
-                                <label class="form-label">Study Time (minutes)</label>
-                                <input type="number" id="studyDuration" class="form-input" value="25" min="1" max="120">
+                                <label class="form-label">Level</label>
+                                <div class="option-buttons">
+                                    <button class="option-btn active" id="btnFoundation"
+                                        onclick="setPredictorLevel('foundation')">Foundation</button>
+                                    <button class="option-btn" id="btnDiploma"
+                                        onclick="setPredictorLevel('diploma')">Diploma</button>
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Break Time (minutes)</label>
-                                <input type="number" id="breakDuration" class="form-input" value="5" min="1" max="30">
+                                <label class="form-label">Course</label>
+                                <select id="predictorCourseSelect" class="form-input" style="appearance: auto;">
+                                    <option value="">Select a course...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 2rem; align-items: start;">
+                            <!-- Inputs -->
+                            <div id="predictorInputs" class="inputs-container">
+                                <div class="text-center text-muted" style="padding: 2rem;">Select a course to begin
+                                </div>
+                            </div>
+
+                            <!-- Results -->
+                            <div class="results-panel">
+                                <div id="predictorResults" class="cgpa-display"
+                                    style="border-color: var(--border-accent); background: var(--bg-surface);">
+                                    <div class="text-center text-muted">Results will appear here</div>
+                                </div>
+
+                                <!-- Disclaimer footer -->
+                                <div class="text-center mt-4 text-xs text-muted" style="opacity: 0.7;">
+                                    * Actual grade/marks might differ (Updated for Jan 2026 Term)
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div id="timerHistory" class="mt-4">
-                        <h4 class="analytics-title">📚 Recent Study Sessions</h4>
-                        <div id="timerHistoryList"></div>
+                <!-- Timer Section -->
+                <div id="timerSection" class="section-content" style="display: none;">
+                    <div class="analytics-full-card">
+                        <h3 class="analytics-title">⏱️ Pomodoro Study Timer</h3>
+
+                        <div class="timer-container text-center mb-4">
+                            <div id="timerDisplay" class="cgpa-value"
+                                style="font-size: 4rem; color: var(--accent-primary);">25:00</div>
+                            <div class="cgpa-label" id="timerStatus">Study Session</div>
+                        </div>
+
+                        <div class="timer-controls text-center mb-4">
+                            <button id="startTimer" class="form-button"
+                                style="width: auto; margin: 0 0.5rem;">Start</button>
+                            <button id="pauseTimer" class="form-button"
+                                style="width: auto; margin: 0 0.5rem; background: var(--accent-warning);">Pause</button>
+                            <button id="resetTimer" class="form-button"
+                                style="width: auto; margin: 0 0.5rem; background: var(--accent-error);">Reset</button>
+                        </div>
+
+                        <div class="timer-settings">
+                            <div class="form-group">
+                                <label class="form-label">Course (Optional)</label>
+                                <input type="text" id="timerCourseInput" class="form-input"
+                                    placeholder="e.g., BSCS1001 - Computational Thinking">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">What are you studying? (Optional)</label>
+                                <input type="text" id="timerActivity" class="form-input"
+                                    placeholder="e.g., Differential Calculus, Python Programming...">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Study Time (minutes)</label>
+                                    <input type="number" id="studyDuration" class="form-input" value="25" min="1"
+                                        max="120">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Break Time (minutes)</label>
+                                    <input type="number" id="breakDuration" class="form-input" value="5" min="1"
+                                        max="30">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="timerHistory" class="mt-4">
+                            <h4 class="analytics-title">📚 Recent Study Sessions</h4>
+                            <div id="timerHistoryList"></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Elective Modal -->
-    <div class="modal-overlay" id="electiveModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">Add Elective Course</h2>
-                <button class="modal-close" id="modalClose">&times;</button>
+        <!-- Elective Modal -->
+        <div class="modal-overlay" id="electiveModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Add Elective Course</h2>
+                    <button class="modal-close" id="modalClose">&times;</button>
+                </div>
+                <input type="text" class="form-input" id="electiveSearch"
+                    placeholder="Search courses by name, code, or category...">
+                <div id="electiveList" style="margin-top: 1rem; max-height: 400px; overflow-y: auto;"></div>
             </div>
-            <input type="text" class="form-input" id="electiveSearch" placeholder="Search courses by name, code, or category...">
-            <div id="electiveList" style="margin-top: 1rem; max-height: 400px; overflow-y: auto;"></div>
         </div>
-    </div>
 
-    <!-- Toast Notification -->
-    <div class="toast" id="toast"></div>
-    
-    <!-- Connection Status -->
-    <div class="connection-status" id="connectionStatus"></div>
+        <!-- Toast Notification -->
+        <div class="toast" id="toast"></div>
 
-    <!-- Chart.js for Analytics -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Main Application Script -->
-    <script src="js/app.js?v=3.5.2"></script>
+        <!-- Connection Status -->
+        <div class="connection-status" id="connectionStatus"></div>
+
+        <!-- Chart.js for Analytics -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <!-- Main Application Script -->
+        <script src="js/app.js?v=3.5.2"></script>
 </body>
+
 </html>

@@ -3,7 +3,7 @@
 **A comprehensive CGPA calculator and academic progress tracker designed exclusively for IIT Madras Bachelor of Science (IITMBS) students.**
 
 ![StudyMetrics Logo](https://img.shields.io/badge/StudyMetrics-IITMBS-blue)
-![Version](https://img.shields.io/badge/version-3.5.9-green)
+![Version](https://img.shields.io/badge/version-4.0.0-purple)
 ![License](https://img.shields.io/badge/license-MIT-yellow)
 
 ---
@@ -25,7 +25,7 @@ StudyMetrics is a powerful, intuitive web application that helps IITMBS students
 ### 💾 **Secure Progress Saving**
 - **Username + PIN System**: Create your unique profile with a 4-digit PIN
 - **Persistent Storage**: Your progress is safely stored and accessible anytime
-- **Welcome Back Experience**: Personalized greetings when you return
+- **Auto-Save**: Changes saved automatically to prevent data loss
 
 ### 📊 **Comprehensive Analytics**
 - **Real-time CGPA Calculation**: Instant updates as you input grades
@@ -33,11 +33,17 @@ StudyMetrics is a powerful, intuitive web application that helps IITMBS students
 - **Progress Visualization**: Beautiful charts showing your academic journey
 - **Target CGPA Calculator**: Plan what grades you need to reach your goals
 
-### 🎨 **Premium User Experience**
-- **Dark Theme Design**: Easy on the eyes for extended study sessions
-- **Mobile Optimized**: Perfect experience on phones, tablets, and desktops
-- **Smooth Animations**: Delightful interactions that make tracking enjoyable
-- **Professional Interface**: Clean, modern design worthy of IIT standards
+### 🎨 **Premium Modern UI (v4.0)**
+- **Glassmorphism Design**: Sleek, modern aesthetics with premium dark mode
+- **Dynamic Typography**: Professional "Poppins" font family for best readability
+- **Interactive Elements**: Smooth animations and Font Awesome icons
+- **Responsive Layout**: Optimized for all devices with a mobile-first approach
+
+### ⚡ **Grade Predictor 4.0**
+- **Instant Calculation**: Reactive updates as you slide or type
+- **Dual Modes**: Predict final grades OR calculate required End Term marks
+- **Privacy First**: 100% Client-side processing - no data leaves your browser
+- **Target Analysis**: Know exactly what you need to score for an S or A grade
 
 ---
 
@@ -100,10 +106,15 @@ Use the "What grades do I need?" feature to:
 - Yellow indicators: Courses in progress
 - Gray indicators: Planned/future courses
 
+### **Grade Predictor 4.0**
+*New in v4.0!*
+- **Mode A (Final Grade)**: Enter all marks including End Term to predict your final Letter Grade.
+- **Mode B (Required Marks)**: Enter Term work only. The app calculates the **exact End Term score** required for every grade cutoff (S, A, B, etc.).
+- **Visual Feedback**: Color-coded results for instant clarity.
+
 ### **Export & Sharing**
-- Generate PDF reports of your academic progress
-- Share read-only links with advisors or family
-- Take clean screenshots for applications
+- **Generate Reports**: Download your academic summary (Coming Soon)
+- **Share**: Take clean screenshots of your dashboard for social sharing
 
 ---
 
