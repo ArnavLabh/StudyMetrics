@@ -1869,6 +1869,10 @@
                         <i class="fas fa-home nav-tab-icon"></i>
                         Dashboard
                     </a>
+                    <a href="/grade-predictor" class="nav-tab" id="navGradePredictor">
+                        <i class="fas fa-calculator nav-tab-icon"></i>
+                        Grade Predictor
+                    </a>
                     <a href="/analytics" class="nav-tab">
                         <i class="fas fa-chart-line nav-tab-icon"></i>
                         Analytics
@@ -1877,17 +1881,13 @@
                         <i class="fas fa-clock nav-tab-icon"></i>
                         Study Timer
                     </a>
-                    <a href="/grade-predictor" class="nav-tab" id="navGradePredictor">
-                        <i class="fas fa-calculator nav-tab-icon"></i>
-                        Grade Predictor
-                    </a>
                 </nav>
             </div>
         </div>
 
         <!-- Main Content -->
-        <div class="container">
-            <!-- CGPA Hero Section - Always at Top -->
+        <div id="dashboardSection" class="main-content container">
+            <!-- CGPA Hero Section - Now inside Dashboard Section -->
             <div class="cgpa-hero">
                 <div class="cgpa-hero-grid">
                     <div class="cgpa-main-display">
@@ -1940,282 +1940,278 @@
                 </div>
             </div>
 
-            <div id="dashboardSection" class="main-content">
-
-                <!-- Main Layout Grid -->
-                <div class="layout-grid">
-                    <!-- Course Sections -->
-                    <div class="content-area">
-                        <!-- Foundation Section -->
-                        <section id="foundation" class="course-section">
-                            <div class="section-header">
-                                <div class="section-title">
-                                    <div class="section-icon foundation-icon">🎯</div>
-                                    <span>Foundation Level</span>
-                                </div>
-                                <div class="credits-badge" id="foundationCredits">0/32 credits</div>
-                            </div>
-                            <div id="foundationCourses" class="course-list"></div>
-                        </section>
-
-                        <!-- Programming Diploma Section -->
-                        <section id="programming" class="course-section">
-                            <div class="section-header">
-                                <div class="section-title">
-                                    <div class="section-icon diploma-icon">💻</div>
-                                    <span>Diploma in Programming</span>
-                                </div>
-                                <div class="credits-badge" id="programmingCredits">0/27 credits</div>
-                            </div>
-                            <div id="programmingCourses" class="course-list"></div>
-                        </section>
-
-                        <!-- Data Science Diploma Section -->
-                        <section id="datascience" class="course-section">
-                            <div class="section-header">
-                                <div class="section-title">
-                                    <div class="section-icon diploma-icon">📊</div>
-                                    <span>Diploma in Data Science</span>
-                                </div>
-                                <div class="credits-badge" id="dataScienceCredits">0/27 credits</div>
-                            </div>
-                            <div id="dataScienceCourses" class="course-list"></div>
-                        </section>
-
-                        <!-- Degree Core Section -->
-                        <section id="degree" class="course-section">
-                            <div class="section-header">
-                                <div class="section-title">
-                                    <div class="section-icon degree-icon">🎓</div>
-                                    <span>Degree Level - Core Courses</span>
-                                </div>
-                                <div class="credits-badge" id="degreeCredits">0/20 credits</div>
-                            </div>
-                            <div id="degreeCourses" class="course-list"></div>
-                        </section>
-
-                        <!-- Electives Section -->
-                        <section id="electives" class="course-section">
-                            <div class="section-header">
-                                <div class="section-title">
-                                    <div class="section-icon degree-icon">📚</div>
-                                    <span>Degree Level - Elective Courses</span>
-                                </div>
-                                <div class="credits-badge" id="electiveCredits">0/36 credits</div>
-                            </div>
-                            <div id="electiveCourses" class="course-list"></div>
-                            <button class="add-elective-btn" id="addElectiveBtn">+ Add Elective Course</button>
-                        </section>
-                    </div>
-
-
-                </div>
-
-                <!-- Analytics Section -->
-                <div id="analyticsSection" class="section-content" style="display: none;">
-                    <div class="analytics-vertical-layout">
-                        <div class="analytics-full-card">
-                            <h3 class="analytics-title">📈 CGPA Trend Over Time</h3>
-                            <div class="chart-container">
-                                <canvas id="cgpaTrendChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="analytics-full-card">
-                            <h3 class="analytics-title">🎯 Target CGPA Calculator</h3>
-                            <div class="target-input-group">
-                                <input type="number" class="target-input" id="targetCgpaInput" min="0" max="10"
-                                    step="0.01" placeholder="Target CGPA (e.g., 9.00)">
-                                <button class="target-btn" onclick="calculateTargetCGPA()">Calculate</button>
-                            </div>
-                            <div id="targetAnalysisResult"></div>
-                        </div>
-
-                        <div class="analytics-full-card">
-                            <h3 class="analytics-title">📊 What-If Analysis</h3>
-                            <p class="text-sm text-secondary mb-3">Add hypothetical courses to see CGPA impact</p>
-                            <div id="whatIfInputs">
-                                <!-- Dynamic inputs will be added here -->
-                            </div>
-                            <button class="whatif-add-btn" onclick="addWhatIfCourse()">+ Add Course</button>
-                            <div id="whatIfResults" class="mt-4"></div>
-                        </div>
-
-                        <div class="analytics-full-card">
-                            <h3 class="analytics-title">📤 Export Data</h3>
-                            <p class="text-sm text-secondary mb-3">Download your academic data</p>
-                            <div class="coming-soon">
-                                🚧 Coming Soon - Export functionality will be available in the next update
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Grade Predictor Section -->
-                <div id="gradePredictorSection" class="section-content" style="display: none;">
-                    <div class="analytics-full-card" style="border-top: 4px solid var(--accent-primary);">
-                        <div class="section-header" style="margin-bottom: 2rem;">
+            <!-- Main Layout Grid -->
+            <div class="layout-grid">
+                <!-- Course Sections -->
+                <div class="content-area">
+                    <!-- Foundation Section -->
+                    <section id="foundation" class="course-section">
+                        <div class="section-header">
                             <div class="section-title">
-                                <div class="section-icon" style="background: var(--gradient-primary);">
-                                    <i class="fas fa-calculator"></i>
-                                </div>
-                                <span>Grade Predictor 4.0</span>
+                                <div class="section-icon foundation-icon">🎯</div>
+                                <span>Foundation Level</span>
                             </div>
-                            <div class="form-toggle" style="margin: 0; display: flex; align-items: center; gap: 1rem;">
-                                <span class="text-sm text-secondary">End Term Attempted?</span>
-                                <label class="switch"
-                                    style="position: relative; display: inline-block; width: 48px; height: 24px;">
-                                    <input type="checkbox" id="endTermToggle">
-                                    <span class="slider round"
-                                        style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--bg-surface); transition: .4s; border-radius: 34px; border: 1px solid var(--border-primary);"></span>
-                                    <style>
-                                        input:checked+.slider {
-                                            background-color: var(--accent-primary);
-                                        }
-
-                                        input:checked+.slider:before {
-                                            transform: translateX(24px);
-                                        }
-
-                                        .slider:before {
-                                            position: absolute;
-                                            content: "";
-                                            height: 16px;
-                                            width: 16px;
-                                            left: 4px;
-                                            bottom: 3px;
-                                            background-color: white;
-                                            transition: .4s;
-                                            border-radius: 50%;
-                                        }
-                                    </style>
-                                </label>
-                            </div>
+                            <div class="credits-badge" id="foundationCredits">0/32 credits</div>
                         </div>
+                        <div id="foundationCourses" class="course-list"></div>
+                    </section>
 
-                        <!-- Controls -->
-                        <div class="grid-controls"
-                            style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; margin-bottom: 2rem;">
-                            <div class="form-group">
-                                <label class="form-label">Level</label>
-                                <div class="option-buttons">
-                                    <button class="option-btn active" id="btnFoundation"
-                                        onclick="setPredictorLevel('foundation')">Foundation</button>
-                                    <button class="option-btn" id="btnDiploma"
-                                        onclick="setPredictorLevel('diploma')">Diploma</button>
-                                </div>
+                    <!-- Programming Diploma Section -->
+                    <section id="programming" class="course-section">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <div class="section-icon diploma-icon">💻</div>
+                                <span>Diploma in Programming</span>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Course</label>
-                                <select id="predictorCourseSelect" class="form-input" style="appearance: auto;">
-                                    <option value="">Select a course...</option>
-                                </select>
-                            </div>
+                            <div class="credits-badge" id="programmingCredits">0/27 credits</div>
                         </div>
+                        <div id="programmingCourses" class="course-list"></div>
+                    </section>
 
-                        <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 2rem; align-items: start;">
-                            <!-- Inputs -->
-                            <div id="predictorInputs" class="inputs-container">
-                                <div class="text-center text-muted" style="padding: 2rem;">Select a course to begin
-                                </div>
+                    <!-- Data Science Diploma Section -->
+                    <section id="datascience" class="course-section">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <div class="section-icon diploma-icon">📊</div>
+                                <span>Diploma in Data Science</span>
                             </div>
-
-                            <!-- Results -->
-                            <div class="results-panel">
-                                <div id="predictorResults" class="cgpa-display"
-                                    style="border-color: var(--border-accent); background: var(--bg-surface);">
-                                    <div class="text-center text-muted">Results will appear here</div>
-                                </div>
-
-                                <!-- Disclaimer footer -->
-                                <div class="text-center mt-4 text-xs text-muted" style="opacity: 0.7;">
-                                    * Actual grade/marks might differ (Updated for Jan 2026 Term)
-                                </div>
-                            </div>
+                            <div class="credits-badge" id="dataScienceCredits">0/27 credits</div>
                         </div>
+                        <div id="dataScienceCourses" class="course-list"></div>
+                    </section>
+
+                    <!-- Degree Core Section -->
+                    <section id="degree" class="course-section">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <div class="section-icon degree-icon">🎓</div>
+                                <span>Degree Level - Core Courses</span>
+                            </div>
+                            <div class="credits-badge" id="degreeCredits">0/20 credits</div>
+                        </div>
+                        <div id="degreeCourses" class="course-list"></div>
+                    </section>
+
+                    <!-- Electives Section -->
+                    <section id="electives" class="course-section">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <div class="section-icon degree-icon">📚</div>
+                                <span>Degree Level - Elective Courses</span>
+                            </div>
+                            <div class="credits-badge" id="electiveCredits">0/36 credits</div>
+                        </div>
+                        <div id="electiveCourses" class="course-list"></div>
+                        <button class="add-elective-btn" id="addElectiveBtn">+ Add Elective Course</button>
+                    </section>
+                </div>
+
+
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analyticsSection" class="section-content" style="display: none;">
+            <div class="analytics-vertical-layout">
+                <div class="analytics-full-card">
+                    <h3 class="analytics-title">📈 CGPA Trend Over Time</h3>
+                    <div class="chart-container">
+                        <canvas id="cgpaTrendChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Timer Section -->
-                <div id="timerSection" class="section-content" style="display: none;">
-                    <div class="analytics-full-card">
-                        <h3 class="analytics-title">⏱️ Pomodoro Study Timer</h3>
+                <div class="analytics-full-card">
+                    <h3 class="analytics-title">🎯 Target CGPA Calculator</h3>
+                    <div class="target-input-group">
+                        <input type="number" class="target-input" id="targetCgpaInput" min="0" max="10" step="0.01"
+                            placeholder="Target CGPA (e.g., 9.00)">
+                        <button class="target-btn" onclick="calculateTargetCGPA()">Calculate</button>
+                    </div>
+                    <div id="targetAnalysisResult"></div>
+                </div>
 
-                        <div class="timer-container text-center mb-4">
-                            <div id="timerDisplay" class="cgpa-value"
-                                style="font-size: 4rem; color: var(--accent-primary);">25:00</div>
-                            <div class="cgpa-label" id="timerStatus">Study Session</div>
+                <div class="analytics-full-card">
+                    <h3 class="analytics-title">📊 What-If Analysis</h3>
+                    <p class="text-sm text-secondary mb-3">Add hypothetical courses to see CGPA impact</p>
+                    <div id="whatIfInputs">
+                        <!-- Dynamic inputs will be added here -->
+                    </div>
+                    <button class="whatif-add-btn" onclick="addWhatIfCourse()">+ Add Course</button>
+                    <div id="whatIfResults" class="mt-4"></div>
+                </div>
+
+                <div class="analytics-full-card">
+                    <h3 class="analytics-title">📤 Export Data</h3>
+                    <p class="text-sm text-secondary mb-3">Download your academic data</p>
+                    <div class="coming-soon">
+                        🚧 Coming Soon - Export functionality will be available in the next update
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grade Predictor Section -->
+        <div id="gradePredictorSection" class="section-content" style="display: none;">
+            <div class="analytics-full-card" style="border-top: 4px solid var(--accent-primary);">
+                <div class="section-header" style="margin-bottom: 2rem;">
+                    <div class="section-title">
+                        <div class="section-icon" style="background: var(--gradient-primary);">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        <span>Grade Predictor 4.0</span>
+                    </div>
+                    <div class="form-toggle" style="margin: 0; display: flex; align-items: center; gap: 1rem;">
+                        <span class="text-sm text-secondary">End Term Attempted?</span>
+                        <label class="switch"
+                            style="position: relative; display: inline-block; width: 48px; height: 24px;">
+                            <input type="checkbox" id="endTermToggle">
+                            <span class="slider round"
+                                style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--bg-surface); transition: .4s; border-radius: 34px; border: 1px solid var(--border-primary);"></span>
+                            <style>
+                                input:checked+.slider {
+                                    background-color: var(--accent-primary);
+                                }
+
+                                input:checked+.slider:before {
+                                    transform: translateX(24px);
+                                }
+
+                                .slider:before {
+                                    position: absolute;
+                                    content: "";
+                                    height: 16px;
+                                    width: 16px;
+                                    left: 4px;
+                                    bottom: 3px;
+                                    background-color: white;
+                                    transition: .4s;
+                                    border-radius: 50%;
+                                }
+                            </style>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="grid-controls"
+                    style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; margin-bottom: 2rem;">
+                    <div class="form-group">
+                        <label class="form-label">Level</label>
+                        <div class="option-buttons">
+                            <button class="option-btn active" id="btnFoundation"
+                                onclick="setPredictorLevel('foundation')">Foundation</button>
+                            <button class="option-btn" id="btnDiploma"
+                                onclick="setPredictorLevel('diploma')">Diploma</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Course</label>
+                        <select id="predictorCourseSelect" class="form-input" style="appearance: auto;">
+                            <option value="">Select a course...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 2rem; align-items: start;">
+                    <!-- Inputs -->
+                    <div id="predictorInputs" class="inputs-container">
+                        <div class="text-center text-muted" style="padding: 2rem;">Select a course to begin
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="results-panel">
+                        <div id="predictorResults" class="cgpa-display"
+                            style="border-color: var(--border-accent); background: var(--bg-surface);">
+                            <div class="text-center text-muted">Results will appear here</div>
                         </div>
 
-                        <div class="timer-controls text-center mb-4">
-                            <button id="startTimer" class="form-button"
-                                style="width: auto; margin: 0 0.5rem;">Start</button>
-                            <button id="pauseTimer" class="form-button"
-                                style="width: auto; margin: 0 0.5rem; background: var(--accent-warning);">Pause</button>
-                            <button id="resetTimer" class="form-button"
-                                style="width: auto; margin: 0 0.5rem; background: var(--accent-error);">Reset</button>
-                        </div>
-
-                        <div class="timer-settings">
-                            <div class="form-group">
-                                <label class="form-label">Course (Optional)</label>
-                                <input type="text" id="timerCourseInput" class="form-input"
-                                    placeholder="e.g., BSCS1001 - Computational Thinking">
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">What are you studying? (Optional)</label>
-                                <input type="text" id="timerActivity" class="form-input"
-                                    placeholder="e.g., Differential Calculus, Python Programming...">
-                            </div>
-
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div class="form-group">
-                                    <label class="form-label">Study Time (minutes)</label>
-                                    <input type="number" id="studyDuration" class="form-input" value="25" min="1"
-                                        max="120">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Break Time (minutes)</label>
-                                    <input type="number" id="breakDuration" class="form-input" value="5" min="1"
-                                        max="30">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="timerHistory" class="mt-4">
-                            <h4 class="analytics-title">📚 Recent Study Sessions</h4>
-                            <div id="timerHistoryList"></div>
+                        <!-- Disclaimer footer -->
+                        <div class="text-center mt-4 text-xs text-muted" style="opacity: 0.7;">
+                            * Actual grade/marks might differ (Updated for Jan 2026 Term)
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Elective Modal -->
-        <div class="modal-overlay" id="electiveModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 class="modal-title">Add Elective Course</h2>
-                    <button class="modal-close" id="modalClose">&times;</button>
+        <!-- Timer Section -->
+        <div id="timerSection" class="section-content" style="display: none;">
+            <div class="analytics-full-card">
+                <h3 class="analytics-title">⏱️ Pomodoro Study Timer</h3>
+
+                <div class="timer-container text-center mb-4">
+                    <div id="timerDisplay" class="cgpa-value" style="font-size: 4rem; color: var(--accent-primary);">
+                        25:00</div>
+                    <div class="cgpa-label" id="timerStatus">Study Session</div>
                 </div>
-                <input type="text" class="form-input" id="electiveSearch"
-                    placeholder="Search courses by name, code, or category...">
-                <div id="electiveList" style="margin-top: 1rem; max-height: 400px; overflow-y: auto;"></div>
+
+                <div class="timer-controls text-center mb-4">
+                    <button id="startTimer" class="form-button" style="width: auto; margin: 0 0.5rem;">Start</button>
+                    <button id="pauseTimer" class="form-button"
+                        style="width: auto; margin: 0 0.5rem; background: var(--accent-warning);">Pause</button>
+                    <button id="resetTimer" class="form-button"
+                        style="width: auto; margin: 0 0.5rem; background: var(--accent-error);">Reset</button>
+                </div>
+
+                <div class="timer-settings">
+                    <div class="form-group">
+                        <label class="form-label">Course (Optional)</label>
+                        <input type="text" id="timerCourseInput" class="form-input"
+                            placeholder="e.g., BSCS1001 - Computational Thinking">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">What are you studying? (Optional)</label>
+                        <input type="text" id="timerActivity" class="form-input"
+                            placeholder="e.g., Differential Calculus, Python Programming...">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Study Time (minutes)</label>
+                            <input type="number" id="studyDuration" class="form-input" value="25" min="1" max="120">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Break Time (minutes)</label>
+                            <input type="number" id="breakDuration" class="form-input" value="5" min="1" max="30">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="timerHistory" class="mt-4">
+                    <h4 class="analytics-title">📚 Recent Study Sessions</h4>
+                    <div id="timerHistoryList"></div>
+                </div>
             </div>
         </div>
+    </div>
+    </div>
 
-        <!-- Toast Notification -->
-        <div class="toast" id="toast"></div>
+    <!-- Elective Modal -->
+    <div class="modal-overlay" id="electiveModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Elective Course</h2>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <input type="text" class="form-input" id="electiveSearch"
+                placeholder="Search courses by name, code, or category...">
+            <div id="electiveList" style="margin-top: 1rem; max-height: 400px; overflow-y: auto;"></div>
+        </div>
+    </div>
 
-        <!-- Connection Status -->
-        <div class="connection-status" id="connectionStatus"></div>
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
 
-        <!-- Chart.js for Analytics -->
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Connection Status -->
+    <div class="connection-status" id="connectionStatus"></div>
 
-        <!-- Main Application Script -->
-        <script src="js/app.js?v=3.5.2"></script>
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Main Application Script -->
+    <script src="js/app.js?v=3.5.2"></script>
 </body>
 
 </html>

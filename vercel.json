@@ -9,20 +9,24 @@
       "destination": "/index.html"
     },
     {
-      "source": "/login",
-      "destination": "/login.html"
-    },
-    {
-      "source": "/register",
-      "destination": "/register.html"
+      "source": "/grade-predictor",
+      "destination": "/index.html"
     },
     {
       "source": "/analytics",
-      "destination": "/analytics.html"
+      "destination": "/index.html"
     },
     {
       "source": "/timer",
-      "destination": "/timer.html"
+      "destination": "/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/register",
+      "destination": "/index.html"
     },
     {
       "source": "/api/:path*",
