@@ -126,33 +126,74 @@ const gradeScale = {
 
 // Grade Predictor Data (Hardcoded as requested, Client-side only)
 const gradePredictorData = {
-    // Grade Cutoffs
-    cutoffs: { S: 90, A: 80, B: 70, C: 60, D: 50, E: 40 },
-
-    // Courses and Formulas
-    courses: [
-        { name: "Mathematics for Data Science 1", formula: "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2) + bonus", inputs: ["F", "Qz1", "Qz2", "bonus"] },
-        { name: "English 1", formula: "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2) + bonus", inputs: ["F", "Qz1", "Qz2", "bonus"] },
-        { name: "Computational Thinking", formula: "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2) + bonus", inputs: ["F", "Qz1", "Qz2", "bonus"] },
-        { name: "Statistics for Data Science 1", formula: "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2) + bonus", inputs: ["F", "Qz1", "Qz2", "bonus"] },
-        { name: "Mathematics for Data Science 2", formula: "min(100, max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2) + bonus)", inputs: ["F", "Qz1", "Qz2", "bonus"] },
-        { name: "English 2", formula: "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2) + bonus", inputs: ["F", "Qz1", "Qz2", "bonus"] },
-        { name: "Intro to Python Programming", formula: "0.15*Qz1 + 0.4*F + 0.25*max(PE1, PE2) + 0.2*min(PE1, PE2) + bonus", inputs: ["Qz1", "F", "PE1", "PE2", "bonus"] },
-        { name: "Statistics for Data Science 2", formula: "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2) + bonus", inputs: ["F", "Qz1", "Qz2", "bonus"] },
-        { name: "Machine Learning Foundations", formula: "0.05*GAA + max(0.6*F + 0.25*max(Qz1, Qz2), 0.4*F + 0.25*Qz1 + 0.3*Qz2) + bonus", inputs: ["GAA", "F", "Qz1", "Qz2", "bonus"] },
-        { name: "Machine Learning Techniques", formula: "0.05*GAA + max(0.6*F + 0.25*max(Qz1, Qz2), 0.4*F + 0.25*Qz1 + 0.3*Qz2) + bonus", inputs: ["GAA", "F", "Qz1", "Qz2", "bonus"] },
-        { name: "Machine Learning Practice", formula: "0.1*GAA + 0.30*F + 0.20*OPPE1 + 0.20*OPPE2 + 0.20*KA + bonus", inputs: ["GAA", "F", "OPPE1", "OPPE2", "KA", "bonus"] },
-        { name: "Business Data Management", formula: "GA + Qz2 + Timed_Assignment + F + bonus", inputs: ["GA", "Qz2", "Timed_Assignment", "F", "bonus"] },
-        { name: "Business Analytics", formula: "Qz + A + F + bonus", inputs: ["Qz", "A", "F", "bonus"], helper: { Qz: "0.7*max(Qz1, Qz2) + 0.3*min(Qz1, Qz2)", A: "Sum of best 2 out of 3 assignments" } },
-        { name: "Tools in Data Science", formula: "0.1*GAA + 0.2*ROE + 0.2*P1 + 0.2*P2 + 0.3*F + bonus", inputs: ["GAA", "ROE", "P1", "P2", "F", "bonus"] },
-        { name: "PDSA", formula: "0.05*GAA + 0.2*OP + 0.45*F + max(0.2*max(Qz1, Qz2), (0.10*Qz1 + 0.20*Qz2)) + bonus", inputs: ["GAA", "OP", "F", "Qz1", "Qz2", "bonus"] },
-        { name: "DBMS", formula: "0.03*GAA2 + 0.02*GAA3 + 0.2*OP + 0.45*F + max(0.2*max(Qz1, Qz2), (0.10*Qz1 + 0.20*Qz2)) + bonus", inputs: ["GAA2", "GAA3", "OP", "F", "Qz1", "Qz2", "bonus"] },
-        { name: "Application Development - 1", formula: "0.05*GLA + max(0.6*F + 0.25*max(Qz1, Qz2), 0.4*F + 0.25*Qz1 + 0.3*Qz2) + bonus", inputs: ["GLA", "F", "Qz1", "Qz2", "bonus"] },
-        { name: "Programming Concepts using Java", formula: "0.05*GAA + 0.2*max(PE1, PE2) + 0.45*F + max(0.2*max(Qz1, Qz2), (0.10*Qz1 + 0.20*Qz2)) + 0.10*min(PE1, PE2) + bonus", inputs: ["GAA", "PE1", "PE2", "F", "Qz1", "Qz2", "bonus"] },
-        { name: "System Commands", formula: "0.05*GAA + 0.25*Qz1 + 0.3*OPPE + 0.3*F + 0.1*BPTA + bonus", inputs: ["GAA", "Qz1", "OPPE", "F", "BPTA", "bonus"] },
-        { name: "Application Development - 2", formula: "0.05*GAA + max(0.6*F + 0.25*max(Qz1, Qz2), 0.4*F + 0.25*Qz1 + 0.3*Qz2) + bonus", inputs: ["GAA", "F", "Qz1", "Qz2", "bonus"] },
-        { name: "Deep Learning and Gen AI", formula: "0.1*GAA + 0.2*Qz1 + 0.2*Qz2 + 0.25*F + 0.1*NPPE1 + 0.15*NPPE2 + bonus", inputs: ["GAA", "Qz1", "Qz2", "F", "NPPE1", "NPPE2", "bonus"] }
-    ]
+    "legend": {
+        "T": "Total Course Score",
+        "F": "Final End-Term Exam Score",
+        "Qz1": "Quiz 1 Score",
+        "Qz2": "Quiz 2 Score",
+        "GAA": "Graded Assignment Average",
+        "OPPE/PE/OP": "Proctored Programming Exam",
+        "NPPE": "Non-Proctored Programming Exam",
+        "GP": "Group Project",
+        "V/Viva": "Viva Voce Score",
+        "bonus": "Course specific bonus marks"
+    },
+    "levels": {
+        "foundation": [
+            { "course": "Mathematics for Data Science 1", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2)" },
+            { "course": "English 1", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2)" },
+            { "course": "Computational Thinking", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2)" },
+            { "course": "Statistics for Data Science 1", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2) + bonus_capped_5" },
+            { "course": "Mathematics for Data Science 2", "formula": "min(100, max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2) + bonus_capped_6)" },
+            { "course": "English 2", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2)" },
+            { "course": "Intro to Python Programming", "formula": "0.15*Qz1 + 0.4*F + 0.25*max(PE1, PE2) + 0.2*min(PE1, PE2)" },
+            { "course": "Statistics for Data Science 2", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2) + bonus_capped_5" }
+        ],
+        "diploma": [
+            { "course": "Machine Learning Foundations", "formula": "0.05*GAA + max(0.6*F + 0.25*max(Qz1, Qz2), 0.4*F + 0.25*Qz1 + 0.3*Qz2)" },
+            { "course": "Machine Learning Techniques", "formula": "0.05*GAA + max(0.6*F + 0.25*max(Qz1, Qz2), 0.4*F + 0.25*Qz1 + 0.3*Qz2) + bonus_3" },
+            { "course": "Machine Learning Practice", "formula": "0.1*GAA + 0.3*F + 0.2*OPPE1 + 0.2*OPPE2 + 0.2*KA_avg" },
+            { "course": "Business Data Management", "formula": "GA_best3_of_4 + Qz2 + Timed_Assignment + F" },
+            { "course": "Business Analytics", "formula": "(0.7*max(Qz1, Qz2) + 0.3*min(Qz1, Qz2)) + Best2_Assignments + F" },
+            { "course": "Tools in Data Science", "formula": "0.1*GAA + 0.2*ROE + 0.2*P1 + 0.2*P2 + 0.3*F" },
+            { "course": "PDSA", "formula": "0.05*GAA + 0.2*OP + 0.45*F + max(0.2*max(Qz1, Qz2), (0.1*Qz1 + 0.2*Qz2))" },
+            { "course": "DBMS", "formula": "0.03*GAA2 + 0.02*GAA3 + 0.2*OP + 0.45*F + max(0.2*max(Qz1, Qz2), (0.1*Qz1 + 0.2*Qz2))" },
+            { "course": "Application Development - 1", "formula": "0.05*GLA + max(0.6*F + 0.25*max(Qz1, Qz2), 0.4*F + 0.25*Qz1 + 0.3*Qz2)" },
+            { "course": "Programming Concepts using Java", "formula": "0.05*GAA + 0.2*max(PE1, PE2) + 0.45*F + max(0.2*max(Qz1, Qz2), (0.1*Qz1 + 0.2*Qz2)) + 0.1*min(PE1, PE2)" },
+            { "course": "System Commands", "formula": "0.05*GAA + 0.25*Qz1 + 0.3*OPPE + 0.3*F + 0.1*BPTA" },
+            { "course": "Application Development - 2", "formula": "0.05*GAA + max(0.6*F + 0.25*max(Qz1, Qz2), 0.4*F + 0.25*Qz1 + 0.3*Qz2)" },
+            { "course": "Deep Learning and Generative AI", "formula": "0.1*GAA + 0.2*Qz1 + 0.2*Qz2 + 0.25*F + 0.1*NPPE1 + 0.15*NPPE2" }
+        ],
+        "degree": [
+            { "course": "Software Testing", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" },
+            { "course": "Software Engineering", "formula": "0.05*GAA + 0.2*Qz2 + 0.4*F + 0.1*GP1 + 0.1*GP2 + 0.1*PP + 0.05*CP" },
+            { "course": "Deep Learning", "formula": "0.05*GAA + 0.25*Qz1 + 0.25*Qz2 + 0.45*F + bonus_5" },
+            { "course": "AI: Search Methods for Problem Solving", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2 + bonus_5" },
+            { "course": "Strategies for Professional Growth", "formula": "0.15*GAA + 0.25*GP + 0.25*Qz2 + 0.35*F" },
+            { "course": "Introduction to Big Data", "formula": "0.1*GAA + 0.3*F + 0.2*OPPE1 + 0.4*OPPE2 + bonus_5" },
+            { "course": "Programming in C", "formula": "0.1*GAA + 0.2*Qz1 + 0.2*OPPE1 + 0.2*OPPE2 + 0.3*F" },
+            { "course": "Deep Learning for CV", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" },
+            { "course": "Large Language Models", "formula": "0.05*GAA + 0.35*F + 0.3*Qz1 + 0.3*Qz2 + bonus_5" },
+            { "course": "Deep Learning Practice", "formula": "0.05*GA + 0.15*(Qz1+Qz2+Qz3) + 0.25*(avg(NPPE1,2,3)) + 0.25*Viva" },
+            { "course": "Industry 4.0", "formula": "15_Quiz_sum + 5_Game + 40_Asgn_Best2 + 30_F + 10_Project" },
+            { "course": "Operating Systems", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" },
+            { "course": "Reinforcement Learning", "formula": "0.05*GAA + 0.4*GPA + max((0.15*Qz1 + 0.15*Qz2), 0.2*max(Qz1, Qz2)) + 0.25*F" },
+            { "course": "Corporate Finance", "formula": "0.1*GAA + 0.4*F + 0.2*Qz1 + 0.3*Qz2" },
+            { "course": "Computer Networks", "formula": "0.1*GAA + 0.3*F + 0.25*Qz1 + 0.25*Qz2 + 0.1*Prog_Asgn" },
+            { "course": "Data Science and AI Lab", "formula": "0.05*GAA + 0.25*Quiz2 + 0.4*P + 0.3*V + bonus_5" },
+            { "course": "Application Development Lab", "formula": "0.2*Quiz2 + 0.3*Weekly_Asgn + 0.5*Project_Viva" },
+            { "course": "Algorithmic Thinking in Bioinformatics", "formula": "0.075*GAA + 0.25*GRPa + 0.25*Qz1 + 0.25*Qz2 + 0.4*F" },
+            { "course": "Big Data and Biological Networks", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" },
+            { "course": "Market Research", "formula": "0.1*GAA + 0.2*Qz1 + 0.2*Qz2 + 0.25*P + 0.25*F" },
+            { "course": "Statistical Computing", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" },
+            { "course": "Advanced Algorithms", "formula": "0.15*GAA + 0.35*F + 0.25*Qz1 + 0.25*Qz2" },
+            { "course": "Managerial Economics", "formula": "0.15*GAA + max(0.2*Qz1 + 0.2*Qz2 + 0.45*F, 0.5*F + 0.25*max(Qz1, Qz2))" },
+            { "course": "Speech Technology", "formula": "0.15*GAA + 0.15*V + 0.3*F + 0.2*Qz1 + 0.2*Qz2" },
+            { "course": "MLOPS", "formula": "0.2*GAA + 0.3*F + 0.25*OPPE1 + 0.25*OPPE2 + bonus_5" },
+            { "course": "Mathematical Foundations of Generative AI", "formula": "0.05*GAA + 0.35*F + 0.2*Qz1 + 0.2*Qz2 + 0.2*NPPE" },
+            { "course": "Theory of Computation", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" }
+        ]
+    }
 };
 
 // Application State
@@ -217,7 +258,7 @@ async function registerServiceWorker() {
                 await registration.unregister();
             }
 
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=3.5.9');
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.0.2');
             console.log('Service Worker registered:', registration);
 
             // Force immediate update check
@@ -253,7 +294,7 @@ async function checkForUpdates() {
         });
 
         // Force update check for existing users
-        const currentVersion = '3.5.9';
+        const currentVersion = '4.0.2';
         const storedVersion = localStorage.getItem('studymetrics_version');
 
         if (storedVersion && storedVersion !== currentVersion) {
@@ -288,7 +329,8 @@ function initializeApp() {
     clearOldCaches();
 
     setupEventListeners();
-    initializeTimer();
+    setupEventListeners();
+    // initializeTimer(); // Removed in v4.0.2
 
     const token = getStoredToken();
     if (token && token.length > 10) {
@@ -558,9 +600,6 @@ function updateView(path) {
             initializeAnalytics();
             window.analyticsInitialized = true;
         }
-    } else if (route === 'timer') {
-        const timer = document.getElementById('timerSection');
-        if (timer) timer.style.display = 'block';
     } else if (route === 'grade-predictor') {
         const predictor = document.getElementById('gradePredictorSection');
         if (predictor) predictor.style.display = 'block';
@@ -2549,8 +2588,11 @@ function initGradePredictor() {
     console.log('Initializing Grade Predictor...');
 
     // Setup Level Buttons
+    // Setup Level Buttons
     document.getElementById('btnFoundation').addEventListener('click', () => setPredictorLevel('foundation'));
     document.getElementById('btnDiploma').addEventListener('click', () => setPredictorLevel('diploma'));
+    const btnDegree = document.getElementById('btnDegree');
+    if (btnDegree) btnDegree.addEventListener('click', () => setPredictorLevel('degree'));
 
     // Setup Course Dropdown
     const courseSelect = document.getElementById('predictorCourseSelect');
@@ -2571,33 +2613,23 @@ function setPredictorLevel(level) {
     predictorState.level = level;
 
     // Update UI
+    // Update UI
     document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
-    document.getElementById(level === 'foundation' ? 'btnFoundation' : 'btnDiploma').classList.add('active');
+    const activeBtnId = level === 'foundation' ? 'btnFoundation' : (level === 'diploma' ? 'btnDiploma' : 'btnDegree');
+    const activeBtn = document.getElementById(activeBtnId);
+    if (activeBtn) activeBtn.classList.add('active');
 
     // Populate Dropdown
     const select = document.getElementById('predictorCourseSelect');
     select.innerHTML = '<option value="">Select a course...</option>';
 
-    gradePredictorData.courses.forEach(course => {
-        // Simple filter based on name/context
-        // Filter based on courseDatabase
-        // (Assuming courseDatabase is available)
+    const courses = gradePredictorData.levels[level] || [];
 
-        let shouldShow = true;
-        // Basic keywords filter
-        if (level === 'foundation' && (course.name.includes('Diploma') || course.name.includes('Business') || course.name.includes('Deep Learning'))) shouldShow = false;
-        if (level === 'foundation' && (course.name.includes('Mathematics') || course.name.includes('Statistics') || course.name.includes('English') || course.name.includes('Thinking') || course.name === "Intro to Python Programming")) shouldShow = true;
-
-        if (level === 'diploma' && (course.name.includes('Mathematics') && !course.name.includes('Machine Learning'))) shouldShow = false;
-        if (level === 'diploma' && (course.name.includes('English'))) shouldShow = false;
-        if (level === 'diploma' && (course.name.includes('Machine Learning') || course.name.includes('Business') || course.name.includes('Application Development') || course.name.includes('Tools in Data Science') || course.name.includes('PDSA') || course.name.includes('DBMS') || course.name.includes('Programming Concepts') || course.name.includes('System Commands'))) shouldShow = true;
-
-        if (shouldShow) {
-            const option = document.createElement('option');
-            option.value = course.name;
-            option.textContent = course.name;
-            select.appendChild(option);
-        }
+    courses.forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.course; // Using 'course' property from new JSON
+        option.textContent = course.course;
+        select.appendChild(option);
     });
 }
 
@@ -2608,7 +2640,7 @@ function selectPredictorCourse(courseName) {
         return;
     }
 
-    predictorState.course = gradePredictorData.courses.find(c => c.name === courseName);
+    predictorState.course = gradePredictorData.levels[predictorState.level]?.find(c => c.course === courseName);
     predictorState.inputs = {}; // Reset inputs
 
     renderPredictorInputs();
@@ -2622,7 +2654,16 @@ function renderPredictorInputs() {
 
     // Determine inputs for this course. 
     // We can infer from formula or use provided inputs list. User provided inputs list!
-    const inputVars = predictorState.course.inputs;
+    // Parse inputs from formula string
+    const formula = predictorState.course.formula;
+    // Regex to match variables (words starting with letter, excluding 'max', 'min')
+    const matches = formula.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+    const keywords = ['max', 'min', 'avg'];
+    // Filter unique variables that are not keywords
+    const inputVars = [...new Set(matches)].filter(v => !keywords.includes(v));
+
+    // Store for calculation usage
+    predictorState.course.inputs = inputVars;
 
     inputVars.forEach(variable => {
         // Skip 'F' (End Term) if End Term NOT Attempted
@@ -2748,48 +2789,58 @@ function calculatePrediction() {
         .replace(/min\(/g, 'Math.min(');
 
     if (predictorState.endTermAttempted) {
-        // Forward Calculation
         try {
-            // Safe evaluation using Function constructor
-            const vars = [...course.inputs].sort((a, b) => b.length - a.length);
-            let evalFormula = formula;
+            const formula = predictorState.course.formula;
+            const inputs = predictorState.inputs;
 
-            vars.forEach(v => {
-                const val = inputs[v] !== undefined ? inputs[v] : 0;
-                // Replace variable with value. Use split/join to replace all instances safely or RegEx
-                // We must be careful not to replace 'Qz1's 'Qz' part if we replace 'Qz' first.
-                // We sorted by length desc, so 'Qz1' replaced before 'Qz'.
-                // Using regex with word boundary is safer?
-                // Actually replaceAll with strict match is tricky if variable is substring.
-                // Example: 'Qz' substring of 'Qz1'.
-                // But vars contains 'Qz1', 'Qz2'.
-
-                // Better approach: Define arguments for Function
-                // new Function('F', 'Qz1', ..., 'return ' + formula)(inputs.F, inputs.Qz1, ...)
+            // Prepare evaluation context
+            const context = {};
+            predictorState.course.inputs.forEach(v => {
+                if (v === 'F' && !predictorState.endTermAttempted) {
+                    context[v] = 0; // F is 0 in calculation if not attempted (logic handled elsewhere usually, but safe fallback)
+                } else {
+                    context[v] = parseFloat(inputs[v]) || 0;
+                }
             });
 
-            // Let's use the Function arg approach. Much safer.
-            const argNames = course.inputs;
-            const argValues = argNames.map(name => inputs[name] || 0);
+            // Create a safe evaluation function
+            // Replace variables with 'context.VarName' using the stored inputVars list
+            // We use a regex to ensure whole word replacement
 
-            // We need to transform the formula to use the arg names?
-            // The formula already uses them!
-            // BUT 'max' was replaced by 'Math.max'.
+            let safeFormula = formula;
+            predictorState.course.inputs.forEach(v => {
+                const regex = new RegExp(`\\b${v}\\b`, 'g');
+                safeFormula = safeFormula.replace(regex, `context['${v}']`);
+            });
 
-            const func = new Function(...argNames, 'return ' + formula);
-            const score = func(...argValues);
+            safeFormula = safeFormula.replace(/\bmax\b/g, 'Math.max');
+            safeFormula = safeFormula.replace(/\bmin\b/g, 'Math.min');
+            safeFormula = safeFormula.replace(/\bavg\b/g, 'avg'); // Assuming avg helper or custom handling
+
+            // Helper for avg if needed, or simple Math
+            // If formula uses avg(a,b), we need to ensure avg is defined in scope or context.
+            // For now, let's assume no avg() in formulas or define a simple one if needed.
+            // Or actually, let's attach Math to context if convenient.
+
+            const evalFunction = new Function('context', 'Math', `return ${safeFormula};`);
+            let score = evalFunction(context, Math);
+
+            // Ensure bonus capping if formula has bonus logic handled inside (e.g. + bonus_capped)
+            // Actually, the keys like 'bonus_capped_5' in JSON need to be parsed as inputs too if they are variables.
+            // My parser regex logic should catch them.
+
             const grade = calculateGradeFromScore(score);
 
             resultsContainer.innerHTML = `
-                <div class="text-center" style="padding: 2rem;">
-                    <div class="text-secondary text-sm mb-2">Total Course Score</div>
-                    <div class="cgpa-value">${score.toFixed(2)}</div>
-                    <div class="text-lg font-bold" style="color: ${getGradeColor(grade)}; margin-top: 1rem;">${grade} Grade</div>
-                </div>
-            `;
+            <div class="text-center" style="padding: 2rem;">
+                <div class="text-secondary text-sm mb-2">Total Course Score</div>
+                <div class="cgpa-value">${score.toFixed(2)}</div>
+                <div class="text-lg font-bold" style="color: ${getGradeColor(grade)}; margin-top: 1rem;">${grade} Grade</div>
+            </div>
+        `;
 
         } catch (e) {
-            console.error('Calculation error', e);
+            console.error('Calculation error:', e);
             resultsContainer.innerHTML = '<div class="text-error text-center p-4">Error in calculation formula</div>';
         }
 

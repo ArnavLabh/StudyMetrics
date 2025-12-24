@@ -1877,10 +1877,6 @@
                         <i class="fas fa-chart-line nav-tab-icon"></i>
                         Analytics
                     </a>
-                    <a href="/timer" class="nav-tab">
-                        <i class="fas fa-clock nav-tab-icon"></i>
-                        Study Timer
-                    </a>
                 </nav>
             </div>
         </div>
@@ -2012,6 +2008,12 @@
 
         <!-- Analytics Section -->
         <div id="analyticsSection" class="section-content" style="display: none;">
+            <div class="alert-banner"
+                style="background: rgba(245, 158, 11, 0.1); border: 1px solid var(--accent-warning); color: var(--accent-warning); padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">
+                <i class="fas fa-hammer"></i>
+                <span><strong>Page Under Development</strong>: Advanced analytics features are currently being
+                    built.</span>
+            </div>
             <div class="analytics-vertical-layout">
                 <div class="analytics-full-card">
                     <h3 class="analytics-title">📈 CGPA Trend Over Time</h3>
@@ -2102,6 +2104,8 @@
                                 onclick="setPredictorLevel('foundation')">Foundation</button>
                             <button class="option-btn" id="btnDiploma"
                                 onclick="setPredictorLevel('diploma')">Diploma</button>
+                            <button class="option-btn" id="btnDegree"
+                                onclick="setPredictorLevel('degree')">Degree</button>
                         </div>
                     </div>
                     <div class="form-group">
