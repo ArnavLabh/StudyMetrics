@@ -174,8 +174,8 @@ const gradePredictorData = {
             { "course": "Programming in C", "formula": "0.1*GAA + 0.2*Qz1 + 0.2*OPPE1 + 0.2*OPPE2 + 0.3*F" },
             { "course": "Deep Learning for CV", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" },
             { "course": "Large Language Models", "formula": "0.05*GAA + 0.35*F + 0.3*Qz1 + 0.3*Qz2" },
-            { "course": "Deep Learning Practice", "formula": "0.05*GA + 0.15*(Qz1+Qz2+Qz3) + 0.25*(avg(NPPE1,2,3)) + 0.25*Viva" },
-            { "course": "Industry 4.0", "formula": "15_Quiz_sum + 5_Game + 40_Asgn_Best2 + 30_F + 10_Project" },
+            { "course": "Deep Learning Practice", "formula": "0.05*GA + 0.15*(Qz1+Qz2+Qz3) + 0.25*(avg(NPPE1,NPPE2,NPPE3)) + 0.25*Viva" },
+            { "course": "Industry 4.0", "formula": "Quiz_Sum_15 + Game_5 + Asgn_Best2_40 + F + Project_10" },
             { "course": "Operating Systems", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" },
             { "course": "Reinforcement Learning", "formula": "0.05*GAA + 0.4*GPA + max((0.15*Qz1 + 0.15*Qz2), 0.2*max(Qz1, Qz2)) + 0.25*F" },
             { "course": "Corporate Finance", "formula": "0.1*GAA + 0.4*F + 0.2*Qz1 + 0.3*Qz2" },
@@ -253,7 +253,7 @@ async function registerServiceWorker() {
                 await registration.unregister();
             }
 
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.0.9');
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.0.10');
             console.log('Service Worker registered:', registration);
 
             // Force immediate update check
@@ -292,7 +292,7 @@ async function checkForUpdates() {
             }
         });
 
-        const currentVersion = '4.0.99'; // v4.0.99
+        const currentVersion = '4.0.10'; // v4.0.10
         const storedVersion = localStorage.getItem('studymetrics_version');
 
         if (storedVersion && storedVersion !== currentVersion) {
@@ -2617,11 +2617,12 @@ function getReadableLabel(key) {
         'ROE': 'Remote Online Examination',
 
         // Industry 4.0 Specific
-        '15_Quiz_sum': 'Quiz Sum (15 Marks)',
-        '5_Game': 'Online Game (5 Marks)',
-        '40_Asgn_Best2': 'Best 2 Assignments (40 Marks)',
-        '30_F': 'End Term Exam (30 Marks)',
-        '10_Project': 'Project (10 Marks)'
+        // Industry 4.0 Specific
+        'Quiz_Sum_15': 'Quiz Sum (15 Marks)',
+        'Game_5': 'Online Game (5 Marks)',
+        'Asgn_Best2_40': 'Best 2 Assignments (40 Marks)',
+        'F': 'End Term Exam', // Standardized
+        'Project_10': 'Project (10 Marks)'
     };
 
     // Dynamic mapping for specific user request
@@ -2671,12 +2672,10 @@ function calculatePrediction() {
 
             safeFormula = safeFormula.replace(/\bmax\b/g, 'Math.max');
             safeFormula = safeFormula.replace(/\bmin\b/g, 'Math.min');
-            safeFormula = safeFormula.replace(/\bavg\b/g, 'avg'); // Assuming avg helper or custom handling
+            // avg is handled by context.avg
 
-            // Helper for avg if needed, or simple Math
-            // If formula uses avg(a,b), we need to ensure avg is defined in scope or context.
-            // For now, let's assume no avg() in formulas or define a simple one if needed.
-            // Or actually, let's attach Math to context if convenient.
+            const avg = (...args) => args.reduce((a, b) => a + b, 0) / (args.length || 1);
+            context.avg = avg;
 
             const evalFunction = new Function('context', 'Math', `return ${safeFormula};`);
             let score = evalFunction(context, Math);
@@ -2754,17 +2753,23 @@ function findRequiredF(course, currentInputs, targetScore) {
         .replace(/max\(/g, 'Math.max(')
         .replace(/min\(/g, 'Math.min(');
     const argNames = course.inputs; // Includes 'F'
-    const func = new Function(...argNames, 'return ' + formula);
+    const avg = (...args) => args.reduce((a, b) => a + b, 0) / (args.length || 1);
+    const func = new Function(...argNames, 'avg', 'return ' + formula);
+
+    const callFunc = (inputsObj) => {
+        const args = argNames.map(n => inputsObj[n] !== undefined ? inputsObj[n] : 0);
+        return func(...args, avg);
+    };
 
     // Check max possible
     const inputsMax = { ...currentInputs, F: 100 };
-    const maxScore = func(...argNames.map(n => inputsMax[n] !== undefined ? inputsMax[n] : 0));
+    const maxScore = callFunc(inputsMax);
 
     if (maxScore < targetScore) return null;
 
     // Check if already achieved with 0
     const inputsMin = { ...currentInputs, F: 0 };
-    const minScore = func(...argNames.map(n => inputsMin[n] !== undefined ? inputsMin[n] : 0));
+    const minScore = callFunc(inputsMin);
     if (minScore >= targetScore) return 0;
 
     // Search
@@ -2772,7 +2777,7 @@ function findRequiredF(course, currentInputs, targetScore) {
     for (let i = 0; i < 20; i++) {
         let mid = (low + high) / 2;
         const inputsMid = { ...currentInputs, F: mid };
-        const s = func(...argNames.map(n => inputsMid[n] !== undefined ? inputsMid[n] : 0));
+        const s = callFunc(inputsMid);
 
         if (s >= targetScore) {
             high = mid;
