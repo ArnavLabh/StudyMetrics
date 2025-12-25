@@ -192,15 +192,15 @@ const gradePredictorData = {
             { "course": "MLOPS", "formula": "0.2*GAA + 0.3*F + 0.25*OPPE1 + 0.25*OPPE2" },
             { "course": "Mathematical Foundations of Generative AI", "formula": "0.05*GAA + 0.35*F + 0.2*Qz1 + 0.2*Qz2 + 0.2*NPPE" },
             { "course": "Theory of Computation", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" }
-        ],
-        "cutoffs": {
-            'S': 90,
-            'A': 80,
-            'B': 70,
-            'C': 60,
-            'D': 50,
-            'E': 40
-        }
+        ]
+    },
+    "cutoffs": {
+        'S': 90,
+        'A': 80,
+        'B': 70,
+        'C': 60,
+        'D': 50,
+        'E': 40
     }
 };
 
