@@ -253,7 +253,7 @@ async function registerServiceWorker() {
                 await registration.unregister();
             }
 
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.1.0');
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.1.1');
             console.log('Service Worker registered:', registration);
 
             // Force immediate update check
@@ -281,19 +281,19 @@ async function registerServiceWorker() {
 // Check for app updates
 async function checkForUpdates() {
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            // Prevent infinite loop: Only reload if we haven't just reloaded for an update
-            if (!sessionStorage.getItem('update_reloaded')) {
+        const currentVersion = '4.1.1'; // v4.1.1
+        const storedVersion = localStorage.getItem('studymetrics_version');
+
+        // Helper for safe reload
+        const reloadForUpdate = () => {
+             if (!sessionStorage.getItem('update_reloaded')) {
                 sessionStorage.setItem('update_reloaded', 'true');
                 showToast('New version available! Refreshing...', 'info');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
+                setTimeout(() => window.location.reload(), 1000);
             }
-        });
+        };
 
-        const currentVersion = '4.1.0'; // v4.1.0
-        const storedVersion = localStorage.getItem('studymetrics_version');
+        navigator.serviceWorker.addEventListener('controllerchange', reloadForUpdate);
 
         if (storedVersion && storedVersion !== currentVersion) {
             console.log(`Version mismatch: ${storedVersion} -> ${currentVersion}`);
@@ -310,13 +310,7 @@ async function checkForUpdates() {
                     }));
                 } catch (e) { console.error('Cache clear failed:', e); }
             }
-
-            // Only reload if not recently reloaded to avoid loops
-            if (!sessionStorage.getItem('update_reloaded')) {
-                sessionStorage.setItem('update_reloaded', 'true');
-                showToast('App updated! Refreshing...', 'success');
-                setTimeout(() => window.location.reload(), 1500);
-            }
+            reloadForUpdate();
         } else {
             localStorage.setItem('studymetrics_version', currentVersion);
             // Clear the reload flag if versions match
