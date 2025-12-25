@@ -253,7 +253,7 @@ async function registerServiceWorker() {
                 await registration.unregister();
             }
 
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.1.1');
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.1.2');
             console.log('Service Worker registered:', registration);
 
             // Force immediate update check
@@ -281,12 +281,12 @@ async function registerServiceWorker() {
 // Check for app updates
 async function checkForUpdates() {
     if ('serviceWorker' in navigator) {
-        const currentVersion = '4.1.1'; // v4.1.1
+        const currentVersion = '4.1.2'; // v4.1.2
         const storedVersion = localStorage.getItem('studymetrics_version');
 
         // Helper for safe reload
         const reloadForUpdate = () => {
-             if (!sessionStorage.getItem('update_reloaded')) {
+            if (!sessionStorage.getItem('update_reloaded')) {
                 sessionStorage.setItem('update_reloaded', 'true');
                 showToast('New version available! Refreshing...', 'info');
                 setTimeout(() => window.location.reload(), 1000);
@@ -1628,6 +1628,11 @@ async function calculateTargetCGPA() {
 
     try {
         const token = getStoredToken();
+        if (!token) {
+            performLocalTargetCalculation(targetCGPA, currentStats, remainingCredits);
+            return;
+        }
+
         const response = await fetch(`${API_BASE_URL}/analytics/target-cgpa`, {
             method: 'POST',
             headers: {
@@ -2281,10 +2286,19 @@ if ('serviceWorker' in navigator) {
 // Cleanup on page unload
 window.addEventListener('beforeunload', (e) => {
     if (currentUser) {
-        // Save any pending data
-        navigator.sendBeacon(`${API_BASE_URL}/user/data`, JSON.stringify({
-            userData: userData
-        }));
+        // Save using fetch with keepalive for auth support
+        const token = getStoredToken();
+        if (token) {
+            fetch(`${API_BASE_URL}/user/data`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ userData: userData }),
+                keepalive: true
+            });
+        }
     }
 
     // Clear intervals
