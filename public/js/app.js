@@ -244,7 +244,7 @@ async function registerServiceWorker() {
                 await registration.unregister();
             }
 
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.0.2');
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.0.8');
             console.log('Service Worker registered:', registration);
 
             // Force immediate update check
@@ -284,7 +284,7 @@ async function checkForUpdates() {
         });
 
         // Version Check
-        const currentVersion = '4.0.6'; // v4.0.3
+        const currentVersion = '4.0.8'; // v4.0.8
         const storedVersion = localStorage.getItem('studymetrics_version');
 
         if (storedVersion && storedVersion !== currentVersion) {
@@ -2389,14 +2389,16 @@ function initGradePredictor() {
     toggle.addEventListener('change', (e) => {
         predictorState.endTermAttempted = e.target.checked;
 
-        // Visual Cue: Handled by CSS on the input:checked state (Green)
-        // No body background change needed as per v4.0.6 request.
-
-        // Auto-update results
-        if (predictorState.course) {
-            renderPredictorInputs();
-            // This re-renders inputs (showing/hiding F) and triggers calculatePrediction() at end
+        // Update Toggle Color
+        if (!e.target.checked) {
+            toggle.style.accentColor = 'var(--accent-success)';
+            document.documentElement.style.setProperty('--toggle-active', 'var(--accent-success)');
+        } else {
+            toggle.style.accentColor = '';
+            document.documentElement.style.setProperty('--toggle-active', 'var(--accent-primary)');
         }
+
+        renderPredictorInputs();
     });
 
     // Initial Population
@@ -2568,35 +2570,61 @@ function renderPredictorInputs() {
     calculatePrediction();
 }
 
-function getReadableLabel(code) {
+function getReadableLabel(key) {
     const map = {
-        'F': 'End Term Exam (out of 100)',
-        'Qz1': 'Quiz 1 (out of 100)',
-        'Qz2': 'Quiz 2 (out of 100)',
-        'Qz': 'Quiz Score (out of 100)',
-        'GAA': 'Graded Assignment Avg (out of 100)',
-        'bonus': 'Bonus Marks', // Clean label
-        'bonus_capped_5': 'Bonus Marks', // Mapped clean label
-        'bonus_3': 'Bonus Marks',
-        'OPPE': 'OPPE (out of 100)',
-        'OPPE1': 'OPPE 1 (out of 100)',
-        'OPPE2': 'OPPE 2 (out of 100)',
-        'PE1': 'PE 1 (out of 100)',
-        'PE2': 'PE 2 (out of 100)',
-        'KA': 'Kaggle Avg (out of 100)',
-        'GA': 'Group Activity (out of 100)',
-        'Timed_Assignment': 'Timed Assignment (out of 100)',
-        'A': 'Assignment Score (out of 100)',
-        'ROE': 'Remote Online Exam (out of 100)',
-        'P1': 'Project 1 (out of 100)',
-        'P2': 'Project 2 (out of 100)',
-        'OP': 'OPPE Score',
-        'GLA': 'Graded Lab Assign',
-        'BPTA': 'Biweekly Prog Test',
-        'NPPE1': 'NPPE 1',
-        'NPPE2': 'NPPE 2'
+        'F': 'End Term Exam',
+        'Qz1': 'Quiz 1',
+        'Qz2': 'Quiz 2',
+        'Qz3': 'Quiz 3',
+        'GA': 'Graded Assignment Avg',
+        'GAA': 'Graded Assignment Avg',
+        'GAA2': 'Graded Assignment Avg 2',
+        'GAA3': 'Graded Assignment Avg 3',
+        'bonus': 'Bonus Marks',
+
+        // Programming & Projects
+        'PE1': 'Proctored Exam 1',
+        'PE2': 'Proctored Exam 2',
+        'OPPE': 'Online Proctored Programming Exam',
+        'OPPE1': 'Online Proctored Programming Exam 1',
+        'OPPE2': 'Online Proctored Programming Exam 2',
+        'NPPE': 'Non-Proctored Programming Exam',
+        'NPPE1': 'Non-Proctored Programming Exam 1',
+        'NPPE2': 'Non-Proctored Programming Exam 2',
+        'OP': 'Online Proctored Programming Exam',
+
+        // Assignments & Labs
+        'GLA': 'Graded Lab Assignment',
+        'Prog_Asgn': 'Programming Assignment',
+        'Weekly_Asgn': 'Weekly Assignment',
+        'BPTA': 'Biweekly Programming Test Avg',
+        'KA_avg': 'Knowledge Assessment Avg',
+
+        // Project & Participation
+        'GP': 'Group Project',
+        'GP1': 'Group Project 1',
+        'GP2': 'Group Project 2',
+        'P1': 'Project 1',
+        'P2': 'Project 2',
+        'PP': 'Project Presentation',
+        'CP': 'Course Participation Activity',
+        'Project_Viva': 'Project Viva',
+        'ROE': 'Remote Online Examination',
+
+        // Industry 4.0 Specific
+        '15_Quiz_sum': 'Quiz Sum (15 Marks)',
+        '5_Game': 'Online Game (5 Marks)',
+        '40_Asgn_Best2': 'Best 2 Assignments (40 Marks)',
+        '30_F': 'End Term Exam (30 Marks)',
+        '10_Project': 'Project (10 Marks)'
     };
-    return map[code] || (code.toLowerCase().includes('bonus') ? 'Bonus Marks' : code);
+
+    // Dynamic mapping for specific user request
+    if (key === 'GA_best3_of_4' || key.includes('GA_')) {
+        return 'Graded Assignment Avg (Best 3 of 4)';
+    }
+
+    return map[key] || key.replace(/_/g, ' ');
 }
 
 function calculatePrediction() {
@@ -2674,33 +2702,41 @@ function calculatePrediction() {
         }
 
     } else {
-        // Backward Calculation
-        let html = '<table style="width:100%; text-align: left;">';
-        html += '<thead><tr><th style="padding:8px; color:var(--text-secondary);">Grade</th><th style="padding:8px; color:var(--text-secondary);">Required in End Term (F)</th></tr></thead><tbody>';
+        try {
+            // Backward Calculation
+            let html = '<table style="width:100%; text-align: left;">';
+            html += '<thead><tr><th style="padding:8px; color:var(--text-secondary);">Grade</th><th style="padding:8px; color:var(--text-secondary);">Required in End Term (F)</th></tr></thead><tbody>';
 
-        const grades = ['S', 'A', 'B', 'C', 'D', 'E'];
+            const grades = ['S', 'A', 'B', 'C', 'D', 'E'];
 
-        grades.forEach(g => {
-            const cutoff = gradePredictorData.cutoffs[g];
-            const requiredF = findRequiredF(course, inputs, cutoff);
+            // Prepare context with known inputs
+            // Similar to forward calc, we need to handle variable replacement in findRequiredF properly
 
-            let displayF = '';
-            if (requiredF === null) displayF = '<span style="color:var(--accent-error)">Unviable</span>';
-            else if (requiredF <= 0) displayF = '<span style="color:var(--accent-success)">Already Achieved</span>';
-            else displayF = `<span style="font-weight:bold; color:var(--text-primary)">${Math.ceil(requiredF)}%</span>`;
+            grades.forEach(g => {
+                const cutoff = gradePredictorData.cutoffs[g];
+                const requiredF = findRequiredF(course, inputs, cutoff);
 
-            const color = getGradeColor(g);
+                let displayF = '';
+                if (requiredF === null) displayF = '<span style="color:var(--accent-error)">Unviable</span>';
+                else if (requiredF <= 0) displayF = '<span style="color:var(--accent-success)">Already Achieved</span>';
+                else displayF = `<span style="font-weight:bold; color:var(--text-primary)">${Math.ceil(requiredF)}%</span>`;
 
-            html += `<tr>
-                <td style="padding:12px 8px; font-weight:bold; color:${color}">
-                    <div style="background:${color}; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">${g[0]}</div>
-                </td>
-                <td style="padding:12px 8px;">${displayF}</td>
-            </tr>`;
-        });
+                const color = getGradeColor(g);
 
-        html += '</tbody></table>';
-        resultsContainer.innerHTML = html;
+                html += `<tr>
+                    <td style="padding:12px 8px; font-weight:bold; color:${color}">
+                        <div style="background:${color}; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">${g[0]}</div>
+                    </td>
+                    <td style="padding:12px 8px;">${displayF}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            resultsContainer.innerHTML = html;
+        } catch (e) {
+            console.error('Backward calc error:', e);
+            resultsContainer.innerHTML = '<div class="text-error text-center p-4">Error calculating required scores</div>';
+        }
     }
 }
 
