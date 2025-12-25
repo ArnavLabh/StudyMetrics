@@ -201,77 +201,77 @@ module.exports = async (req, res) => {
                 const lastEntry = lastEntries && lastEntries.length > 0 ? lastEntries[0] : null;
 
                 // Check if we should update the last entry (if it's from today) or create new one
-                const today = new Date().toDateString();
-                const lastEntryDate = lastEntry ? new Date(lastEntry.recorded_at).toDateString() : null;
+                // Use strict date formatting YYYY-MM-DD
+                const now = new Date();
+                const todayStr = now.toISOString().split('T')[0];
+                const lastEntryDateStr = lastEntry ? new Date(lastEntry.recorded_at).toISOString().split('T')[0] : null;
 
-                if (lastEntry && lastEntryDate === today) {
+                if (lastEntry && lastEntryDateStr === todayStr) {
                     // Update existing entry for today
-                    if (parseFloat(lastEntry.cgpa) !== parseFloat(stats.cgpa.toFixed(2)) || lastEntry.total_credits !== stats.total_credits) {
+                    if (parseFloat(lastEntry.cgpa) !== parseFloat(stats.cgpa.toFixed(2)) || lastEntry.total_credits !== stats.totalCredits) {
                         const { error: updateError } = await supabase
                             .from('cgpa_history')
                             .update({
                                 cgpa: parseFloat(stats.cgpa.toFixed(2)),
                                 total_credits: stats.totalCredits,
                                 grade_points: parseFloat(stats.totalPoints.toFixed(2)),
-                                recorded_at: new Date().toISOString() // Update timestamp
+                                recorded_at: new Date().toISOString() // Update timestamp to now
                             })
                             .eq('id', lastEntry.id);
 
                         if (updateError) console.error('CGPA history update error:', updateError);
                     }
                 } else {
-                    // Create new entry if no entry today or significant change logic (optional, but daily snapshot is good)
-                    // We only insert if there is a CHANGE from previous, OR if it's a new day.
-                    // But if it's a new day, we only want to insert if there was a change or just to have a data point?
-                    // Let's stick to: New Day = New Entry (if data exists), Same Day = Update Entry.
-                    // This keeps history clean (1 per day max).
+                    // Start of a new day -> New Entry
+                    const { error: insertError } = await supabase
+                        .from('cgpa_history')
+                        .insert({
+                            user_id: userId,
+                            cgpa: parseFloat(stats.cgpa.toFixed(2)),
+                            total_credits: stats.totalCredits,
+                            grade_points: parseFloat(stats.totalPoints.toFixed(2)),
+                            recorded_at: new Date().toISOString()
+                        });
 
-                    const shouldInsert = !lastEntry || lastEntryDate !== today;
+                    if (insertError) console.error('CGPA history insert error:', insertError);
+                }
+            } grade_points: parseFloat(stats.totalPoints.toFixed(2)),
+                recorded_at: new Date().toISOString()
+        });
 
-                    if (shouldInsert) {
-                        const { error: insertError } = await supabase
-                            .from('cgpa_history')
-                            .insert({
-                                user_id: userId,
-                                cgpa: parseFloat(stats.cgpa.toFixed(2)),
-                                total_credits: stats.totalCredits,
-                                grade_points: parseFloat(stats.totalPoints.toFixed(2)),
-                                recorded_at: new Date().toISOString()
-                            });
-
-                        if (insertError) console.error('CGPA history insert error:', insertError);
-                    }
+        if (insertError) console.error('CGPA history insert error:', insertError);
+    }
                 }
             }
 
-            res.status(200).json({
-                success: true,
-                message: 'Data saved successfully',
-                stats: {
-                    cgpa: stats.cgpa.toFixed(2),
-                    totalCredits: stats.totalCredits,
-                    gradeCounts: stats.gradeCounts
-                }
-            });
+res.status(200).json({
+    success: true,
+    message: 'Data saved successfully',
+    stats: {
+        cgpa: stats.cgpa.toFixed(2),
+        totalCredits: stats.totalCredits,
+        gradeCounts: stats.gradeCounts
+    }
+});
 
         } else {
-            res.status(405).json({ message: 'Method not allowed' });
-        }
+    res.status(405).json({ message: 'Method not allowed' });
+}
 
     } catch (error) {
-        console.error('User data API error:', error);
+    console.error('User data API error:', error);
 
-        if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json({ message: 'Invalid token' });
-        }
-
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({ message: 'Token expired' });
-        }
-
-        res.status(500).json({
-            message: 'Server error',
-            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-        });
+    if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({ message: 'Invalid token' });
     }
+
+    if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Token expired' });
+    }
+
+    res.status(500).json({
+        message: 'Server error',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+}
 };

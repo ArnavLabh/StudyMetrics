@@ -298,7 +298,7 @@ async function checkForUpdates() {
         });
 
         // Version Check
-        const currentVersion = '4.0.4'; // v4.0.3
+        const currentVersion = '4.0.5'; // v4.0.3
         const storedVersion = localStorage.getItem('studymetrics_version');
 
         if (storedVersion && storedVersion !== currentVersion) {
@@ -2611,7 +2611,23 @@ function initGradePredictor() {
     const toggle = document.getElementById('endTermToggle');
     toggle.addEventListener('change', (e) => {
         predictorState.endTermAttempted = e.target.checked;
-        renderPredictorInputs(); // Re-render to show/hide F slider
+
+        // Visual Cue: Change background slightly
+        if (e.target.checked) {
+            document.body.classList.add('predict-mode-active');
+        } else {
+            document.body.classList.remove('predict-mode-active');
+        }
+
+        // Auto-update results
+        if (predictorState.course) {
+            if (predictorState.endTermAttempted) {
+                renderPredictorInputs(); // Re-render to show F slider
+            } else {
+                renderPredictorInputs(); // Re-render to hide F slider
+                // renderPredictorInputs calls calculatePrediction at end, so backward calc happens automatically
+            }
+        }
     });
 
     // Initial Population
@@ -2785,31 +2801,33 @@ function renderPredictorInputs() {
 
 function getReadableLabel(code) {
     const map = {
-        'F': 'End Term Exam (100)',
-        'Qz1': 'Quiz 1 (100)',
-        'Qz2': 'Quiz 2 (100)',
-        'Qz': 'Quiz Score (100)',
-        'GAA': 'Graded Assignment Avg (100)',
-        'bonus': 'Bonus Marks (Default 0)',
-        'OPPE': 'OPPE (100)',
-        'OPPE1': 'OPPE 1 (100)',
-        'OPPE2': 'OPPE 2 (100)',
-        'PE1': 'PE 1 (100)',
-        'PE2': 'PE 2 (100)',
-        'KA': 'Kaggle Avg (100)',
-        'GA': 'Group Activity (100)',
-        'Timed_Assignment': 'Timed Assignment (100)',
-        'A': 'Assignment Score (100)',
-        'ROE': 'Remote Online Exam (100)',
-        'P1': 'Project 1 (100)',
-        'P2': 'Project 2 (100)',
+        'F': 'End Term Exam (out of 100)',
+        'Qz1': 'Quiz 1 (out of 100)',
+        'Qz2': 'Quiz 2 (out of 100)',
+        'Qz': 'Quiz Score (out of 100)',
+        'GAA': 'Graded Assignment Avg (out of 100)',
+        'bonus': 'Bonus Marks', // Clean label
+        'bonus_capped_5': 'Bonus Marks', // Mapped clean label
+        'bonus_3': 'Bonus Marks',
+        'OPPE': 'OPPE (out of 100)',
+        'OPPE1': 'OPPE 1 (out of 100)',
+        'OPPE2': 'OPPE 2 (out of 100)',
+        'PE1': 'PE 1 (out of 100)',
+        'PE2': 'PE 2 (out of 100)',
+        'KA': 'Kaggle Avg (out of 100)',
+        'GA': 'Group Activity (out of 100)',
+        'Timed_Assignment': 'Timed Assignment (out of 100)',
+        'A': 'Assignment Score (out of 100)',
+        'ROE': 'Remote Online Exam (out of 100)',
+        'P1': 'Project 1 (out of 100)',
+        'P2': 'Project 2 (out of 100)',
         'OP': 'OPPE Score',
         'GLA': 'Graded Lab Assign',
         'BPTA': 'Biweekly Prog Test',
         'NPPE1': 'NPPE 1',
         'NPPE2': 'NPPE 2'
     };
-    return map[code] || code;
+    return map[code] || (code.toLowerCase().includes('bonus') ? 'Bonus Marks' : code);
 }
 
 function calculatePrediction() {

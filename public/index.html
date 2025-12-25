@@ -8,7 +8,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="version" content="4.0.4">
+    <meta name="version" content="4.0.5">
 
     <!-- PWA Meta Tags -->
     <meta name="description" content="Track your academic progress at IIT Madras BS Program">
@@ -2063,7 +2063,8 @@
                         <span>Grade Predictor</span>
                     </div>
                     <div class="form-toggle" style="margin: 0; display: flex; align-items: center; gap: 1rem;">
-                        <span class="text-sm end-term-label-highlight" style="margin-right: 0.5rem;">End Term Attempted?</span>
+                        <span class="text-sm end-term-label-highlight" style="margin-right: 0.5rem;">End Term
+                            Attempted?</span>
                         <label class="switch"
                             style="position: relative; display: inline-block; width: 48px; height: 24px;">
                             <input type="checkbox" id="endTermToggle">
@@ -2080,7 +2081,8 @@
 
                                 input:checked+.slider {
                                     background-color: var(--accent-primary);
-                                    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); /* Highlight Glow */
+                                    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+                                    /* Highlight Glow */
                                 }
 
                                 input:checked+.slider:before {
@@ -2098,9 +2100,11 @@
                                     transition: .4s;
                                     border-radius: 50%;
                                 }
-                                
+
                                 /* Dropdown Custom Styles */
                                 select.form-input {
+                                    -webkit-appearance: none;
+                                    -moz-appearance: none;
                                     appearance: none;
                                     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
                                     background-repeat: no-repeat;
@@ -2109,14 +2113,20 @@
                                     padding-right: 2.5rem;
                                 }
 
-                                .section-cgpa-item {
-                                    padding: 0.75rem 0.5rem; /* Increased Padding */
+                                /* Active Predict Mode Background Cue */
+                                .predict-mode-active {
+                                    background: linear-gradient(135deg, var(--bg-background) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
                                 }
-                                
+
+                                .section-cgpa-item {
+                                    padding: 0.75rem 0.5rem;
+                                    /* Increased Padding */
+                                }
+
                                 .end-term-label-highlight {
                                     color: var(--text-primary);
                                     font-weight: 600;
-                                    text-shadow: 0 0 1px rgba(0,0,0,0.1);
+                                    text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
                                 }
                             </style>
                         </label>
