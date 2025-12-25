@@ -8,7 +8,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="version" content="3.5.2">
+    <meta name="version" content="4.0.4">
 
     <!-- PWA Meta Tags -->
     <meta name="description" content="Track your academic progress at IIT Madras BS Program">
@@ -2060,34 +2060,63 @@
                         <div class="section-icon" style="background: var(--gradient-primary);">
                             <i class="fas fa-calculator"></i>
                         </div>
-                        <span>Grade Predictor 4.0</span>
+                        <span>Grade Predictor</span>
                     </div>
                     <div class="form-toggle" style="margin: 0; display: flex; align-items: center; gap: 1rem;">
-                        <span class="text-sm text-secondary">End Term Attempted?</span>
+                        <span class="text-sm end-term-label-highlight" style="margin-right: 0.5rem;">End Term Attempted?</span>
                         <label class="switch"
                             style="position: relative; display: inline-block; width: 48px; height: 24px;">
                             <input type="checkbox" id="endTermToggle">
                             <span class="slider round"
                                 style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--bg-surface); transition: .4s; border-radius: 34px; border: 1px solid var(--border-primary);"></span>
                             <style>
+                                /* Toggle Switch Styles */
+                                .switch {
+                                    position: relative;
+                                    display: inline-block;
+                                    width: 54px;
+                                    height: 28px;
+                                }
+
                                 input:checked+.slider {
                                     background-color: var(--accent-primary);
+                                    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); /* Highlight Glow */
                                 }
 
                                 input:checked+.slider:before {
-                                    transform: translateX(24px);
+                                    transform: translateX(26px);
                                 }
 
                                 .slider:before {
                                     position: absolute;
                                     content: "";
-                                    height: 16px;
-                                    width: 16px;
+                                    height: 20px;
+                                    width: 20px;
                                     left: 4px;
-                                    bottom: 3px;
+                                    bottom: 4px;
                                     background-color: white;
                                     transition: .4s;
                                     border-radius: 50%;
+                                }
+                                
+                                /* Dropdown Custom Styles */
+                                select.form-input {
+                                    appearance: none;
+                                    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+                                    background-repeat: no-repeat;
+                                    background-position: right 1rem center;
+                                    background-size: 1em;
+                                    padding-right: 2.5rem;
+                                }
+
+                                .section-cgpa-item {
+                                    padding: 0.75rem 0.5rem; /* Increased Padding */
+                                }
+                                
+                                .end-term-label-highlight {
+                                    color: var(--text-primary);
+                                    font-weight: 600;
+                                    text-shadow: 0 0 1px rgba(0,0,0,0.1);
                                 }
                             </style>
                         </label>

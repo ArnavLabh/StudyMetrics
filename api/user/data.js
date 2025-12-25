@@ -42,7 +42,7 @@ function calculateStats(courseData) {
 // Get credits for a specific course
 function getCreditsForCourse(courseId, courseData) {
     const [section, index] = courseId.split('-');
-    
+
     // Credit mapping based on course structure
     const creditMap = {
         foundation: 4,
@@ -123,7 +123,7 @@ module.exports = async (req, res) => {
             }
 
             // userData already defined above
-            
+
             // Get CGPA history
             const { data: historyResult } = await supabase
                 .from('cgpa_history')
@@ -142,14 +142,14 @@ module.exports = async (req, res) => {
             let courseData = {};
             try {
                 if (userData.course_data) {
-                    courseData = typeof userData.course_data === 'string' ? 
+                    courseData = typeof userData.course_data === 'string' ?
                         JSON.parse(userData.course_data) : userData.course_data;
                 }
             } catch (e) {
                 console.error('Error parsing course_data:', e);
                 courseData = { courses: {}, electives: [] };
             }
-            
+
             // Ensure all required fields exist
             const responseData = {
                 courses: courseData.courses || {},
@@ -157,7 +157,7 @@ module.exports = async (req, res) => {
                 targetCGPA: userData.target_cgpa || null,
                 cgpaHistory: cgpaHistory || []
             };
-            
+
             res.status(200).json({
                 success: true,
                 userData: responseData,
@@ -188,41 +188,63 @@ module.exports = async (req, res) => {
                     updated_at: new Date().toISOString()
                 });
 
-            // Record CGPA history if there are completed courses
+            // Record CGPA history if there are completed courses (and data changed)
             if (stats.totalCredits > 0) {
-                // Check if we should add a new history entry
+                // Get latest entry
                 const { data: lastEntries } = await supabase
                     .from('cgpa_history')
-                    .select('cgpa, total_credits, recorded_at')
+                    .select('id, cgpa, total_credits, recorded_at')
                     .eq('user_id', userId)
                     .order('recorded_at', { ascending: false })
                     .limit(1);
 
                 const lastEntry = lastEntries && lastEntries.length > 0 ? lastEntries[0] : null;
 
-                const shouldAddEntry = !lastEntry || 
-                    Math.abs(parseFloat(lastEntry.cgpa) - stats.cgpa) > 0.01 ||
-                    lastEntry.total_credits !== stats.totalCredits ||
-                    new Date() - new Date(lastEntry.recorded_at) > 3600000; // 1 hour
+                // Check if we should update the last entry (if it's from today) or create new one
+                const today = new Date().toDateString();
+                const lastEntryDate = lastEntry ? new Date(lastEntry.recorded_at).toDateString() : null;
 
-                if (shouldAddEntry) {
-                    const { error: insertError } = await supabase
-                        .from('cgpa_history')
-                        .insert({
-                            user_id: userId,
-                            cgpa: parseFloat(stats.cgpa.toFixed(2)),
-                            total_credits: stats.totalCredits,
-                            grade_points: parseFloat(stats.totalPoints.toFixed(2)),
-                            recorded_at: new Date().toISOString()
-                        });
-                    
-                    if (insertError) {
-                        console.error('CGPA history insert error:', insertError);
+                if (lastEntry && lastEntryDate === today) {
+                    // Update existing entry for today
+                    if (parseFloat(lastEntry.cgpa) !== parseFloat(stats.cgpa.toFixed(2)) || lastEntry.total_credits !== stats.total_credits) {
+                        const { error: updateError } = await supabase
+                            .from('cgpa_history')
+                            .update({
+                                cgpa: parseFloat(stats.cgpa.toFixed(2)),
+                                total_credits: stats.totalCredits,
+                                grade_points: parseFloat(stats.totalPoints.toFixed(2)),
+                                recorded_at: new Date().toISOString() // Update timestamp
+                            })
+                            .eq('id', lastEntry.id);
+
+                        if (updateError) console.error('CGPA history update error:', updateError);
+                    }
+                } else {
+                    // Create new entry if no entry today or significant change logic (optional, but daily snapshot is good)
+                    // We only insert if there is a CHANGE from previous, OR if it's a new day.
+                    // But if it's a new day, we only want to insert if there was a change or just to have a data point?
+                    // Let's stick to: New Day = New Entry (if data exists), Same Day = Update Entry.
+                    // This keeps history clean (1 per day max).
+
+                    const shouldInsert = !lastEntry || lastEntryDate !== today;
+
+                    if (shouldInsert) {
+                        const { error: insertError } = await supabase
+                            .from('cgpa_history')
+                            .insert({
+                                user_id: userId,
+                                cgpa: parseFloat(stats.cgpa.toFixed(2)),
+                                total_credits: stats.totalCredits,
+                                grade_points: parseFloat(stats.totalPoints.toFixed(2)),
+                                recorded_at: new Date().toISOString()
+                            });
+
+                        if (insertError) console.error('CGPA history insert error:', insertError);
                     }
                 }
             }
 
-            res.status(200).json({ 
+            res.status(200).json({
                 success: true,
                 message: 'Data saved successfully',
                 stats: {
@@ -238,16 +260,16 @@ module.exports = async (req, res) => {
 
     } catch (error) {
         console.error('User data API error:', error);
-        
+
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ message: 'Invalid token' });
         }
-        
+
         if (error.name === 'TokenExpiredError') {
             return res.status(401).json({ message: 'Token expired' });
         }
 
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Server error',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
         });

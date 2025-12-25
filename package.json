@@ -1,6 +1,6 @@
 {
   "name": "studymetrics",
-  "version": "2.0.0",
+  "version": "4.0.4",
   "description": "IITM BS Academic Progress Tracker with Enhanced Analytics and Study Timer",
   "main": "app.js",
   "scripts": {

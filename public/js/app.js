@@ -298,7 +298,7 @@ async function checkForUpdates() {
         });
 
         // Version Check
-        const currentVersion = '4.0.3'; // v4.0.3
+        const currentVersion = '4.0.4'; // v4.0.3
         const storedVersion = localStorage.getItem('studymetrics_version');
 
         if (storedVersion && storedVersion !== currentVersion) {
@@ -2666,8 +2666,36 @@ function renderPredictorInputs() {
     // Regex to match variables (words starting with letter, excluding 'max', 'min')
     const matches = formula.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
     const keywords = ['max', 'min', 'avg'];
+
     // Filter unique variables that are not keywords
-    const inputVars = [...new Set(matches)].filter(v => !keywords.includes(v));
+    let inputVars = [...new Set(matches)].filter(v => !keywords.includes(v));
+
+    // Ensure 'bonus' is present if not already (user request: "Bonus input is not shown for many courses")
+    // We only add it if it's not already covered by a specific bonus variable (like bonus_capped_5)
+    // But since "bonus" is the generic one, we'll force add "bonus" if no other bonus var exists, or just validly add it.
+    // simpler: Ensure "bonus" is in the list. logic later handles if it's used or not.
+    if (!inputVars.includes('bonus')) {
+        inputVars.push('bonus');
+    }
+
+    // Sort Inputs: Custom Order as per request
+    // "End Term input should be after Quiz 2"
+    // Desired Order: Quiz 1, Quiz 2, End Term (F), Bonus, [Others]
+    const sortOrder = {
+        'Qz1': 1,
+        'Qz2': 2,
+        'F': 3,
+        'bonus': 99 // At the end usually, or just after F? "End Term input... after Quiz 2". 
+        // Usually F is main. Bonus is extra. putting bonus last makes sense.
+    };
+
+    inputVars.sort((a, b) => {
+        const orderA = sortOrder[a] || 50; // Default middle priority
+        const orderB = sortOrder[b] || 50;
+        if (orderA !== orderB) return orderA - orderB;
+        return a.localeCompare(b); // Alphabetical for others
+    });
+
 
     // Store for calculation usage
     predictorState.course.inputs = inputVars;
@@ -2706,6 +2734,7 @@ function renderPredictorInputs() {
         const slider = document.createElement('input');
         slider.type = 'range';
         slider.min = '0';
+        // Bonus might have lower max? Assuming 100 or specific. Default 100 safe.
         slider.max = '100';
         slider.value = '0';
         slider.className = 'form-input';
@@ -2832,9 +2861,15 @@ function calculatePrediction() {
             const evalFunction = new Function('context', 'Math', `return ${safeFormula};`);
             let score = evalFunction(context, Math);
 
-            // Ensure bonus capping if formula has bonus logic handled inside (e.g. + bonus_capped)
-            // Actually, the keys like 'bonus_capped_5' in JSON need to be parsed as inputs too if they are variables.
-            // My parser regex logic should catch them.
+            // Add Bonus if not already part of formula
+            // We search if 'bonus' (case insensitive or whatever) was in the original formula logic.
+            // But strict 'bonus' variable was added to inputs.
+            // If the formula didn't reference the 'bonus' variable, we simply add it to the final score.
+            // Many formulas are just 'max(...)' without bonus.
+            const formulaHasBonus = /\bbonus\b/.test(formula);
+            if (!formulaHasBonus && inputs.bonus) {
+                score += inputs.bonus;
+            }
 
             const grade = calculateGradeFromScore(score);
 
