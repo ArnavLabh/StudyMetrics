@@ -253,7 +253,7 @@ async function registerServiceWorker() {
                 await registration.unregister();
             }
 
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.0.10');
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.1.0');
             console.log('Service Worker registered:', registration);
 
             // Force immediate update check
@@ -292,7 +292,7 @@ async function checkForUpdates() {
             }
         });
 
-        const currentVersion = '4.0.10'; // v4.0.10
+        const currentVersion = '4.1.0'; // v4.1.0
         const storedVersion = localStorage.getItem('studymetrics_version');
 
         if (storedVersion && storedVersion !== currentVersion) {
