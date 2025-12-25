@@ -253,7 +253,7 @@ async function registerServiceWorker() {
                 await registration.unregister();
             }
 
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.1.2');
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.1.3');
             console.log('Service Worker registered:', registration);
 
             // Force immediate update check
@@ -261,10 +261,11 @@ async function registerServiceWorker() {
                 const newWorker = registration.installing;
                 newWorker.addEventListener('statechange', () => {
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        showToast('New version available! Refreshing...', 'info');
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
+                        if (!sessionStorage.getItem('update_reloaded')) {
+                            sessionStorage.setItem('update_reloaded', 'true');
+                            showToast('New version available! Refreshing...', 'info');
+                            setTimeout(() => window.location.reload(), 2000);
+                        }
                     }
                 });
             });
@@ -281,7 +282,7 @@ async function registerServiceWorker() {
 // Check for app updates
 async function checkForUpdates() {
     if ('serviceWorker' in navigator) {
-        const currentVersion = '4.1.2'; // v4.1.2
+        const currentVersion = '4.1.3'; // v4.1.3
         const storedVersion = localStorage.getItem('studymetrics_version');
 
         // Helper for safe reload
