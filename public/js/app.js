@@ -124,6 +124,7 @@ const gradeScale = {
     'E': 4
 };
 
+
 // Grade Predictor Data (Hardcoded as requested, Client-side only)
 const gradePredictorData = {
     "legend": {
@@ -191,7 +192,15 @@ const gradePredictorData = {
             { "course": "MLOPS", "formula": "0.2*GAA + 0.3*F + 0.25*OPPE1 + 0.25*OPPE2" },
             { "course": "Mathematical Foundations of Generative AI", "formula": "0.05*GAA + 0.35*F + 0.2*Qz1 + 0.2*Qz2 + 0.2*NPPE" },
             { "course": "Theory of Computation", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" }
-        ]
+        ],
+        "cutoffs": {
+            'S': 90,
+            'A': 80,
+            'B': 70,
+            'C': 60,
+            'D': 50,
+            'E': 40
+        }
     }
 };
 
@@ -244,7 +253,7 @@ async function registerServiceWorker() {
                 await registration.unregister();
             }
 
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.0.8');
+            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.0.9');
             console.log('Service Worker registered:', registration);
 
             // Force immediate update check
@@ -283,8 +292,7 @@ async function checkForUpdates() {
             }
         });
 
-        // Version Check
-        const currentVersion = '4.0.8'; // v4.0.8
+        const currentVersion = '4.0.99'; // v4.0.99
         const storedVersion = localStorage.getItem('studymetrics_version');
 
         if (storedVersion && storedVersion !== currentVersion) {
@@ -323,7 +331,6 @@ function initializeApp() {
     // Clear old caches on app start
     clearOldCaches();
 
-    setupEventListeners();
     setupEventListeners();
 
 
@@ -501,9 +508,6 @@ function setupPinInputs() {
     const pinInputs = document.querySelectorAll('.pin-input');
     pinInputs.forEach((input, index) => {
         input.addEventListener('input', (e) => {
-            // Only allow digits
-            e.target.value = e.target.value.replace(/[^0-9]/g, '');
-
             // Only allow digits
             e.target.value = e.target.value.replace(/[^0-9]/g, '');
 
@@ -2390,11 +2394,9 @@ function initGradePredictor() {
         predictorState.endTermAttempted = e.target.checked;
 
         // Update Toggle Color
-        if (!e.target.checked) {
-            toggle.style.accentColor = 'var(--accent-success)';
+        if (e.target.checked) {
             document.documentElement.style.setProperty('--toggle-active', 'var(--accent-success)');
         } else {
-            toggle.style.accentColor = '';
             document.documentElement.style.setProperty('--toggle-active', 'var(--accent-primary)');
         }
 
@@ -2469,11 +2471,12 @@ function renderPredictorInputs() {
     // "End Term input should be after Quiz 2"
     // Desired Order: Quiz 1, Quiz 2, End Term (F), Bonus, [Others]
     const sortOrder = {
-        'Qz1': 1,
-        'Qz2': 2,
-        'F': 3,
-        'bonus': 99 // At the end usually, or just after F? "End Term input... after Quiz 2". 
-        // Usually F is main. Bonus is extra. putting bonus last makes sense.
+        'GA': 1, // User Request: "Graded Assignment Avg ... above Quiz 1"
+        'GAA': 1,
+        'Qz1': 2,
+        'Qz2': 3,
+        'F': 4,
+        'bonus': 99
     };
 
     inputVars.sort((a, b) => {
@@ -2518,11 +2521,13 @@ function renderPredictorInputs() {
         inputsRow.style.alignItems = 'center';
         inputsRow.style.gap = '1rem';
 
+        const isBonus = /bonus/i.test(variable);
+        const maxVal = isBonus ? 10 : 100;
+
         const slider = document.createElement('input');
         slider.type = 'range';
         slider.min = '0';
-        // Bonus might have lower max? Assuming 100 or specific. Default 100 safe.
-        slider.max = '100';
+        slider.max = maxVal;
         slider.value = '0';
         slider.className = 'form-input';
         slider.style.padding = '0'; // Slider style
@@ -2532,7 +2537,7 @@ function renderPredictorInputs() {
         const numInput = document.createElement('input');
         numInput.type = 'number';
         numInput.min = '0';
-        numInput.max = '100';
+        numInput.max = maxVal;
         numInput.value = '0';
         numInput.className = 'form-input';
         numInput.style.width = '70px';
@@ -2542,7 +2547,7 @@ function renderPredictorInputs() {
         // Sync Logic
         const updateVal = (val) => {
             // Clamping
-            if (val > 100) val = 100;
+            if (val > maxVal) val = maxVal;
             if (val < 0) val = 0;
 
             slider.value = val;
