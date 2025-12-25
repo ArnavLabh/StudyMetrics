@@ -135,23 +135,22 @@ const gradePredictorData = {
         "OPPE/PE/OP": "Proctored Programming Exam",
         "NPPE": "Non-Proctored Programming Exam",
         "GP": "Group Project",
-        "V/Viva": "Viva Voce Score",
-        "bonus": "Course specific bonus marks"
+        "V/Viva": "Viva Voce Score"
     },
     "levels": {
         "foundation": [
             { "course": "Mathematics for Data Science 1", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2)" },
             { "course": "English 1", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2)" },
             { "course": "Computational Thinking", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2)" },
-            { "course": "Statistics for Data Science 1", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2) + bonus_capped_5" },
-            { "course": "Mathematics for Data Science 2", "formula": "min(100, max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2) + bonus_capped_6)" },
+            { "course": "Statistics for Data Science 1", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2)" },
+            { "course": "Mathematics for Data Science 2", "formula": "min(100, max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2))" },
             { "course": "English 2", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2)" },
             { "course": "Intro to Python Programming", "formula": "0.15*Qz1 + 0.4*F + 0.25*max(PE1, PE2) + 0.2*min(PE1, PE2)" },
-            { "course": "Statistics for Data Science 2", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2) + bonus_capped_5" }
+            { "course": "Statistics for Data Science 2", "formula": "max(0.6*F + 0.3*max(Qz1, Qz2), 0.45*F + 0.25*Qz1 + 0.3*Qz2)" }
         ],
         "diploma": [
             { "course": "Machine Learning Foundations", "formula": "0.05*GAA + max(0.6*F + 0.25*max(Qz1, Qz2), 0.4*F + 0.25*Qz1 + 0.3*Qz2)" },
-            { "course": "Machine Learning Techniques", "formula": "0.05*GAA + max(0.6*F + 0.25*max(Qz1, Qz2), 0.4*F + 0.25*Qz1 + 0.3*Qz2) + bonus_3" },
+            { "course": "Machine Learning Techniques", "formula": "0.05*GAA + max(0.6*F + 0.25*max(Qz1, Qz2), 0.4*F + 0.25*Qz1 + 0.3*Qz2)" },
             { "course": "Machine Learning Practice", "formula": "0.1*GAA + 0.3*F + 0.2*OPPE1 + 0.2*OPPE2 + 0.2*KA_avg" },
             { "course": "Business Data Management", "formula": "GA_best3_of_4 + Qz2 + Timed_Assignment + F" },
             { "course": "Business Analytics", "formula": "(0.7*max(Qz1, Qz2) + 0.3*min(Qz1, Qz2)) + Best2_Assignments + F" },
@@ -167,20 +166,20 @@ const gradePredictorData = {
         "degree": [
             { "course": "Software Testing", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" },
             { "course": "Software Engineering", "formula": "0.05*GAA + 0.2*Qz2 + 0.4*F + 0.1*GP1 + 0.1*GP2 + 0.1*PP + 0.05*CP" },
-            { "course": "Deep Learning", "formula": "0.05*GAA + 0.25*Qz1 + 0.25*Qz2 + 0.45*F + bonus_5" },
-            { "course": "AI: Search Methods for Problem Solving", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2 + bonus_5" },
+            { "course": "Deep Learning", "formula": "0.05*GAA + 0.25*Qz1 + 0.25*Qz2 + 0.45*F" },
+            { "course": "AI: Search Methods for Problem Solving", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" },
             { "course": "Strategies for Professional Growth", "formula": "0.15*GAA + 0.25*GP + 0.25*Qz2 + 0.35*F" },
-            { "course": "Introduction to Big Data", "formula": "0.1*GAA + 0.3*F + 0.2*OPPE1 + 0.4*OPPE2 + bonus_5" },
+            { "course": "Introduction to Big Data", "formula": "0.1*GAA + 0.3*F + 0.2*OPPE1 + 0.4*OPPE2" },
             { "course": "Programming in C", "formula": "0.1*GAA + 0.2*Qz1 + 0.2*OPPE1 + 0.2*OPPE2 + 0.3*F" },
             { "course": "Deep Learning for CV", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" },
-            { "course": "Large Language Models", "formula": "0.05*GAA + 0.35*F + 0.3*Qz1 + 0.3*Qz2 + bonus_5" },
+            { "course": "Large Language Models", "formula": "0.05*GAA + 0.35*F + 0.3*Qz1 + 0.3*Qz2" },
             { "course": "Deep Learning Practice", "formula": "0.05*GA + 0.15*(Qz1+Qz2+Qz3) + 0.25*(avg(NPPE1,2,3)) + 0.25*Viva" },
             { "course": "Industry 4.0", "formula": "15_Quiz_sum + 5_Game + 40_Asgn_Best2 + 30_F + 10_Project" },
             { "course": "Operating Systems", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" },
             { "course": "Reinforcement Learning", "formula": "0.05*GAA + 0.4*GPA + max((0.15*Qz1 + 0.15*Qz2), 0.2*max(Qz1, Qz2)) + 0.25*F" },
             { "course": "Corporate Finance", "formula": "0.1*GAA + 0.4*F + 0.2*Qz1 + 0.3*Qz2" },
             { "course": "Computer Networks", "formula": "0.1*GAA + 0.3*F + 0.25*Qz1 + 0.25*Qz2 + 0.1*Prog_Asgn" },
-            { "course": "Data Science and AI Lab", "formula": "0.05*GAA + 0.25*Quiz2 + 0.4*P + 0.3*V + bonus_5" },
+            { "course": "Data Science and AI Lab", "formula": "0.05*GAA + 0.25*Quiz2 + 0.4*P + 0.3*V" },
             { "course": "Application Development Lab", "formula": "0.2*Quiz2 + 0.3*Weekly_Asgn + 0.5*Project_Viva" },
             { "course": "Algorithmic Thinking in Bioinformatics", "formula": "0.075*GAA + 0.25*GRPa + 0.25*Qz1 + 0.25*Qz2 + 0.4*F" },
             { "course": "Big Data and Biological Networks", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" },
@@ -189,7 +188,7 @@ const gradePredictorData = {
             { "course": "Advanced Algorithms", "formula": "0.15*GAA + 0.35*F + 0.25*Qz1 + 0.25*Qz2" },
             { "course": "Managerial Economics", "formula": "0.15*GAA + max(0.2*Qz1 + 0.2*Qz2 + 0.45*F, 0.5*F + 0.25*max(Qz1, Qz2))" },
             { "course": "Speech Technology", "formula": "0.15*GAA + 0.15*V + 0.3*F + 0.2*Qz1 + 0.2*Qz2" },
-            { "course": "MLOPS", "formula": "0.2*GAA + 0.3*F + 0.25*OPPE1 + 0.25*OPPE2 + bonus_5" },
+            { "course": "MLOPS", "formula": "0.2*GAA + 0.3*F + 0.25*OPPE1 + 0.25*OPPE2" },
             { "course": "Mathematical Foundations of Generative AI", "formula": "0.05*GAA + 0.35*F + 0.2*Qz1 + 0.2*Qz2 + 0.2*NPPE" },
             { "course": "Theory of Computation", "formula": "0.1*GAA + 0.4*F + 0.25*Qz1 + 0.25*Qz2" }
         ]
@@ -208,19 +207,6 @@ let userData = {
 let whatIfCourses = [];
 let autoSaveInterval = null;
 let isRegistering = false;
-
-// Timer State
-let timerState = {
-    isRunning: false,
-    isBreak: false,
-    timeLeft: 25 * 60, // 25 minutes in seconds
-    studyDuration: 25 * 60,
-    breakDuration: 5 * 60,
-    currentCourse: '',
-    currentActivity: '',
-    interval: null,
-    sessions: []
-};
 
 // API Configuration
 const API_BASE_URL = '/api';
@@ -298,7 +284,7 @@ async function checkForUpdates() {
         });
 
         // Version Check
-        const currentVersion = '4.0.5'; // v4.0.3
+        const currentVersion = '4.0.6'; // v4.0.3
         const storedVersion = localStorage.getItem('studymetrics_version');
 
         if (storedVersion && storedVersion !== currentVersion) {
@@ -339,7 +325,7 @@ function initializeApp() {
 
     setupEventListeners();
     setupEventListeners();
-    // initializeTimer(); // Removed in v4.0.2
+
 
     const token = getStoredToken();
     if (token && token.length > 10) {
@@ -492,14 +478,7 @@ function setupEventListeners() {
         targetInput.addEventListener('input', debounce(saveTargetCGPA, 500));
     }
 
-    // Timer controls
-    document.getElementById('startTimer')?.addEventListener('click', startTimer);
-    document.getElementById('pauseTimer')?.addEventListener('click', pauseTimer);
-    document.getElementById('resetTimer')?.addEventListener('click', resetTimer);
 
-    // Timer settings
-    document.getElementById('studyDuration')?.addEventListener('change', updateTimerSettings);
-    document.getElementById('breakDuration')?.addEventListener('change', updateTimerSettings);
 
     // What-if analysis
     window.addWhatIfCourse = addWhatIfCourse;
@@ -593,7 +572,7 @@ function updateView(path) {
     });
 
     // Hide all sections
-    ['dashboardSection', 'analyticsSection', 'timerSection', 'gradePredictorSection'].forEach(id => {
+    ['dashboardSection', 'analyticsSection', 'gradePredictorSection'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
@@ -1901,173 +1880,7 @@ function calculateWhatIf() {
     `;
 }
 
-// Timer Functions
-function initializeTimer() {
-    updateTimerDisplay();
-    loadTimerSettings();
-}
 
-function populateTimerCourses() {
-    // Timer now uses text input instead of dropdown
-    // No population needed
-}
-
-function loadTimerSettings() {
-    const studyInput = document.getElementById('studyDuration');
-    const breakInput = document.getElementById('breakDuration');
-
-    if (studyInput && breakInput) {
-        studyInput.value = timerState.studyDuration / 60;
-        breakInput.value = timerState.breakDuration / 60;
-    }
-}
-
-function updateTimerSettings() {
-    const studyDuration = parseInt(document.getElementById('studyDuration')?.value || 25) * 60;
-    const breakDuration = parseInt(document.getElementById('breakDuration')?.value || 5) * 60;
-
-    timerState.studyDuration = studyDuration;
-    timerState.breakDuration = breakDuration;
-
-    // Reset timer with new duration if not running
-    if (!timerState.isRunning) {
-        timerState.timeLeft = timerState.isBreak ? breakDuration : studyDuration;
-        updateTimerDisplay();
-    }
-}
-
-function startTimer() {
-    if (timerState.isRunning) return;
-
-    timerState.isRunning = true;
-    timerState.currentCourse = document.getElementById('timerCourseInput')?.value || '';
-    timerState.currentActivity = document.getElementById('timerActivity')?.value || '';
-
-    timerState.interval = setInterval(() => {
-        timerState.timeLeft--;
-        updateTimerDisplay();
-
-        if (timerState.timeLeft <= 0) {
-            completeTimerSession();
-        }
-    }, 1000);
-
-    updateTimerButtons();
-    showToast(`${timerState.isBreak ? 'Break' : 'Study'} session started!`, 'success');
-}
-
-function pauseTimer() {
-    if (!timerState.isRunning) return;
-
-    clearInterval(timerState.interval);
-    timerState.isRunning = false;
-    updateTimerButtons();
-    showToast('Timer paused', 'info');
-}
-
-function resetTimer() {
-    clearInterval(timerState.interval);
-    timerState.isRunning = false;
-    timerState.timeLeft = timerState.isBreak ? timerState.breakDuration : timerState.studyDuration;
-    updateTimerDisplay();
-    updateTimerButtons();
-    showToast('Timer reset', 'info');
-}
-
-function completeTimerSession() {
-    clearInterval(timerState.interval);
-    timerState.isRunning = false;
-
-    // Save session to history
-    const session = {
-        type: timerState.isBreak ? 'break' : 'study',
-        duration: timerState.isBreak ? timerState.breakDuration : timerState.studyDuration,
-        course: timerState.currentCourse,
-        activity: timerState.currentActivity,
-        completedAt: new Date().toISOString()
-    };
-
-    timerState.sessions.unshift(session);
-    if (timerState.sessions.length > 10) {
-        timerState.sessions = timerState.sessions.slice(0, 10);
-    }
-
-    // Switch between study and break
-    timerState.isBreak = !timerState.isBreak;
-    timerState.timeLeft = timerState.isBreak ? timerState.breakDuration : timerState.studyDuration;
-
-    updateTimerDisplay();
-    updateTimerButtons();
-    loadTimerHistory();
-
-    const sessionType = session.type === 'study' ? 'Study' : 'Break';
-    const nextType = timerState.isBreak ? 'break' : 'study';
-    showToast(`${sessionType} session completed! Ready for ${nextType}.`, 'success');
-
-    // Play notification sound if available
-    if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(`${sessionType} session completed!`, {
-            body: `Ready for ${nextType} session.`,
-            icon: '/icons/icon-192x192.png'
-        });
-    }
-}
-
-function updateTimerDisplay() {
-    const display = document.getElementById('timerDisplay');
-    const status = document.getElementById('timerStatus');
-
-    if (display && status) {
-        const minutes = Math.floor(timerState.timeLeft / 60);
-        const seconds = timerState.timeLeft % 60;
-        display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-        status.textContent = timerState.isBreak ? 'Break Time' : 'Study Session';
-        display.style.color = timerState.isBreak ? 'var(--accent-success)' : 'var(--accent-primary)';
-    }
-}
-
-function updateTimerButtons() {
-    const startBtn = document.getElementById('startTimer');
-    const pauseBtn = document.getElementById('pauseTimer');
-    const resetBtn = document.getElementById('resetTimer');
-
-    if (startBtn && pauseBtn && resetBtn) {
-        startBtn.disabled = timerState.isRunning;
-        pauseBtn.disabled = !timerState.isRunning;
-        resetBtn.disabled = false;
-
-        startBtn.style.opacity = timerState.isRunning ? '0.5' : '1';
-        pauseBtn.style.opacity = timerState.isRunning ? '1' : '0.5';
-    }
-}
-
-function loadTimerHistory() {
-    const container = document.getElementById('timerHistoryList');
-    if (!container) return;
-
-    if (timerState.sessions.length === 0) {
-        container.innerHTML = '<div class="text-sm text-secondary">No study sessions yet</div>';
-        return;
-    }
-
-    container.innerHTML = timerState.sessions.map(session => {
-        const date = new Date(session.completedAt);
-        const duration = Math.floor(session.duration / 60);
-        const courseText = session.course ? ` - ${session.course}` : '';
-        const activityText = session.activity ? ` (${session.activity})` : '';
-
-        return `
-            <div style="padding: 0.5rem; background: var(--bg-card); border-radius: 0.375rem; margin-bottom: 0.5rem; font-size: 0.875rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>${session.type === 'study' ? '📚' : '☕'} ${duration} min ${session.type}${courseText}</span>
-                    <span class="text-xs text-secondary">${date.toLocaleDateString()}</span>
-                </div>
-                ${activityText ? `<div class="text-xs text-secondary">${activityText}</div>` : ''}
-            </div>
-        `;
-    }).join('');
-}
 
 // Auto-save functionality
 function startAutoSave() {
@@ -2214,19 +2027,7 @@ function logout() {
     };
     whatIfCourses = [];
 
-    // Reset timer
-    clearInterval(timerState.interval);
-    timerState = {
-        isRunning: false,
-        isBreak: false,
-        timeLeft: 25 * 60,
-        studyDuration: 25 * 60,
-        breakDuration: 5 * 60,
-        currentCourse: '',
-        currentActivity: '',
-        interval: null,
-        sessions: []
-    };
+
 
     showLoginPage();
     showToast('Logged out successfully', 'success');
@@ -2281,25 +2082,9 @@ function handleKeyboardShortcuts(e) {
         showToast('Data saved manually', 'success');
     }
 
-    // Ctrl/Cmd + 1/2/3 for navigation
-    if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '3') {
-        e.preventDefault();
-        const sections = ['dashboard', 'analytics', 'timer'];
-        const sectionIndex = parseInt(e.key) - 1;
-        if (sections[sectionIndex]) {
-            switchSection(sections[sectionIndex]);
-        }
-    }
 
-    // Space bar for timer control (when in timer section)
-    if (e.code === 'Space' && document.getElementById('timerSection').style.display !== 'none') {
-        e.preventDefault();
-        if (timerState.isRunning) {
-            pauseTimer();
-        } else {
-            startTimer();
-        }
-    }
+
+
 }
 
 // Request notification permission on first load
@@ -2309,18 +2094,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Handle page visibility for auto-pause timer
+// Handle page visibility for auto-save
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
         // Page is hidden - save data
         if (currentUser) {
             saveUserData();
-        }
-    } else {
-        // Page is visible - could resume timer or refresh data
-        if (currentUser) {
-            // Optionally refresh data or update UI
-            updateTimerDisplay();
         }
     }
 });
@@ -2512,9 +2291,7 @@ window.addEventListener('beforeunload', (e) => {
 
     // Clear intervals
     stopAutoSave();
-    if (timerState.interval) {
-        clearInterval(timerState.interval);
-    }
+
 });
 
 // Initialize smooth scrolling for anchor links
@@ -2612,21 +2389,13 @@ function initGradePredictor() {
     toggle.addEventListener('change', (e) => {
         predictorState.endTermAttempted = e.target.checked;
 
-        // Visual Cue: Change background slightly
-        if (e.target.checked) {
-            document.body.classList.add('predict-mode-active');
-        } else {
-            document.body.classList.remove('predict-mode-active');
-        }
+        // Visual Cue: Handled by CSS on the input:checked state (Green)
+        // No body background change needed as per v4.0.6 request.
 
         // Auto-update results
         if (predictorState.course) {
-            if (predictorState.endTermAttempted) {
-                renderPredictorInputs(); // Re-render to show F slider
-            } else {
-                renderPredictorInputs(); // Re-render to hide F slider
-                // renderPredictorInputs calls calculatePrediction at end, so backward calc happens automatically
-            }
+            renderPredictorInputs();
+            // This re-renders inputs (showing/hiding F) and triggers calculatePrediction() at end
         }
     });
 

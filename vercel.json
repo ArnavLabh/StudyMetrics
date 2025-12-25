@@ -17,10 +17,6 @@
       "destination": "/index.html"
     },
     {
-      "source": "/timer",
-      "destination": "/index.html"
-    },
-    {
       "source": "/login",
       "destination": "/index.html"
     },

@@ -94,7 +94,7 @@ module.exports = async (req, res) => {
             // Get user data
             const { data: result, error } = await supabase
                 .from('user_data')
-                .select('course_data, target_cgpa, timer_settings, updated_at')
+                .select('course_data, target_cgpa, updated_at')
                 .eq('user_id', userId);
 
             const userData = result && result.length > 0 ? result[0] : null;
@@ -106,8 +106,7 @@ module.exports = async (req, res) => {
                     .insert({
                         user_id: userId,
                         course_data: { courses: {}, electives: [] },
-                        target_cgpa: null,
-                        timer_settings: { studyDuration: 1500, breakDuration: 300 }
+                        target_cgpa: null
                     });
 
                 return res.status(200).json({
@@ -117,8 +116,7 @@ module.exports = async (req, res) => {
                         electives: [],
                         targetCGPA: null,
                         cgpaHistory: []
-                    },
-                    timerSettings: { studyDuration: 1500, breakDuration: 300 }
+                    }
                 });
             }
 
@@ -160,13 +158,12 @@ module.exports = async (req, res) => {
 
             res.status(200).json({
                 success: true,
-                userData: responseData,
-                timerSettings: userData.timer_settings || { studyDuration: 1500, breakDuration: 300 }
+                userData: responseData
             });
 
         } else if (req.method === 'POST') {
             // Save user data
-            const { userData, timerSettings } = req.body;
+            const { userData } = req.body;
 
             if (!userData) {
                 return res.status(400).json({ message: 'User data is required' });
@@ -184,7 +181,6 @@ module.exports = async (req, res) => {
                     current_cgpa: stats.totalCredits > 0 ? parseFloat(stats.cgpa.toFixed(2)) : null,
                     total_credits: stats.totalCredits,
                     target_cgpa: userData.targetCGPA || null,
-                    timer_settings: timerSettings || { studyDuration: 1500, breakDuration: 300 },
                     updated_at: new Date().toISOString()
                 });
 
@@ -235,43 +231,37 @@ module.exports = async (req, res) => {
 
                     if (insertError) console.error('CGPA history insert error:', insertError);
                 }
-            } grade_points: parseFloat(stats.totalPoints.toFixed(2)),
-                recorded_at: new Date().toISOString()
-        });
-
-        if (insertError) console.error('CGPA history insert error:', insertError);
-    }
-                }
             }
 
-res.status(200).json({
-    success: true,
-    message: 'Data saved successfully',
-    stats: {
-        cgpa: stats.cgpa.toFixed(2),
-        totalCredits: stats.totalCredits,
-        gradeCounts: stats.gradeCounts
-    }
-});
+            res.status(200).json({
+                success: true,
+                message: 'Data saved successfully',
+                stats: {
+                    cgpa: stats.cgpa.toFixed(2),
+                    totalCredits: stats.totalCredits,
+                    gradeCounts: stats.gradeCounts
+                }
+            });
 
         } else {
-    res.status(405).json({ message: 'Method not allowed' });
-}
+            res.status(405).json({ message: 'Method not allowed' });
+        }
+
 
     } catch (error) {
-    console.error('User data API error:', error);
+        console.error('User data API error:', error);
 
-    if (error.name === 'JsonWebTokenError') {
-        return res.status(401).json({ message: 'Invalid token' });
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: 'Invalid token' });
+        }
+
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Token expired' });
+        }
+
+        res.status(500).json({
+            message: 'Server error',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
     }
-
-    if (error.name === 'TokenExpiredError') {
-        return res.status(401).json({ message: 'Token expired' });
-    }
-
-    res.status(500).json({
-        message: 'Server error',
-        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    });
-}
 };

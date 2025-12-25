@@ -1,7 +1,7 @@
 {
   "name": "studymetrics",
-  "version": "4.0.5",
-  "description": "IITM BS Academic Progress Tracker with Enhanced Analytics and Study Timer",
+  "version": "4.0.6",
+  "description": "IITM BS Academic Progress Tracker with Enhanced Analytics",
   "main": "app.js",
   "scripts": {
     "start": "node server.js",
@@ -38,7 +38,6 @@
     "iit-madras",
     "student-tools",
     "analytics",
-    "pomodoro-timer",
     "study-tracker"
   ],
   "author": "Arnav Labhasetwar",

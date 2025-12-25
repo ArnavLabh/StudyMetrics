@@ -8,7 +8,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="version" content="4.0.5">
+    <meta name="version" content="4.0.6">
 
     <!-- PWA Meta Tags -->
     <meta name="description" content="Track your academic progress at IIT Madras BS Program">
@@ -2175,56 +2175,7 @@
             </div>
         </div>
 
-        <!-- Timer Section -->
-        <div id="timerSection" class="section-content" style="display: none;">
-            <div class="analytics-full-card">
-                <h3 class="analytics-title">⏱️ Pomodoro Study Timer</h3>
 
-                <div class="timer-container text-center mb-4">
-                    <div id="timerDisplay" class="cgpa-value" style="font-size: 4rem; color: var(--accent-primary);">
-                        25:00</div>
-                    <div class="cgpa-label" id="timerStatus">Study Session</div>
-                </div>
-
-                <div class="timer-controls text-center mb-4">
-                    <button id="startTimer" class="form-button" style="width: auto; margin: 0 0.5rem;">Start</button>
-                    <button id="pauseTimer" class="form-button"
-                        style="width: auto; margin: 0 0.5rem; background: var(--accent-warning);">Pause</button>
-                    <button id="resetTimer" class="form-button"
-                        style="width: auto; margin: 0 0.5rem; background: var(--accent-error);">Reset</button>
-                </div>
-
-                <div class="timer-settings">
-                    <div class="form-group">
-                        <label class="form-label">Course (Optional)</label>
-                        <input type="text" id="timerCourseInput" class="form-input"
-                            placeholder="e.g., BSCS1001 - Computational Thinking">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">What are you studying? (Optional)</label>
-                        <input type="text" id="timerActivity" class="form-input"
-                            placeholder="e.g., Differential Calculus, Python Programming...">
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label class="form-label">Study Time (minutes)</label>
-                            <input type="number" id="studyDuration" class="form-input" value="25" min="1" max="120">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Break Time (minutes)</label>
-                            <input type="number" id="breakDuration" class="form-input" value="5" min="1" max="30">
-                        </div>
-                    </div>
-                </div>
-
-                <div id="timerHistory" class="mt-4">
-                    <h4 class="analytics-title">📚 Recent Study Sessions</h4>
-                    <div id="timerHistoryList"></div>
-                </div>
-            </div>
-        </div>
     </div>
     </div>
 
