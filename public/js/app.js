@@ -257,7 +257,7 @@ async function registerServiceWorker() {
 
 // Check for app updates - simplified version without auto-reload
 function checkForUpdates() {
-    const currentVersion = '4.2.0';
+    const currentVersion = '4.2.1';
     const storedVersion = localStorage.getItem('studymetrics_version');
 
     if (storedVersion !== currentVersion) {
@@ -404,12 +404,19 @@ function setupEventListeners() {
         loginForm.addEventListener('submit', handleAuth);
     }
 
-    // Toggle auth mode - using event delegation for robustness
+    // Toggle auth mode - handle both button and legacy clicks
     document.addEventListener('click', (e) => {
         const toggleAuth = e.target.closest('#toggleAuth');
         if (toggleAuth) {
             e.preventDefault();
             toggleAuthMode();
+        }
+
+        // Guest mode button
+        const guestBtn = e.target.closest('#guestBtn');
+        if (guestBtn) {
+            e.preventDefault();
+            enableGuestMode();
         }
     });
 
@@ -1880,8 +1887,18 @@ function stopAutoSave() {
     }
 }
 
+// Save user data to backend
 async function saveUserData(showNotification = false) {
     if (!currentUser) return false;
+
+    // Guest Mode Guard
+    if (currentUser.isGuest) {
+        if (showNotification) {
+            showToast('Guest Mode: Data is saved locally only', 'info');
+            localStorage.setItem('studymetrics_guest_data', JSON.stringify(userData));
+        }
+        return true;
+    }
 
     try {
         const token = getStoredToken();
@@ -1896,8 +1913,6 @@ async function saveUserData(showNotification = false) {
             targetCGPA: userData.targetCGPA || null,
             cgpaHistory: userData.cgpaHistory || []
         };
-
-        console.log('Saving:', dataToSave);
 
         const response = await fetch(`${API_BASE_URL}/user/data`, {
             method: 'POST',
@@ -1923,763 +1938,763 @@ async function saveUserData(showNotification = false) {
         if (showNotification) showToast('Save failed', 'error');
         return false;
     }
-}
+    // End of saveUserData is already closed above
+    // Next function:
+    async function saveUserDataWithRetry(showNotification = false, retries = 3) {
+        for (let i = 0; i < retries; i++) {
+            const success = await saveUserData(showNotification && i === retries - 1);
+            if (success) return true;
 
-async function saveUserDataWithRetry(showNotification = false, retries = 3) {
-    for (let i = 0; i < retries; i++) {
-        const success = await saveUserData(showNotification && i === retries - 1);
-        if (success) return true;
-
-        if (i < retries - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+            if (i < retries - 1) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+            }
         }
-    }
-    return false;
-}
-
-async function manualSave() {
-    if (!currentUser) {
-        showToast('Please login first', 'error');
         return false;
     }
 
-    updateSaveButtonState('saving');
+    async function manualSave() {
+        if (!currentUser) {
+            showToast('Please login first', 'error');
+            return false;
+        }
 
-    try {
-        const success = await saveUserData(true);
-        if (success) {
-            setTimeout(() => updateSaveButtonState('default'), 2000);
-            return true;
-        } else {
+        updateSaveButtonState('saving');
+
+        try {
+            const success = await saveUserData(true);
+            if (success) {
+                setTimeout(() => updateSaveButtonState('default'), 2000);
+                return true;
+            } else {
+                updateSaveButtonState('error');
+                setTimeout(() => updateSaveButtonState('default'), 3000);
+                return false;
+            }
+        } catch (error) {
+            console.error('Manual save error:', error);
             updateSaveButtonState('error');
+            showToast(`Save failed: ${error.message}`, 'error');
             setTimeout(() => updateSaveButtonState('default'), 3000);
             return false;
         }
-    } catch (error) {
-        console.error('Manual save error:', error);
-        updateSaveButtonState('error');
-        showToast(`Save failed: ${error.message}`, 'error');
-        setTimeout(() => updateSaveButtonState('default'), 3000);
-        return false;
     }
-}
 
-function updateSaveButtonState(state) {
-    const saveBtn = document.getElementById('saveBtn');
-    const saveText = document.getElementById('saveText');
+    function updateSaveButtonState(state) {
+        const saveBtn = document.getElementById('saveBtn');
+        const saveText = document.getElementById('saveText');
 
-    if (!saveBtn || !saveText) return;
+        if (!saveBtn || !saveText) return;
 
-    saveBtn.className = 'save-btn';
+        saveBtn.className = 'save-btn';
 
-    switch (state) {
-        case 'saving':
-            saveBtn.classList.add('saving');
-            saveText.textContent = 'Saving...';
-            saveBtn.disabled = true;
-            break;
-        case 'saved':
-            saveBtn.classList.add('saved');
-            saveText.textContent = 'Saved!';
-            saveBtn.disabled = false;
-            break;
-        case 'error':
-            saveBtn.style.background = 'var(--accent-error)';
-            saveText.textContent = 'Error';
-            saveBtn.disabled = false;
-            break;
-        default:
-            saveText.textContent = 'Save';
-            saveBtn.disabled = false;
-            saveBtn.style.background = '';
+        switch (state) {
+            case 'saving':
+                saveBtn.classList.add('saving');
+                saveText.textContent = 'Saving...';
+                saveBtn.disabled = true;
+                break;
+            case 'saved':
+                saveBtn.classList.add('saved');
+                saveText.textContent = 'Saved!';
+                saveBtn.disabled = false;
+                break;
+            case 'error':
+                saveBtn.style.background = 'var(--accent-error)';
+                saveText.textContent = 'Error';
+                saveBtn.disabled = false;
+                break;
+            default:
+                saveText.textContent = 'Save';
+                saveBtn.disabled = false;
+                saveBtn.style.background = '';
+        }
     }
-}
 
-function logout() {
-    stopAutoSave();
-    removeStoredToken();
-    currentUser = null;
-    userData = {
-        courses: {},
-        electives: [],
-        targetCGPA: null,
-        cgpaHistory: []
-    };
-    whatIfCourses = [];
-
-
-
-    showLoginPage();
-    showToast('Logged out successfully', 'success');
-}
-
-// Utility Functions
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    if (!toast) return;
-
-    toast.textContent = message;
-    toast.className = `toast ${type} show`;
-
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
-}
-
-function showLoader(textId, loaderId) {
-    const textEl = document.getElementById(textId);
-    const loaderEl = document.getElementById(loaderId);
-
-    if (textEl) textEl.style.display = 'none';
-    if (loaderEl) loaderEl.style.display = 'inline-block';
-}
-
-function hideLoader(textId, loaderId) {
-    const textEl = document.getElementById(textId);
-    const loaderEl = document.getElementById(loaderId);
-
-    if (textEl) textEl.style.display = 'inline';
-    if (loaderEl) loaderEl.style.display = 'none';
-}
-
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
+    function logout() {
+        stopAutoSave();
+        removeStoredToken();
+        currentUser = null;
+        userData = {
+            courses: {},
+            electives: [],
+            targetCGPA: null,
+            cgpaHistory: []
         };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
+        whatIfCourses = [];
 
-function handleKeyboardShortcuts(e) {
-    // Ctrl/Cmd + S to save
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        saveUserData();
-        showToast('Data saved manually', 'success');
+
+
+        showLoginPage();
+        showToast('Logged out successfully', 'success');
     }
 
+    // Utility Functions
+    function showToast(message, type = 'info') {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
 
+        toast.textContent = message;
+        toast.className = `toast ${type} show`;
 
-
-}
-
-// Request notification permission on first load
-document.addEventListener('DOMContentLoaded', () => {
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-    }
-});
-
-// Handle page visibility for auto-save
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        // Page is hidden - save data
-        if (currentUser) {
-            saveUserData();
-        }
-    }
-});
-
-// Handle online/offline status
-function updateConnectionStatus() {
-    const status = document.getElementById('connectionStatus');
-    if (!status) return;
-
-    if (navigator.onLine) {
-        status.textContent = 'Connected';
-        status.className = 'connection-status online';
         setTimeout(() => {
-            status.classList.remove('show');
-        }, 2000);
-    } else {
-        status.textContent = 'Offline - Changes saved locally';
-        status.className = 'connection-status offline show';
+            toast.classList.remove('show');
+        }, 3000);
     }
-}
 
-window.addEventListener('online', () => {
-    updateConnectionStatus();
-    showToast('Connection restored', 'success');
-    if (currentUser) {
-        saveUserData(false); // Sync any pending changes
+    function showLoader(textId, loaderId) {
+        const textEl = document.getElementById(textId);
+        const loaderEl = document.getElementById(loaderId);
+
+        if (textEl) textEl.style.display = 'none';
+        if (loaderEl) loaderEl.style.display = 'inline-block';
     }
-});
 
-window.addEventListener('offline', () => {
-    updateConnectionStatus();
-    showToast('Working offline', 'info');
-});
+    function hideLoader(textId, loaderId) {
+        const textEl = document.getElementById(textId);
+        const loaderEl = document.getElementById(loaderId);
 
-// Check initial connection status
-document.addEventListener('DOMContentLoaded', () => {
-    if (!navigator.onLine) {
+        if (textEl) textEl.style.display = 'inline';
+        if (loaderEl) loaderEl.style.display = 'none';
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    function handleKeyboardShortcuts(e) {
+        // Ctrl/Cmd + S to save
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            saveUserData();
+            showToast('Data saved manually', 'success');
+        }
+
+
+
+
+    }
+
+    // Request notification permission on first load
+    document.addEventListener('DOMContentLoaded', () => {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    });
+
+    // Handle page visibility for auto-save
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            // Page is hidden - save data
+            if (currentUser) {
+                saveUserData();
+            }
+        }
+    });
+
+    // Handle online/offline status
+    function updateConnectionStatus() {
+        const status = document.getElementById('connectionStatus');
+        if (!status) return;
+
+        if (navigator.onLine) {
+            status.textContent = 'Connected';
+            status.className = 'connection-status online';
+            setTimeout(() => {
+                status.classList.remove('show');
+            }, 2000);
+        } else {
+            status.textContent = 'Offline - Changes saved locally';
+            status.className = 'connection-status offline show';
+        }
+    }
+
+    window.addEventListener('online', () => {
         updateConnectionStatus();
-    }
-});
-
-// Progressive Web App installation
-let deferredPrompt;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-
-    // Could show an install button here
-    console.log('PWA install prompt available');
-});
-
-window.addEventListener('appinstalled', (e) => {
-    showToast('StudyMetrics installed successfully!', 'success');
-    deferredPrompt = null;
-});
-
-
-
-
-
-// Analytics helper functions
-function getGradeCount(grade) {
-    return Object.values(userData.courses).filter(course => course.grade === grade).length;
-}
-
-function getTotalCompletedCourses() {
-    return Object.values(userData.courses).filter(course => course.grade).length;
-}
-
-function getSectionProgress(section) {
-    const sectionCourses = Object.entries(userData.courses).filter(([courseId]) =>
-        courseId.startsWith(section)
-    );
-
-    const completed = sectionCourses.filter(([_, data]) => data.grade).length;
-    let total = 0;
-
-    switch (section) {
-        case 'foundation':
-            total = courseDatabase.foundation.courses.length;
-            break;
-        case 'programming':
-            total = courseDatabase.diploma.programming.courses.length;
-            break;
-        case 'dataScience':
-            total = courseDatabase.diploma.dataScience.courses.length + 2; // including optional
-            break;
-        case 'degreeCore':
-            total = courseDatabase.degree.core.courses.length;
-            break;
-        case 'elective':
-            total = userData.electives.length;
-            break;
-    }
-
-    return { completed, total, percentage: total > 0 ? (completed / total) * 100 : 0 };
-}
-
-
-
-// Accessibility improvements
-document.addEventListener('keydown', (e) => {
-    // Tab navigation enhancement
-    if (e.key === 'Tab') {
-        document.body.classList.add('keyboard-navigation');
-    }
-});
-
-document.addEventListener('mousedown', () => {
-    document.body.classList.remove('keyboard-navigation');
-});
-
-// Add focus trap for modals
-function trapFocus(element) {
-    const focusableElements = element.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-
-    element.addEventListener('keydown', (e) => {
-        if (e.key === 'Tab') {
-            if (e.shiftKey) {
-                if (document.activeElement === firstElement) {
-                    lastElement.focus();
-                    e.preventDefault();
-                }
-            } else {
-                if (document.activeElement === lastElement) {
-                    firstElement.focus();
-                    e.preventDefault();
-                }
-            }
-        }
-
-        if (e.key === 'Escape') {
-            hideElectiveModal();
+        showToast('Connection restored', 'success');
+        if (currentUser) {
+            saveUserData(false); // Sync any pending changes
         }
     });
-}
 
-// Initialize focus trap when modal opens
-const originalShowElectiveModal = showElectiveModal;
-showElectiveModal = function () {
-    originalShowElectiveModal();
-    const modal = document.getElementById('electiveModal');
-    trapFocus(modal.querySelector('.modal-content'));
-};
+    window.addEventListener('offline', () => {
+        updateConnectionStatus();
+        showToast('Working offline', 'info');
+    });
 
-// Theme detection and handling
-function detectSystemTheme() {
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-        return 'light';
-    }
-    return 'dark';
-}
-
-// Handle system theme changes
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    if (e.matches) {
-        console.log('System switched to dark theme');
-    } else {
-        console.log('System switched to light theme');
-    }
-});
-
-// Service Worker update handling
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'SKIP_WAITING') {
-            window.location.reload();
-        } else if (event.data && event.data.type === 'CACHE_UPDATED') {
-            console.log('Cache updated to version:', event.data.version);
-            showToast('App updated successfully!', 'success');
+    // Check initial connection status
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!navigator.onLine) {
+            updateConnectionStatus();
         }
     });
-}
 
-// Cleanup on page unload
-window.addEventListener('beforeunload', (e) => {
-    if (currentUser) {
-        // Save using fetch with keepalive for auth support
-        const token = getStoredToken();
-        if (token) {
-            fetch(`${API_BASE_URL}/user/data`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ userData: userData }),
-                keepalive: true
-            });
-        }
-    }
+    // Progressive Web App installation
+    let deferredPrompt;
 
-    // Clear intervals
-    stopAutoSave();
-
-});
-
-// Initialize smooth scrolling for anchor links
-document.addEventListener('click', (e) => {
-    const href = e.target.getAttribute('href');
-    // Skip if href is just '#' or doesn't exist
-    if (e.target.tagName === 'A' && href && href.startsWith('#') && href.length > 1) {
+    window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
-        const target = document.querySelector(href);
-        if (target) {
-            target.scrollIntoView({ behavior: 'smooth' });
-        }
-    }
-});
+        deferredPrompt = e;
 
-// Lazy loading for images (if any are added later)
-if ('IntersectionObserver' in window) {
-    const imageObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const img = entry.target;
-                img.src = img.dataset.src;
-                img.classList.remove('lazy');
-                observer.unobserve(img);
-            }
-        });
+        // Could show an install button here
+        console.log('PWA install prompt available');
     });
 
-    // Observe lazy images when added
-    const observeLazyImages = () => {
-        document.querySelectorAll('img[data-src]').forEach(img => {
-            imageObserver.observe(img);
+    window.addEventListener('appinstalled', (e) => {
+        showToast('StudyMetrics installed successfully!', 'success');
+        deferredPrompt = null;
+    });
+
+
+
+
+
+    // Analytics helper functions
+    function getGradeCount(grade) {
+        return Object.values(userData.courses).filter(course => course.grade === grade).length;
+    }
+
+    function getTotalCompletedCourses() {
+        return Object.values(userData.courses).filter(course => course.grade).length;
+    }
+
+    function getSectionProgress(section) {
+        const sectionCourses = Object.entries(userData.courses).filter(([courseId]) =>
+            courseId.startsWith(section)
+        );
+
+        const completed = sectionCourses.filter(([_, data]) => data.grade).length;
+        let total = 0;
+
+        switch (section) {
+            case 'foundation':
+                total = courseDatabase.foundation.courses.length;
+                break;
+            case 'programming':
+                total = courseDatabase.diploma.programming.courses.length;
+                break;
+            case 'dataScience':
+                total = courseDatabase.diploma.dataScience.courses.length + 2; // including optional
+                break;
+            case 'degreeCore':
+                total = courseDatabase.degree.core.courses.length;
+                break;
+            case 'elective':
+                total = userData.electives.length;
+                break;
+        }
+
+        return { completed, total, percentage: total > 0 ? (completed / total) * 100 : 0 };
+    }
+
+
+
+    // Accessibility improvements
+    document.addEventListener('keydown', (e) => {
+        // Tab navigation enhancement
+        if (e.key === 'Tab') {
+            document.body.classList.add('keyboard-navigation');
+        }
+    });
+
+    document.addEventListener('mousedown', () => {
+        document.body.classList.remove('keyboard-navigation');
+    });
+
+    // Add focus trap for modals
+    function trapFocus(element) {
+        const focusableElements = element.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        element.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                if (e.shiftKey) {
+                    if (document.activeElement === firstElement) {
+                        lastElement.focus();
+                        e.preventDefault();
+                    }
+                } else {
+                    if (document.activeElement === lastElement) {
+                        firstElement.focus();
+                        e.preventDefault();
+                    }
+                }
+            }
+
+            if (e.key === 'Escape') {
+                hideElectiveModal();
+            }
         });
+    }
+
+    // Initialize focus trap when modal opens
+    const originalShowElectiveModal = showElectiveModal;
+    showElectiveModal = function () {
+        originalShowElectiveModal();
+        const modal = document.getElementById('electiveModal');
+        trapFocus(modal.querySelector('.modal-content'));
     };
 
-    // Call initially and set up mutation observer for dynamic content
-    observeLazyImages();
-
-    const mutationObserver = new MutationObserver(observeLazyImages);
-    mutationObserver.observe(document.body, { childList: true, subtree: true });
-}
-
-// Debug function for troubleshooting
-window.debugStudyMetrics = function () {
-    console.log('=== StudyMetrics Debug Info ===');
-    console.log('Current User:', currentUser);
-    console.log('User Data:', userData);
-    console.log('Token:', getStoredToken() ? 'Present' : 'Missing');
-    console.log('API Base URL:', API_BASE_URL);
-    console.log('Course Database:', {
-        foundation: courseDatabase.foundation?.courses?.length || 0,
-        programming: courseDatabase.diploma?.programming?.courses?.length || 0,
-        dataScience: courseDatabase.diploma?.dataScience?.courses?.length || 0,
-        degreeCore: courseDatabase.degree?.core?.courses?.length || 0,
-        electives: courseDatabase.degree?.electives?.length || 0
-    });
-    console.log('DOM Elements:', {
-        mainApp: !!document.getElementById('mainApp'),
-        foundationCourses: !!document.getElementById('foundationCourses'),
-        programmingCourses: !!document.getElementById('programmingCourses'),
-        dataScienceCourses: !!document.getElementById('dataScienceCourses'),
-        degreeCourses: !!document.getElementById('degreeCourses'),
-        electiveCourses: !!document.getElementById('electiveCourses')
-    });
-    console.log('===============================');
-};
-
-window.calculateTargetCGPA = calculateTargetCGPA;
-window.addWhatIfCourse = addWhatIfCourse;
-window.removeWhatIfCourse = removeWhatIfCourse;
-window.updateWhatIfCourse = updateWhatIfCourse;
-window.calculateWhatIf = calculateWhatIf;
-
-// Grade Predictor Logic
-let predictorState = {
-    level: 'foundation',
-    course: null,
-    inputs: {},
-    endTermAttempted: false
-};
-
-function initGradePredictor() {
-    console.log('Initializing Grade Predictor...');
-
-    // Setup Level Select
-    const levelSelect = document.getElementById('predictorLevelSelect');
-    if (levelSelect) {
-        levelSelect.addEventListener('change', (e) => setPredictorLevel(e.target.value));
+    // Theme detection and handling
+    function detectSystemTheme() {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            return 'light';
+        }
+        return 'dark';
     }
 
-    // Setup Course Dropdown
-    const courseSelect = document.getElementById('predictorCourseSelect');
-    courseSelect.addEventListener('change', (e) => selectPredictorCourse(e.target.value));
-
-    // Setup Toggle
-    const toggle = document.getElementById('endTermToggle');
-    toggle.addEventListener('change', (e) => {
-        predictorState.endTermAttempted = e.target.checked;
-
-        // Update Toggle Color
-        if (e.target.checked) {
-            document.documentElement.style.setProperty('--toggle-active', 'var(--accent-success)');
+    // Handle system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (e.matches) {
+            console.log('System switched to dark theme');
         } else {
-            document.documentElement.style.setProperty('--toggle-active', 'var(--accent-primary)');
+            console.log('System switched to light theme');
         }
+    });
+
+    // Service Worker update handling
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'SKIP_WAITING') {
+                window.location.reload();
+            } else if (event.data && event.data.type === 'CACHE_UPDATED') {
+                console.log('Cache updated to version:', event.data.version);
+                showToast('App updated successfully!', 'success');
+            }
+        });
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', (e) => {
+        if (currentUser) {
+            // Save using fetch with keepalive for auth support
+            const token = getStoredToken();
+            if (token) {
+                fetch(`${API_BASE_URL}/user/data`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ userData: userData }),
+                    keepalive: true
+                });
+            }
+        }
+
+        // Clear intervals
+        stopAutoSave();
+
+    });
+
+    // Initialize smooth scrolling for anchor links
+    document.addEventListener('click', (e) => {
+        const href = e.target.getAttribute('href');
+        // Skip if href is just '#' or doesn't exist
+        if (e.target.tagName === 'A' && href && href.startsWith('#') && href.length > 1) {
+            e.preventDefault();
+            const target = document.querySelector(href);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    });
+
+    // Lazy loading for images (if any are added later)
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.classList.remove('lazy');
+                    observer.unobserve(img);
+                }
+            });
+        });
+
+        // Observe lazy images when added
+        const observeLazyImages = () => {
+            document.querySelectorAll('img[data-src]').forEach(img => {
+                imageObserver.observe(img);
+            });
+        };
+
+        // Call initially and set up mutation observer for dynamic content
+        observeLazyImages();
+
+        const mutationObserver = new MutationObserver(observeLazyImages);
+        mutationObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
+    // Debug function for troubleshooting
+    window.debugStudyMetrics = function () {
+        console.log('=== StudyMetrics Debug Info ===');
+        console.log('Current User:', currentUser);
+        console.log('User Data:', userData);
+        console.log('Token:', getStoredToken() ? 'Present' : 'Missing');
+        console.log('API Base URL:', API_BASE_URL);
+        console.log('Course Database:', {
+            foundation: courseDatabase.foundation?.courses?.length || 0,
+            programming: courseDatabase.diploma?.programming?.courses?.length || 0,
+            dataScience: courseDatabase.diploma?.dataScience?.courses?.length || 0,
+            degreeCore: courseDatabase.degree?.core?.courses?.length || 0,
+            electives: courseDatabase.degree?.electives?.length || 0
+        });
+        console.log('DOM Elements:', {
+            mainApp: !!document.getElementById('mainApp'),
+            foundationCourses: !!document.getElementById('foundationCourses'),
+            programmingCourses: !!document.getElementById('programmingCourses'),
+            dataScienceCourses: !!document.getElementById('dataScienceCourses'),
+            degreeCourses: !!document.getElementById('degreeCourses'),
+            electiveCourses: !!document.getElementById('electiveCourses')
+        });
+        console.log('===============================');
+    };
+
+    window.calculateTargetCGPA = calculateTargetCGPA;
+    window.addWhatIfCourse = addWhatIfCourse;
+    window.removeWhatIfCourse = removeWhatIfCourse;
+    window.updateWhatIfCourse = updateWhatIfCourse;
+    window.calculateWhatIf = calculateWhatIf;
+
+    // Grade Predictor Logic
+    let predictorState = {
+        level: 'foundation',
+        course: null,
+        inputs: {},
+        endTermAttempted: false
+    };
+
+    function initGradePredictor() {
+        console.log('Initializing Grade Predictor...');
+
+        // Setup Level Select
+        const levelSelect = document.getElementById('predictorLevelSelect');
+        if (levelSelect) {
+            levelSelect.addEventListener('change', (e) => setPredictorLevel(e.target.value));
+        }
+
+        // Setup Course Dropdown
+        const courseSelect = document.getElementById('predictorCourseSelect');
+        courseSelect.addEventListener('change', (e) => selectPredictorCourse(e.target.value));
+
+        // Setup Toggle
+        const toggle = document.getElementById('endTermToggle');
+        toggle.addEventListener('change', (e) => {
+            predictorState.endTermAttempted = e.target.checked;
+
+            // Update Toggle Color
+            if (e.target.checked) {
+                document.documentElement.style.setProperty('--toggle-active', 'var(--accent-success)');
+            } else {
+                document.documentElement.style.setProperty('--toggle-active', 'var(--accent-primary)');
+            }
+
+            renderPredictorInputs();
+        });
+
+        // Initial Population
+        setPredictorLevel('foundation');
+    }
+
+    function setPredictorLevel(level) {
+        predictorState.level = level;
+
+        // Update UI
+        // Update Select Value
+        const levelSelect = document.getElementById('predictorLevelSelect');
+        if (levelSelect && levelSelect.value !== level) levelSelect.value = level;
+
+        // Populate Dropdown
+        const select = document.getElementById('predictorCourseSelect');
+        select.innerHTML = '<option value="">Select a course...</option>';
+
+        const courses = gradePredictorData.levels[level] || [];
+
+        courses.forEach(course => {
+            const option = document.createElement('option');
+            option.value = course.course; // Using 'course' property from new JSON
+            option.textContent = course.course;
+            select.appendChild(option);
+        });
+    }
+
+    function selectPredictorCourse(courseName) {
+        if (!courseName) {
+            predictorState.course = null;
+            document.getElementById('predictorInputs').innerHTML = '<div class="text-center text-muted" style="padding: 2rem;">Select a course to begin</div>';
+            return;
+        }
+
+        predictorState.course = gradePredictorData.levels[predictorState.level]?.find(c => c.course === courseName);
+        predictorState.inputs = {}; // Reset inputs
 
         renderPredictorInputs();
-    });
-
-    // Initial Population
-    setPredictorLevel('foundation');
-}
-
-function setPredictorLevel(level) {
-    predictorState.level = level;
-
-    // Update UI
-    // Update Select Value
-    const levelSelect = document.getElementById('predictorLevelSelect');
-    if (levelSelect && levelSelect.value !== level) levelSelect.value = level;
-
-    // Populate Dropdown
-    const select = document.getElementById('predictorCourseSelect');
-    select.innerHTML = '<option value="">Select a course...</option>';
-
-    const courses = gradePredictorData.levels[level] || [];
-
-    courses.forEach(course => {
-        const option = document.createElement('option');
-        option.value = course.course; // Using 'course' property from new JSON
-        option.textContent = course.course;
-        select.appendChild(option);
-    });
-}
-
-function selectPredictorCourse(courseName) {
-    if (!courseName) {
-        predictorState.course = null;
-        document.getElementById('predictorInputs').innerHTML = '<div class="text-center text-muted" style="padding: 2rem;">Select a course to begin</div>';
-        return;
     }
 
-    predictorState.course = gradePredictorData.levels[predictorState.level]?.find(c => c.course === courseName);
-    predictorState.inputs = {}; // Reset inputs
+    function renderPredictorInputs() {
+        if (!predictorState.course) return;
 
-    renderPredictorInputs();
-}
+        const container = document.getElementById('predictorInputs');
+        container.innerHTML = '';
 
-function renderPredictorInputs() {
-    if (!predictorState.course) return;
+        // Determine inputs for this course. 
+        // We can infer from formula or use provided inputs list. User provided inputs list!
+        // Parse inputs from formula string
+        const formula = predictorState.course.formula;
+        // Regex to match variables (words starting with letter, excluding 'max', 'min')
+        const matches = formula.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+        const keywords = ['max', 'min', 'avg'];
 
-    const container = document.getElementById('predictorInputs');
-    container.innerHTML = '';
+        // Filter unique variables that are not keywords
+        let inputVars = [...new Set(matches)].filter(v => !keywords.includes(v));
 
-    // Determine inputs for this course. 
-    // We can infer from formula or use provided inputs list. User provided inputs list!
-    // Parse inputs from formula string
-    const formula = predictorState.course.formula;
-    // Regex to match variables (words starting with letter, excluding 'max', 'min')
-    const matches = formula.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
-    const keywords = ['max', 'min', 'avg'];
+        // Ensure 'bonus' is present if not already (user request: "Bonus input is not shown for many courses")
+        // We only add it if it's not already covered by a specific bonus variable (like bonus_capped_5)
+        // But since "bonus" is the generic one, we'll force add "bonus" if no other bonus var exists, or just validly add it.
+        // simpler: Ensure "bonus" is in the list. logic later handles if it's used or not.
+        if (!inputVars.includes('bonus')) {
+            inputVars.push('bonus');
+        }
 
-    // Filter unique variables that are not keywords
-    let inputVars = [...new Set(matches)].filter(v => !keywords.includes(v));
-
-    // Ensure 'bonus' is present if not already (user request: "Bonus input is not shown for many courses")
-    // We only add it if it's not already covered by a specific bonus variable (like bonus_capped_5)
-    // But since "bonus" is the generic one, we'll force add "bonus" if no other bonus var exists, or just validly add it.
-    // simpler: Ensure "bonus" is in the list. logic later handles if it's used or not.
-    if (!inputVars.includes('bonus')) {
-        inputVars.push('bonus');
-    }
-
-    // Sort Inputs: Custom Order as per request
-    // "End Term input should be after Quiz 2"
-    // Desired Order: Quiz 1, Quiz 2, End Term (F), Bonus, [Others]
-    const sortOrder = {
-        'GA': 1, // User Request: "Graded Assignment Avg ... above Quiz 1"
-        'GAA': 1,
-        'Qz1': 2,
-        'Qz2': 3,
-        'F': 4,
-        'bonus': 99
-    };
-
-    inputVars.sort((a, b) => {
-        const orderA = sortOrder[a] || 50; // Default middle priority
-        const orderB = sortOrder[b] || 50;
-        if (orderA !== orderB) return orderA - orderB;
-        return a.localeCompare(b); // Alphabetical for others
-    });
-
-
-    // Store for calculation usage
-    predictorState.course.inputs = inputVars;
-
-    inputVars.forEach(variable => {
-        // Skip 'F' (End Term) if End Term NOT Attempted
-        if (variable === 'F' && !predictorState.endTermAttempted) return;
-
-        const wrapper = document.createElement('div');
-        wrapper.className = 'form-group';
-        wrapper.style.marginBottom = '1.5rem';
-
-        const labelRow = document.createElement('div');
-        labelRow.style.display = 'flex';
-        labelRow.style.justifyContent = 'space-between';
-        labelRow.style.marginBottom = '0.5rem';
-
-        const label = document.createElement('label');
-        label.className = 'form-label';
-        label.textContent = getReadableLabel(variable);
-
-        const valueDisplay = document.createElement('span');
-        valueDisplay.className = 'text-sm font-bold';
-        valueDisplay.style.color = 'var(--accent-primary)';
-        valueDisplay.textContent = '0';
-        valueDisplay.id = `val-${variable}`;
-
-        labelRow.appendChild(label);
-        labelRow.appendChild(valueDisplay);
-
-        const inputsRow = document.createElement('div');
-        inputsRow.style.display = 'flex';
-        inputsRow.style.alignItems = 'center';
-        inputsRow.style.gap = '1rem';
-
-        const isBonus = /bonus/i.test(variable);
-        const maxVal = isBonus ? 10 : 100;
-
-        const slider = document.createElement('input');
-        slider.type = 'range';
-        slider.min = '0';
-        slider.max = maxVal;
-        slider.value = '0';
-        slider.className = 'form-input';
-        slider.style.padding = '0'; // Slider style
-        slider.id = `slider-${variable}`;
-        slider.style.flex = '1';
-
-        const numInput = document.createElement('input');
-        numInput.type = 'number';
-        numInput.min = '0';
-        numInput.max = maxVal;
-        numInput.value = '0';
-        numInput.className = 'form-input';
-        numInput.style.width = '70px';
-        numInput.style.padding = '0.4rem';
-        numInput.id = `num-${variable}`;
-
-        // Sync Logic
-        const updateVal = (val) => {
-            // Clamping
-            if (val > maxVal) val = maxVal;
-            if (val < 0) val = 0;
-
-            slider.value = val;
-            numInput.value = val;
-            valueDisplay.textContent = val;
-            predictorState.inputs[variable] = parseInt(val);
-            calculatePrediction();
+        // Sort Inputs: Custom Order as per request
+        // "End Term input should be after Quiz 2"
+        // Desired Order: Quiz 1, Quiz 2, End Term (F), Bonus, [Others]
+        const sortOrder = {
+            'GA': 1, // User Request: "Graded Assignment Avg ... above Quiz 1"
+            'GAA': 1,
+            'Qz1': 2,
+            'Qz2': 3,
+            'F': 4,
+            'bonus': 99
         };
 
-        slider.addEventListener('input', (e) => updateVal(e.target.value));
-        numInput.addEventListener('input', (e) => updateVal(e.target.value));
+        inputVars.sort((a, b) => {
+            const orderA = sortOrder[a] || 50; // Default middle priority
+            const orderB = sortOrder[b] || 50;
+            if (orderA !== orderB) return orderA - orderB;
+            return a.localeCompare(b); // Alphabetical for others
+        });
 
-        inputsRow.appendChild(slider);
-        inputsRow.appendChild(numInput);
 
-        wrapper.appendChild(labelRow);
-        wrapper.appendChild(inputsRow);
+        // Store for calculation usage
+        predictorState.course.inputs = inputVars;
 
-        container.appendChild(wrapper);
+        inputVars.forEach(variable => {
+            // Skip 'F' (End Term) if End Term NOT Attempted
+            if (variable === 'F' && !predictorState.endTermAttempted) return;
 
-        // Initialize state
-        predictorState.inputs[variable] = 0;
-    });
+            const wrapper = document.createElement('div');
+            wrapper.className = 'form-group';
+            wrapper.style.marginBottom = '1.5rem';
 
-    calculatePrediction();
-}
+            const labelRow = document.createElement('div');
+            labelRow.style.display = 'flex';
+            labelRow.style.justifyContent = 'space-between';
+            labelRow.style.marginBottom = '0.5rem';
 
-function getReadableLabel(key) {
-    const map = {
-        'F': 'End Term Exam',
-        'Qz1': 'Quiz 1',
-        'Qz2': 'Quiz 2',
-        'Qz3': 'Quiz 3',
-        'GA': 'Graded Assignment Avg',
-        'GAA': 'Graded Assignment Avg',
-        'GAA2': 'Graded Assignment Avg 2',
-        'GAA3': 'Graded Assignment Avg 3',
-        'bonus': 'Bonus Marks',
+            const label = document.createElement('label');
+            label.className = 'form-label';
+            label.textContent = getReadableLabel(variable);
 
-        // Programming & Projects
-        'PE1': 'Proctored Exam 1',
-        'PE2': 'Proctored Exam 2',
-        'OPPE': 'Online Proctored Programming Exam',
-        'OPPE1': 'Online Proctored Programming Exam 1',
-        'OPPE2': 'Online Proctored Programming Exam 2',
-        'NPPE': 'Non-Proctored Programming Exam',
-        'NPPE1': 'Non-Proctored Programming Exam 1',
-        'NPPE2': 'Non-Proctored Programming Exam 2',
-        'OP': 'Online Proctored Programming Exam',
+            const valueDisplay = document.createElement('span');
+            valueDisplay.className = 'text-sm font-bold';
+            valueDisplay.style.color = 'var(--accent-primary)';
+            valueDisplay.textContent = '0';
+            valueDisplay.id = `val-${variable}`;
 
-        // Assignments & Labs
-        'GLA': 'Graded Lab Assignment',
-        'Prog_Asgn': 'Programming Assignment',
-        'Weekly_Asgn': 'Weekly Assignment',
-        'BPTA': 'Biweekly Programming Test Avg',
-        'KA_avg': 'Knowledge Assessment Avg',
+            labelRow.appendChild(label);
+            labelRow.appendChild(valueDisplay);
 
-        // Project & Participation
-        'GP': 'Group Project',
-        'GP1': 'Group Project 1',
-        'GP2': 'Group Project 2',
-        'P1': 'Project 1',
-        'P2': 'Project 2',
-        'PP': 'Project Presentation',
-        'CP': 'Course Participation Activity',
-        'Project_Viva': 'Project Viva',
-        'ROE': 'Remote Online Examination',
+            const inputsRow = document.createElement('div');
+            inputsRow.style.display = 'flex';
+            inputsRow.style.alignItems = 'center';
+            inputsRow.style.gap = '1rem';
 
-        // Industry 4.0 Specific
-        // Industry 4.0 Specific
-        'Quiz_Sum_15': 'Quiz Sum (15 Marks)',
-        'Game_5': 'Online Game (5 Marks)',
-        'Asgn_Best2_40': 'Best 2 Assignments (40 Marks)',
-        'F': 'End Term Exam', // Standardized
-        'Project_10': 'Project (10 Marks)'
-    };
+            const isBonus = /bonus/i.test(variable);
+            const maxVal = isBonus ? 10 : 100;
 
-    // Dynamic mapping for specific user request
-    if (key === 'GA_best3_of_4' || key.includes('GA_')) {
-        return 'Graded Assignment Avg (Best 3 of 4)';
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.min = '0';
+            slider.max = maxVal;
+            slider.value = '0';
+            slider.className = 'form-input';
+            slider.style.padding = '0'; // Slider style
+            slider.id = `slider-${variable}`;
+            slider.style.flex = '1';
+
+            const numInput = document.createElement('input');
+            numInput.type = 'number';
+            numInput.min = '0';
+            numInput.max = maxVal;
+            numInput.value = '0';
+            numInput.className = 'form-input';
+            numInput.style.width = '70px';
+            numInput.style.padding = '0.4rem';
+            numInput.id = `num-${variable}`;
+
+            // Sync Logic
+            const updateVal = (val) => {
+                // Clamping
+                if (val > maxVal) val = maxVal;
+                if (val < 0) val = 0;
+
+                slider.value = val;
+                numInput.value = val;
+                valueDisplay.textContent = val;
+                predictorState.inputs[variable] = parseInt(val);
+                calculatePrediction();
+            };
+
+            slider.addEventListener('input', (e) => updateVal(e.target.value));
+            numInput.addEventListener('input', (e) => updateVal(e.target.value));
+
+            inputsRow.appendChild(slider);
+            inputsRow.appendChild(numInput);
+
+            wrapper.appendChild(labelRow);
+            wrapper.appendChild(inputsRow);
+
+            container.appendChild(wrapper);
+
+            // Initialize state
+            predictorState.inputs[variable] = 0;
+        });
+
+        calculatePrediction();
     }
 
-    return map[key] || key.replace(/_/g, ' ');
-}
+    function getReadableLabel(key) {
+        const map = {
+            'F': 'End Term Exam',
+            'Qz1': 'Quiz 1',
+            'Qz2': 'Quiz 2',
+            'Qz3': 'Quiz 3',
+            'GA': 'Graded Assignment Avg',
+            'GAA': 'Graded Assignment Avg',
+            'GAA2': 'Graded Assignment Avg 2',
+            'GAA3': 'Graded Assignment Avg 3',
+            'bonus': 'Bonus Marks',
 
-function calculatePrediction() {
-    const course = predictorState.course;
-    if (!course) return;
+            // Programming & Projects
+            'PE1': 'Proctored Exam 1',
+            'PE2': 'Proctored Exam 2',
+            'OPPE': 'Online Proctored Programming Exam',
+            'OPPE1': 'Online Proctored Programming Exam 1',
+            'OPPE2': 'Online Proctored Programming Exam 2',
+            'NPPE': 'Non-Proctored Programming Exam',
+            'NPPE1': 'Non-Proctored Programming Exam 1',
+            'NPPE2': 'Non-Proctored Programming Exam 2',
+            'OP': 'Online Proctored Programming Exam',
 
-    const resultsContainer = document.getElementById('predictorResults');
-    const inputs = predictorState.inputs;
+            // Assignments & Labs
+            'GLA': 'Graded Lab Assignment',
+            'Prog_Asgn': 'Programming Assignment',
+            'Weekly_Asgn': 'Weekly Assignment',
+            'BPTA': 'Biweekly Programming Test Avg',
+            'KA_avg': 'Knowledge Assessment Avg',
 
-    // Prepare formula
-    let formula = course.formula
-        .replace(/max\(/g, 'Math.max(')
-        .replace(/min\(/g, 'Math.min(');
+            // Project & Participation
+            'GP': 'Group Project',
+            'GP1': 'Group Project 1',
+            'GP2': 'Group Project 2',
+            'P1': 'Project 1',
+            'P2': 'Project 2',
+            'PP': 'Project Presentation',
+            'CP': 'Course Participation Activity',
+            'Project_Viva': 'Project Viva',
+            'ROE': 'Remote Online Examination',
 
-    if (predictorState.endTermAttempted) {
-        try {
-            const formula = predictorState.course.formula;
-            const inputs = predictorState.inputs;
+            // Industry 4.0 Specific
+            // Industry 4.0 Specific
+            'Quiz_Sum_15': 'Quiz Sum (15 Marks)',
+            'Game_5': 'Online Game (5 Marks)',
+            'Asgn_Best2_40': 'Best 2 Assignments (40 Marks)',
+            'F': 'End Term Exam', // Standardized
+            'Project_10': 'Project (10 Marks)'
+        };
 
-            // Prepare evaluation context
-            const context = {};
-            predictorState.course.inputs.forEach(v => {
-                if (v === 'F' && !predictorState.endTermAttempted) {
-                    context[v] = 0; // F is 0 in calculation if not attempted (logic handled elsewhere usually, but safe fallback)
-                } else {
-                    context[v] = parseFloat(inputs[v]) || 0;
+        // Dynamic mapping for specific user request
+        if (key === 'GA_best3_of_4' || key.includes('GA_')) {
+            return 'Graded Assignment Avg (Best 3 of 4)';
+        }
+
+        return map[key] || key.replace(/_/g, ' ');
+    }
+
+    function calculatePrediction() {
+        const course = predictorState.course;
+        if (!course) return;
+
+        const resultsContainer = document.getElementById('predictorResults');
+        const inputs = predictorState.inputs;
+
+        // Prepare formula
+        let formula = course.formula
+            .replace(/max\(/g, 'Math.max(')
+            .replace(/min\(/g, 'Math.min(');
+
+        if (predictorState.endTermAttempted) {
+            try {
+                const formula = predictorState.course.formula;
+                const inputs = predictorState.inputs;
+
+                // Prepare evaluation context
+                const context = {};
+                predictorState.course.inputs.forEach(v => {
+                    if (v === 'F' && !predictorState.endTermAttempted) {
+                        context[v] = 0; // F is 0 in calculation if not attempted (logic handled elsewhere usually, but safe fallback)
+                    } else {
+                        context[v] = parseFloat(inputs[v]) || 0;
+                    }
+                });
+
+                // Create a safe evaluation function
+                // Replace variables with 'context.VarName' using the stored inputVars list
+                // We use a regex to ensure whole word replacement
+
+                let safeFormula = formula;
+                predictorState.course.inputs.forEach(v => {
+                    const regex = new RegExp(`\\b${v}\\b`, 'g');
+                    safeFormula = safeFormula.replace(regex, `context['${v}']`);
+                });
+
+                safeFormula = safeFormula.replace(/\bmax\b/g, 'Math.max');
+                safeFormula = safeFormula.replace(/\bmin\b/g, 'Math.min');
+                // avg is handled by context.avg
+
+                const avg = (...args) => args.reduce((a, b) => a + b, 0) / (args.length || 1);
+                context.avg = avg;
+
+                const evalFunction = new Function('context', 'Math', `return ${safeFormula};`);
+                let score = evalFunction(context, Math);
+
+                // Add Bonus if not already part of formula
+                // We search if 'bonus' (case insensitive or whatever) was in the original formula logic.
+                // But strict 'bonus' variable was added to inputs.
+                // If the formula didn't reference the 'bonus' variable, we simply add it to the final score.
+                // Many formulas are just 'max(...)' without bonus.
+                const formulaHasBonus = /\bbonus\b/.test(formula);
+                if (!formulaHasBonus && inputs.bonus) {
+                    score += inputs.bonus;
                 }
-            });
 
-            // Create a safe evaluation function
-            // Replace variables with 'context.VarName' using the stored inputVars list
-            // We use a regex to ensure whole word replacement
+                const grade = calculateGradeFromScore(score);
 
-            let safeFormula = formula;
-            predictorState.course.inputs.forEach(v => {
-                const regex = new RegExp(`\\b${v}\\b`, 'g');
-                safeFormula = safeFormula.replace(regex, `context['${v}']`);
-            });
-
-            safeFormula = safeFormula.replace(/\bmax\b/g, 'Math.max');
-            safeFormula = safeFormula.replace(/\bmin\b/g, 'Math.min');
-            // avg is handled by context.avg
-
-            const avg = (...args) => args.reduce((a, b) => a + b, 0) / (args.length || 1);
-            context.avg = avg;
-
-            const evalFunction = new Function('context', 'Math', `return ${safeFormula};`);
-            let score = evalFunction(context, Math);
-
-            // Add Bonus if not already part of formula
-            // We search if 'bonus' (case insensitive or whatever) was in the original formula logic.
-            // But strict 'bonus' variable was added to inputs.
-            // If the formula didn't reference the 'bonus' variable, we simply add it to the final score.
-            // Many formulas are just 'max(...)' without bonus.
-            const formulaHasBonus = /\bbonus\b/.test(formula);
-            if (!formulaHasBonus && inputs.bonus) {
-                score += inputs.bonus;
-            }
-
-            const grade = calculateGradeFromScore(score);
-
-            resultsContainer.innerHTML = `
+                resultsContainer.innerHTML = `
             <div class="text-center" style="padding: 2rem;">
                 <div class="text-secondary text-sm mb-2">Total Course Score</div>
                 <div class="cgpa-value">${score.toFixed(2)}</div>
@@ -2687,129 +2702,129 @@ function calculatePrediction() {
             </div>
         `;
 
-        } catch (e) {
-            console.error('Calculation error:', e);
-            resultsContainer.innerHTML = '<div class="text-error text-center p-4">Error in calculation formula</div>';
-        }
+            } catch (e) {
+                console.error('Calculation error:', e);
+                resultsContainer.innerHTML = '<div class="text-error text-center p-4">Error in calculation formula</div>';
+            }
 
-    } else {
-        try {
-            // Backward Calculation
-            let html = '<table style="width:100%; text-align: left;">';
-            html += '<thead><tr><th style="padding:8px; color:var(--text-secondary);">Grade</th><th style="padding:8px; color:var(--text-secondary);">Required in End Term (F)</th></tr></thead><tbody>';
+        } else {
+            try {
+                // Backward Calculation
+                let html = '<table style="width:100%; text-align: left;">';
+                html += '<thead><tr><th style="padding:8px; color:var(--text-secondary);">Grade</th><th style="padding:8px; color:var(--text-secondary);">Required in End Term (F)</th></tr></thead><tbody>';
 
-            const grades = ['S', 'A', 'B', 'C', 'D', 'E'];
+                const grades = ['S', 'A', 'B', 'C', 'D', 'E'];
 
-            // Prepare context with known inputs
-            // Similar to forward calc, we need to handle variable replacement in findRequiredF properly
+                // Prepare context with known inputs
+                // Similar to forward calc, we need to handle variable replacement in findRequiredF properly
 
-            grades.forEach(g => {
-                const cutoff = gradePredictorData.cutoffs[g];
-                // Subtract bonus from target since bonus is added to final score
-                const bonusValue = inputs.bonus || 0;
-                const adjustedTarget = Math.max(0, cutoff - bonusValue);
-                const requiredF = findRequiredF(course, inputs, adjustedTarget);
+                grades.forEach(g => {
+                    const cutoff = gradePredictorData.cutoffs[g];
+                    // Subtract bonus from target since bonus is added to final score
+                    const bonusValue = inputs.bonus || 0;
+                    const adjustedTarget = Math.max(0, cutoff - bonusValue);
+                    const requiredF = findRequiredF(course, inputs, adjustedTarget);
 
-                let displayF = '';
-                if (requiredF === null) displayF = '<span style="color:var(--accent-error)">Unviable</span>';
-                else if (requiredF <= 0) displayF = '<span style="color:var(--accent-success)">Already Achieved</span>';
-                else displayF = `<span style="font-weight:bold; color:var(--text-primary)">${Math.ceil(requiredF)}%</span>`;
+                    let displayF = '';
+                    if (requiredF === null) displayF = '<span style="color:var(--accent-error)">Unviable</span>';
+                    else if (requiredF <= 0) displayF = '<span style="color:var(--accent-success)">Already Achieved</span>';
+                    else displayF = `<span style="font-weight:bold; color:var(--text-primary)">${Math.ceil(requiredF)}%</span>`;
 
-                const color = getGradeColor(g);
+                    const color = getGradeColor(g);
 
-                html += `<tr>
+                    html += `<tr>
                     <td style="padding:12px 8px; font-weight:bold; color:${color}">
                         <div style="background:${color}; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">${g[0]}</div>
                     </td>
                     <td style="padding:12px 8px;">${displayF}</td>
                 </tr>`;
-            });
+                });
 
-            html += '</tbody></table>';
-            resultsContainer.innerHTML = html;
-        } catch (e) {
-            console.error('Backward calc error:', e);
-            resultsContainer.innerHTML = '<div class="text-error text-center p-4">Error calculating required scores</div>';
+                html += '</tbody></table>';
+                resultsContainer.innerHTML = html;
+            } catch (e) {
+                console.error('Backward calc error:', e);
+                resultsContainer.innerHTML = '<div class="text-error text-center p-4">Error calculating required scores</div>';
+            }
         }
     }
-}
 
-function findRequiredF(course, currentInputs, targetScore) {
-    // Binary/Linear Search for F (0-100)
-    // Formula is max(..., ...) usually linear with F.
+    function findRequiredF(course, currentInputs, targetScore) {
+        // Binary/Linear Search for F (0-100)
+        // Formula is max(..., ...) usually linear with F.
 
-    // Create function to eval
-    let formula = course.formula
-        .replace(/max\(/g, 'Math.max(')
-        .replace(/min\(/g, 'Math.min(');
-    const argNames = course.inputs; // Includes 'F'
-    const avg = (...args) => args.reduce((a, b) => a + b, 0) / (args.length || 1);
-    const func = new Function(...argNames, 'avg', 'return ' + formula);
+        // Create function to eval
+        let formula = course.formula
+            .replace(/max\(/g, 'Math.max(')
+            .replace(/min\(/g, 'Math.min(');
+        const argNames = course.inputs; // Includes 'F'
+        const avg = (...args) => args.reduce((a, b) => a + b, 0) / (args.length || 1);
+        const func = new Function(...argNames, 'avg', 'return ' + formula);
 
-    const callFunc = (inputsObj) => {
-        const args = argNames.map(n => inputsObj[n] !== undefined ? inputsObj[n] : 0);
-        return func(...args, avg);
-    };
+        const callFunc = (inputsObj) => {
+            const args = argNames.map(n => inputsObj[n] !== undefined ? inputsObj[n] : 0);
+            return func(...args, avg);
+        };
 
-    // Check max possible
-    const inputsMax = { ...currentInputs, F: 100 };
-    const maxScore = callFunc(inputsMax);
+        // Check max possible
+        const inputsMax = { ...currentInputs, F: 100 };
+        const maxScore = callFunc(inputsMax);
 
-    if (maxScore < targetScore) return null;
+        if (maxScore < targetScore) return null;
 
-    // Check if already achieved with 0
-    const inputsMin = { ...currentInputs, F: 0 };
-    const minScore = callFunc(inputsMin);
-    if (minScore >= targetScore) return 0;
+        // Check if already achieved with 0
+        const inputsMin = { ...currentInputs, F: 0 };
+        const minScore = callFunc(inputsMin);
+        if (minScore >= targetScore) return 0;
 
-    // Search
-    let low = 0, high = 100;
-    for (let i = 0; i < 20; i++) {
-        let mid = (low + high) / 2;
-        const inputsMid = { ...currentInputs, F: mid };
-        const s = callFunc(inputsMid);
+        // Search
+        let low = 0, high = 100;
+        for (let i = 0; i < 20; i++) {
+            let mid = (low + high) / 2;
+            const inputsMid = { ...currentInputs, F: mid };
+            const s = callFunc(inputsMid);
 
-        if (s >= targetScore) {
-            high = mid;
-        } else {
-            low = mid;
+            if (s >= targetScore) {
+                high = mid;
+            } else {
+                low = mid;
+            }
         }
+        return high;
     }
-    return high;
-}
 
-function calculateGradeFromScore(score) {
-    if (score >= 90) return 'S';
-    if (score >= 80) return 'A';
-    if (score >= 70) return 'B';
-    if (score >= 60) return 'C';
-    if (score >= 50) return 'D';
-    if (score >= 40) return 'E';
-    return 'U';
-}
+    function calculateGradeFromScore(score) {
+        if (score >= 90) return 'S';
+        if (score >= 80) return 'A';
+        if (score >= 70) return 'B';
+        if (score >= 60) return 'C';
+        if (score >= 50) return 'D';
+        if (score >= 40) return 'E';
+        return 'U';
+    }
 
-function getGradeColor(g) {
-    const map = {
-        'S': 'var(--grade-s)',
-        'A': 'var(--grade-a)',
-        'B': 'var(--grade-b)',
-        'C': 'var(--grade-c)',
-        'D': 'var(--grade-d)',
-        'E': 'var(--grade-e)',
-        'U': 'var(--accent-error)'
-    };
-    return map[g] || 'white';
-}
+    function getGradeColor(g) {
+        const map = {
+            'S': 'var(--grade-s)',
+            'A': 'var(--grade-a)',
+            'B': 'var(--grade-b)',
+            'C': 'var(--grade-c)',
+            'D': 'var(--grade-d)',
+            'E': 'var(--grade-e)',
+            'U': 'var(--accent-error)'
+        };
+        return map[g] || 'white';
+    }
 
-// Window exports
-window.initGradePredictor = initGradePredictor;
-window.setPredictorLevel = setPredictorLevel;
-window.calculatePrediction = calculatePrediction;
-window.addWhatIfCourse = addWhatIfCourse;
+    // Window exports
+    window.initGradePredictor = initGradePredictor;
+    window.setPredictorLevel = setPredictorLevel;
+    window.calculatePrediction = calculatePrediction;
+    window.addWhatIfCourse = addWhatIfCourse;
 
-// Initialize everything when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeApp);
-} else {
-    initializeApp();
-}
+    // Initialize everything when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    } else {
+        initializeApp();
+    }

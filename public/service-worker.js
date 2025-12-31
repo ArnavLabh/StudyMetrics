@@ -1,8 +1,8 @@
-const CACHE_NAME = 'studymetrics-v4.2.0';
+const CACHE_NAME = 'studymetrics-v4.2.1';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/js/app.js?v=4.2.0',
+  '/js/app.js?v=4.2.1',
   '/manifest.json',
   'https://cdn.jsdelivr.net/npm/chart.js'
 ];
@@ -82,7 +82,7 @@ self.addEventListener('activate', event => {
           clients.forEach(client => {
             client.postMessage({
               type: 'CACHE_UPDATED',
-              version: 'v4.2.0'
+              version: 'v4.2.1'
             });
           });
         });
