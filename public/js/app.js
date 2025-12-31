@@ -257,7 +257,7 @@ async function registerServiceWorker() {
 
 // Check for app updates - simplified version without auto-reload
 function checkForUpdates() {
-    const currentVersion = '4.1.6';
+    const currentVersion = '4.1.7';
     const storedVersion = localStorage.getItem('studymetrics_version');
 
     if (storedVersion !== currentVersion) {
@@ -398,15 +398,20 @@ function removeStoredToken() {
 }
 
 function setupEventListeners() {
-    // Auth form
+    // Auth form - with null checks
     const loginForm = document.getElementById('loginForm');
-    loginForm.addEventListener('submit', handleAuth);
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleAuth);
+    }
 
-    // Toggle auth mode
-    document.getElementById('toggleAuth').addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleAuthMode();
-    });
+    // Toggle auth mode - with null check
+    const toggleAuth = document.getElementById('toggleAuth');
+    if (toggleAuth) {
+        toggleAuth.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleAuthMode();
+        });
+    }
 
     // PIN input auto-focus
     setupPinInputs();
@@ -414,10 +419,13 @@ function setupEventListeners() {
     // Navigation
     setupNavigation();
 
-    // Save button
-    document.getElementById('saveBtn').addEventListener('click', () => {
-        manualSave();
-    });
+    // Save button - with null check
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            manualSave();
+        });
+    }
 
     // Logout
     document.getElementById('logoutBtn').addEventListener('click', logout);
