@@ -257,7 +257,7 @@ async function registerServiceWorker() {
 
 // Check for app updates - simplified version without auto-reload
 function checkForUpdates() {
-    const currentVersion = '4.1.7';
+    const currentVersion = '4.1.8';
     const storedVersion = localStorage.getItem('studymetrics_version');
 
     if (storedVersion !== currentVersion) {
@@ -404,14 +404,14 @@ function setupEventListeners() {
         loginForm.addEventListener('submit', handleAuth);
     }
 
-    // Toggle auth mode - with null check
-    const toggleAuth = document.getElementById('toggleAuth');
-    if (toggleAuth) {
-        toggleAuth.addEventListener('click', (e) => {
+    // Toggle auth mode - using event delegation for robustness
+    document.addEventListener('click', (e) => {
+        const toggleAuth = e.target.closest('#toggleAuth');
+        if (toggleAuth) {
             e.preventDefault();
             toggleAuthMode();
-        });
-    }
+        }
+    });
 
     // PIN input auto-focus
     setupPinInputs();
