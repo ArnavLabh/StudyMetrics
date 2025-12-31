@@ -257,7 +257,7 @@ async function registerServiceWorker() {
 
 // Check for app updates - simplified version without auto-reload
 function checkForUpdates() {
-    const currentVersion = '4.1.4';
+    const currentVersion = '4.1.5';
     const storedVersion = localStorage.getItem('studymetrics_version');
 
     if (storedVersion !== currentVersion) {
@@ -687,7 +687,17 @@ async function verifyAndLoadUser(token) {
 }
 
 function showLoginPage() {
-    window.location.href = '/login';
+    console.log('Showing login page...');
+
+    const loadingScreen = document.getElementById('loadingScreen');
+    const loginPage = document.getElementById('loginPage');
+    const mainApp = document.getElementById('mainApp');
+
+    if (loadingScreen) loadingScreen.style.display = 'none';
+    if (loginPage) loginPage.style.display = 'flex';
+    if (mainApp) mainApp.style.display = 'none';
+
+    document.body.style.overflow = 'auto';
 }
 
 function showMainApp() {
