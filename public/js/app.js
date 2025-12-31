@@ -245,77 +245,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Register Service Worker for PWA
 async function registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-        try {
-            // Unregister old service workers first
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (let registration of registrations) {
-                await registration.unregister();
-            }
+    if (!('serviceWorker' in navigator)) return;
 
-            const registration = await navigator.serviceWorker.register('/service-worker.js?v=4.1.3');
-            console.log('Service Worker registered:', registration);
-
-            // Force immediate update check
-            registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        if (!sessionStorage.getItem('update_reloaded')) {
-                            sessionStorage.setItem('update_reloaded', 'true');
-                            showToast('New version available! Refreshing...', 'info');
-                            setTimeout(() => window.location.reload(), 2000);
-                        }
-                    }
-                });
-            });
-
-            setInterval(() => {
-                registration.update();
-            }, 60000);
-        } catch (error) {
-            console.error('Service Worker registration failed:', error);
-        }
+    try {
+        const registration = await navigator.serviceWorker.register('/service-worker.js');
+        console.log('Service Worker registered:', registration.scope);
+    } catch (error) {
+        console.error('Service Worker registration failed:', error);
     }
 }
 
-// Check for app updates
-async function checkForUpdates() {
-    if ('serviceWorker' in navigator) {
-        const currentVersion = '4.1.3'; // v4.1.3
-        const storedVersion = localStorage.getItem('studymetrics_version');
+// Check for app updates - simplified version without auto-reload
+function checkForUpdates() {
+    const currentVersion = '4.1.4';
+    const storedVersion = localStorage.getItem('studymetrics_version');
 
-        // Helper for safe reload
-        const reloadForUpdate = () => {
-            if (!sessionStorage.getItem('update_reloaded')) {
-                sessionStorage.setItem('update_reloaded', 'true');
-                showToast('New version available! Refreshing...', 'info');
-                setTimeout(() => window.location.reload(), 1000);
-            }
-        };
+    if (storedVersion !== currentVersion) {
+        console.log(`Version updated: ${storedVersion || 'none'} -> ${currentVersion}`);
+        localStorage.setItem('studymetrics_version', currentVersion);
 
-        navigator.serviceWorker.addEventListener('controllerchange', reloadForUpdate);
-
-        if (storedVersion && storedVersion !== currentVersion) {
-            console.log(`Version mismatch: ${storedVersion} -> ${currentVersion}`);
-            localStorage.setItem('studymetrics_version', currentVersion);
-
-            // Clear old caches
-            if ('caches' in window) {
-                try {
-                    const keys = await caches.keys();
-                    await Promise.all(keys.map(key => {
-                        if (key.startsWith('studymetrics-v') && !key.includes(currentVersion)) {
-                            return caches.delete(key);
-                        }
-                    }));
-                } catch (e) { console.error('Cache clear failed:', e); }
-            }
-            reloadForUpdate();
-        } else {
-            localStorage.setItem('studymetrics_version', currentVersion);
-            // Clear the reload flag if versions match
-            sessionStorage.removeItem('update_reloaded');
+        // Clear old caches silently
+        if ('caches' in window) {
+            caches.keys().then(keys => {
+                keys.forEach(key => {
+                    if (key.startsWith('studymetrics-') && !key.includes(currentVersion)) {
+                        caches.delete(key);
+                    }
+                });
+            });
         }
     }
 }
