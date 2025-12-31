@@ -257,7 +257,7 @@ async function registerServiceWorker() {
 
 // Check for app updates - simplified version without auto-reload
 function checkForUpdates() {
-    const currentVersion = '4.1.5';
+    const currentVersion = '4.1.6';
     const storedVersion = localStorage.getItem('studymetrics_version');
 
     if (storedVersion !== currentVersion) {
@@ -933,10 +933,11 @@ function renderDataScienceCourses() {
 function createCourseCard(course, section, index) {
     const div = document.createElement('div');
     div.className = 'course-card fade-in';
-    div.dataset.courseId = `${section}-${index}`;
-
-    const savedData = userData.courses[`${section}-${index}`] || {};
+    const courseId = `${section}-${index}`;
+    const savedData = userData.courses[courseId] || {};
     const grade = savedData.grade || '';
+
+    console.log(`Creating card for ${courseId}:`, { savedData, grade, allCourses: Object.keys(userData.courses) });
 
     const removeBtn = section === 'elective' ? `
         <button onclick="removeElective('${index}')" class="whatif-remove" style="margin-left: 0.5rem;">×</button>
@@ -2694,7 +2695,10 @@ function calculatePrediction() {
 
             grades.forEach(g => {
                 const cutoff = gradePredictorData.cutoffs[g];
-                const requiredF = findRequiredF(course, inputs, cutoff);
+                // Subtract bonus from target since bonus is added to final score
+                const bonusValue = inputs.bonus || 0;
+                const adjustedTarget = Math.max(0, cutoff - bonusValue);
+                const requiredF = findRequiredF(course, inputs, adjustedTarget);
 
                 let displayF = '';
                 if (requiredF === null) displayF = '<span style="color:var(--accent-error)">Unviable</span>';
