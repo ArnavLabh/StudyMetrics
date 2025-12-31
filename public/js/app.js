@@ -257,7 +257,7 @@ async function registerServiceWorker() {
 
 // Check for app updates - simplified version without auto-reload
 function checkForUpdates() {
-    const currentVersion = '4.1.8';
+    const currentVersion = '4.2.0';
     const storedVersion = localStorage.getItem('studymetrics_version');
 
     if (storedVersion !== currentVersion) {
@@ -2285,9 +2285,11 @@ window.addEventListener('beforeunload', (e) => {
 
 // Initialize smooth scrolling for anchor links
 document.addEventListener('click', (e) => {
-    if (e.target.tagName === 'A' && e.target.getAttribute('href')?.startsWith('#')) {
+    const href = e.target.getAttribute('href');
+    // Skip if href is just '#' or doesn't exist
+    if (e.target.tagName === 'A' && href && href.startsWith('#') && href.length > 1) {
         e.preventDefault();
-        const target = document.querySelector(e.target.getAttribute('href'));
+        const target = document.querySelector(href);
         if (target) {
             target.scrollIntoView({ behavior: 'smooth' });
         }
