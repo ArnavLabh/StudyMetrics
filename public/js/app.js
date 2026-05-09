@@ -257,7 +257,7 @@ async function registerServiceWorker() {
 
 // Check for app updates - simplified version without auto-reload
 function checkForUpdates() {
-    const currentVersion = '4.2.1';
+    const currentVersion = '4.2.2';
     const storedVersion = localStorage.getItem('studymetrics_version');
 
     if (storedVersion !== currentVersion) {
@@ -1938,8 +1938,10 @@ async function saveUserData(showNotification = false) {
         if (showNotification) showToast('Save failed', 'error');
         return false;
     }
-    // End of saveUserData is already closed above
-    // Next function:
+}
+
+// End of saveUserData is already closed above
+// Next function:
     async function saveUserDataWithRetry(showNotification = false, retries = 3) {
         for (let i = 0; i < retries; i++) {
             const success = await saveUserData(showNotification && i === retries - 1);
