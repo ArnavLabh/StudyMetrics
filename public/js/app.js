@@ -2562,10 +2562,12 @@ async function saveUserData(showNotification = false) {
             label.className = 'form-label';
             label.textContent = getReadableLabel(variable);
 
+            const existingVal = predictorState.inputs[variable] ?? 0;
+
             const valueDisplay = document.createElement('span');
             valueDisplay.className = 'text-sm font-bold';
             valueDisplay.style.color = 'var(--accent-primary)';
-            valueDisplay.textContent = '0';
+            valueDisplay.textContent = existingVal;
             valueDisplay.id = `val-${variable}`;
 
             labelRow.appendChild(label);
@@ -2583,7 +2585,7 @@ async function saveUserData(showNotification = false) {
             slider.type = 'range';
             slider.min = '0';
             slider.max = maxVal;
-            slider.value = '0';
+            slider.value = existingVal;
             slider.className = 'form-input';
             slider.style.padding = '0'; // Slider style
             slider.id = `slider-${variable}`;
@@ -2593,7 +2595,7 @@ async function saveUserData(showNotification = false) {
             numInput.type = 'number';
             numInput.min = '0';
             numInput.max = maxVal;
-            numInput.value = '0';
+            numInput.value = existingVal;
             numInput.className = 'form-input';
             numInput.style.width = '70px';
             numInput.style.padding = '0.4rem';
@@ -2623,8 +2625,10 @@ async function saveUserData(showNotification = false) {
 
             container.appendChild(wrapper);
 
-            // Initialize state
-            predictorState.inputs[variable] = 0;
+            // Initialize state only if not already set
+            if (predictorState.inputs[variable] === undefined) {
+                predictorState.inputs[variable] = 0;
+            }
         });
 
         calculatePrediction();
@@ -2658,7 +2662,7 @@ async function saveUserData(showNotification = false) {
             'Prog_Asgn': 'Programming Assignment',
             'Weekly_Asgn': 'Weekly Assignment',
             'BPTA': 'Biweekly Programming Test Avg',
-            'KA_avg': 'Knowledge Assessment Avg',
+            'KA_avg': 'Kaggle Assignment Avg',
 
             // Project & Participation
             'GP': 'Group Project',
