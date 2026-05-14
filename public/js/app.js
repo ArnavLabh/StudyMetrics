@@ -756,7 +756,58 @@ function showMainApp() {
     console.log('Main app shown successfully');
 }
 
+function enableGuestMode() {
+    currentUser = { isGuest: true, username: 'Guest' };
+
+    const savedGuestData = localStorage.getItem('studymetrics_guest_data');
+    if (savedGuestData) {
+        try {
+            const parsed = JSON.parse(savedGuestData);
+            userData = {
+                courses: parsed.courses || {},
+                electives: parsed.electives || [],
+                targetCGPA: parsed.targetCGPA || null,
+                cgpaHistory: parsed.cgpaHistory || []
+            };
+        } catch (e) {
+            initializeDefaultUserData();
+        }
+    } else {
+        initializeDefaultUserData();
+    }
+
+    showMainApp();
+    showToast('Guest mode active — data saved locally only', 'info');
+}
+
 async function loadUserData() {
+    // Guest mode: load from localStorage, skip API
+    if (currentUser && currentUser.isGuest) {
+        const savedGuestData = localStorage.getItem('studymetrics_guest_data');
+        if (savedGuestData) {
+            try {
+                const parsed = JSON.parse(savedGuestData);
+                userData = {
+                    courses: parsed.courses || {},
+                    electives: parsed.electives || [],
+                    targetCGPA: parsed.targetCGPA || null,
+                    cgpaHistory: parsed.cgpaHistory || []
+                };
+                if (userData.targetCGPA) {
+                    const targetInput = document.getElementById('targetCgpaInput');
+                    if (targetInput) targetInput.value = userData.targetCGPA;
+                }
+                renderAllCourses();
+                updateAnalytics();
+            } catch (e) {
+                initializeDefaultUserData();
+            }
+        } else {
+            initializeDefaultUserData();
+        }
+        return;
+    }
+
     try {
         console.log('Loading user data...');
         const token = getStoredToken();
@@ -1612,7 +1663,7 @@ async function calculateTargetCGPA() {
 
     try {
         const token = getStoredToken();
-        if (!token) {
+        if (!token || (currentUser && currentUser.isGuest)) {
             performLocalTargetCalculation(targetCGPA, currentStats, remainingCredits);
             return;
         }
@@ -1893,9 +1944,9 @@ async function saveUserData(showNotification = false) {
 
     // Guest Mode Guard
     if (currentUser.isGuest) {
+        localStorage.setItem('studymetrics_guest_data', JSON.stringify(userData));
         if (showNotification) {
             showToast('Guest Mode: Data is saved locally only', 'info');
-            localStorage.setItem('studymetrics_guest_data', JSON.stringify(userData));
         }
         return true;
     }
